@@ -127,7 +127,7 @@ export default function SuperAdminCoursePage() {
                     src={course.coverImage}
                     alt={course.title}
                     fill
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover transition-transform duration-300"
                   />
                 ) : (
                   <div className="absolute inset-0 bg-[#2A0066]/5 flex items-center justify-center">

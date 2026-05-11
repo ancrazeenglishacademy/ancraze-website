@@ -195,9 +195,9 @@ export default function StaffPage() {
       </div>
 
       {/* Staff List */}
-      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full min-w-[800px] text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-50">
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">

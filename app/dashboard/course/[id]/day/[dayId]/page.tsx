@@ -257,13 +257,7 @@ export default function DayDetailPage() {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-[#2A0066] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#2A0066]/20 hover:opacity-95 transition-all"
-        >
-          <Plus size={18} />
-          Add New Module
-        </button>
+
       </div>
 
       {/* Modules List */}
@@ -289,22 +283,7 @@ export default function DayDetailPage() {
                     </p>
                   </div>
                </div>
-               <div className="flex gap-2">
-                 <button 
-                   onClick={() => {
-                     setEditingModule(module);
-                     setEditModuleTitle(module.title);
-                     setEditModuleDescription(module.description || "");
-                     setEditModuleQuestions(module.questions || []);
-                     setEditModuleVideoUrl(module.videoUrl || "");
-                     setEditModuleDuration(module.duration || "");
-                     setShowEditModuleModal(true);
-                   }}
-                   className="p-3 text-slate-300 hover:text-[#2A0066] hover:bg-slate-50 rounded-xl transition"
-                 >
-                   <Settings size={18} />
-                 </button>
-               </div>
+
             </div>
           ))
         )}
@@ -346,30 +325,7 @@ export default function DayDetailPage() {
                     </div>
                   </div>
 
-                  {/* Practice Questions */}
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Practice Questions</label>
-                    
-                    {questions.length > 0 && (
-                      <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2">
-                        {questions.map((q, idx) => (
-                          <div key={idx} className="bg-slate-50 p-4 rounded-2xl flex items-start justify-between gap-3 border border-slate-100">
-                             <div className="flex-1">
-                               <p className="text-xs font-bold text-slate-800">Q: {q.question}</p>
-                               <p className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-tighter">Ans: {q.answer.substring(0, 40)}...</p>
-                             </div>
-                             <button type="button" onClick={() => removeQuestion(idx)} className="text-red-400 hover:text-red-600 p-1"><X size={14} /></button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
 
-                    <div className="bg-slate-50 p-6 rounded-[28px] space-y-3">
-                       <textarea value={currentQuestion} onChange={e => setCurrentQuestion(e.target.value)} placeholder="Type your question..." rows={2} className="w-full bg-white border-none rounded-xl text-sm p-3 focus:ring-1 focus:ring-[#2A0066]" />
-                       <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)} placeholder="Type the answer..." rows={1} className="w-full bg-white border-none rounded-xl text-sm p-3 focus:ring-1 focus:ring-[#2A0066]" />
-                       <button type="button" onClick={addQuestion} className="w-full py-3 bg-[#2A0066]/5 text-[#2A0066] text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#2A0066]/10 transition-all border border-[#2A0066]/10">Add to Module</button>
-                    </div>
-                  </div>
                   <div className="pt-4 flex gap-3">
                      <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs">Cancel</button>
                      <button type="submit" disabled={modalLoading} className="flex-1 py-4 bg-[#2A0066] text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-[#2A0066]/20">

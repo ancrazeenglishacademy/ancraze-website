@@ -627,28 +627,11 @@ export default function CourseDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingDay(day);
-                            setDayTitle(day.title);
-                            setShowEditDayModal(true);
-                          }}
-                          className="p-3 bg-slate-50 text-slate-400 hover:text-[#2A0066] rounded-xl border border-slate-100 transition"
-                        >
-                          <Edit3 size={18} />
-                        </button>
-                      </div>
+
                     </div>
                   ))
                 )}
-                <button
-                  onClick={() => setShowDayModal(true)}
-                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 text-xs font-bold hover:border-[#2A0066] hover:text-[#2A0066] transition-all flex items-center justify-center gap-2"
-                >
-                  <Plus size={16} /> Add New Day
-                </button>
+
               </motion.div>
             )}
           </div>
