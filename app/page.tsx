@@ -16,6 +16,12 @@ import {
   MessageSquare,
   Award,
   Zap,
+  Mail,
+  MapPin,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Facebook,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -308,7 +314,7 @@ function FeatureSection() {
                     <h3 className="text-xl font-black text-white">
                       {course.title}
                     </h3>
-                    <button className="px-5 py-2.5 bg-[#2A0066] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-[#5500CC] hover:scale-105 transition-all duration-300">
+                    <button className="px-5 py-2.5 bg-[#2A0066] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-[#5500CC] transition-colors duration-300">
                       Join Now
                     </button>
                   </div>
@@ -437,32 +443,104 @@ function SpecializationSection() {
 
 function Footer() {
   return (
-    <footer className="bg-white border-t border-gray-100">
-      <div className="max-w-[1400px] mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#2A0066] rounded-xl flex items-center justify-center">
-            <span className="font-black text-lg text-white">A</span>
+    <footer className="bg-[#2A0066] text-white pt-20 pb-10 border-t border-[#350080]">
+      <div className="max-w-[1400px] mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          {/* Brand */}
+          <div className="space-y-6 lg:col-span-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-xl shadow-black/10">
+                <span className="font-black text-lg text-[#2A0066]">A</span>
+              </div>
+              <span className="font-black text-2xl tracking-tighter text-white">
+                Ancraze
+              </span>
+            </div>
+            <p className="text-white/70 text-sm font-medium leading-relaxed max-w-xs">
+              Master languages and unlock your full potential with expert-led spoken English classes and interactive platforms.
+            </p>
+            <div className="flex items-center gap-4 pt-2">
+              <Link href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white hover:text-[#2A0066] transition-all">
+                <Twitter size={18} />
+              </Link>
+              <Link href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white hover:text-[#2A0066] transition-all">
+                <Linkedin size={18} />
+              </Link>
+              <Link href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white hover:text-[#2A0066] transition-all">
+                <Instagram size={18} />
+              </Link>
+              <Link href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white hover:text-[#2A0066] transition-all">
+                <Facebook size={18} />
+              </Link>
+            </div>
           </div>
-          <span className="font-black text-xl text-gray-900 tracking-tighter">
-            Ancraze
-          </span>
+
+          {/* Links 1 */}
+          <div>
+            <h4 className="font-black text-white uppercase tracking-widest text-[11px] mb-6 opacity-50">Programs</h4>
+            <ul className="space-y-4">
+              {['Spoken English', 'Business English', 'Kids Learning'].map((link) => (
+                <li key={link}>
+                  <Link href="#" className="text-white/80 hover:text-white text-sm font-bold transition-colors">
+                    {link}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Links 2 */}
+          <div>
+            <h4 className="font-black text-white uppercase tracking-widest text-[11px] mb-6 opacity-50">Company</h4>
+            <ul className="space-y-4">
+              {['About Us', 'Careers', 'Expert Tutors', 'Contact Support'].map((link) => (
+                <li key={link}>
+                  <Link href="#" className="text-white/80 hover:text-white text-sm font-bold transition-colors">
+                    {link}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact / App */}
+          <div>
+            <h4 className="font-black text-white uppercase tracking-widest text-[11px] mb-6 opacity-50">Get in Touch</h4>
+            <ul className="space-y-5 text-sm font-bold text-white/80">
+              <li className="flex items-center gap-3 hover:text-white transition-colors cursor-pointer">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
+                  <Mail size={14} />
+                </div>
+                hello@ancraze.com
+              </li>
+              <li className="flex items-center gap-3 hover:text-white transition-colors cursor-pointer">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
+                  <Phone size={14} />
+                </div>
+                +91 (800) 123-4567
+              </li>
+              <li className="flex items-start gap-3 hover:text-white transition-colors cursor-pointer">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 mt-0.5">
+                  <MapPin size={14} />
+                </div>
+                <span className="leading-relaxed">
+                  123 Education Hub, Tech Park,<br />Bangalore, India 560001
+                </span>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div className="flex items-center gap-8">
-          {["Privacy", "Terms", "Support"].map((item) => (
-            <Link
-              key={item}
-              href="#"
-              className="text-sm font-bold text-gray-400 hover:text-gray-900 transition-colors"
-            >
-              {item}
-            </Link>
-          ))}
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-[11px] font-black text-white/40 uppercase tracking-widest text-center md:text-left">
+            © {new Date().getFullYear()} Ancraze Edu System • Precision Built
+          </p>
+          <div className="flex items-center gap-8">
+             <Link href="#" className="text-[11px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">Privacy Policy</Link>
+             <Link href="#" className="text-[11px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">Terms of Service</Link>
+          </div>
         </div>
-
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-          © 2026 Ancraze Edu System • Precision Built
-        </p>
       </div>
     </footer>
   );
