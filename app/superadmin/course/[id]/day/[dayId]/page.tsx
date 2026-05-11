@@ -243,7 +243,7 @@ export default function DayDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => router.push(`/dashboard/course/${courseId}`)}
+            onClick={() => router.push(`/superadmin/course/${courseId}`)}
             className="h-12 w-12 bg-slate-50 text-slate-400 hover:text-[#2A0066] rounded-2xl flex items-center justify-center transition-all border border-slate-100"
           >
             <ChevronLeft size={24} />
@@ -303,6 +303,12 @@ export default function DayDetailPage() {
                    className="p-3 text-slate-300 hover:text-[#2A0066] hover:bg-slate-50 rounded-xl transition"
                  >
                    <Settings size={18} />
+                 </button>
+                 <button 
+                   onClick={() => handleDeleteModule(module.id)}
+                   className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition"
+                 >
+                   <Trash2 size={18} />
                  </button>
                </div>
             </div>

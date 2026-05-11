@@ -71,7 +71,7 @@ export default function StudentDashboardPage() {
                     { label: "Enrolled Courses", value: courses.length, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" },
                     { label: "Hours Learned", value: "12.5", icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
                     { label: "Certificates", value: "2", icon: Trophy, color: "text-amber-600", bg: "bg-amber-50" },
-                    { label: "Learning Streak", value: "5 Days", icon: Zap, color: "text-purple-600", bg: "bg-purple-50" },
+                    { label: "Learning Streak", value: "5 Days", icon: Zap, color: "text-[#2A0066]", bg: "bg-[#2A0066]/5" },
                 ].map((stat, i) => (
                     <motion.div
                         key={i}

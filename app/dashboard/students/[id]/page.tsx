@@ -297,8 +297,8 @@ export default function StudentDetailPage() {
                       day: "numeric",
                     },
                   )}
-                  bgColor="bg-purple-50"
-                  textColor="text-purple-600"
+                  bgColor="bg-[#2A0066]/5"
+                  textColor="text-[#2A0066]"
                 />
                 {student.trainerId && (
                   <InfoItem

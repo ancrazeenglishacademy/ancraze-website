@@ -88,16 +88,9 @@ export default function CoursePage() {
             Course <span className="text-[#2A0066]">Management</span>
           </h1>
           <p className="text-slate-500 mt-1 text-sm font-medium">
-            Create, edit and manage your curriculum offerings.
+            View and manage your curriculum offerings.
           </p>
         </div>
-        <button
-          className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#2A0066] text-white rounded-2xl text-sm font-bold shadow-xl shadow-[#2A0066]/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
-          onClick={() => router.push("/dashboard/addCourse")}
-        >
-          <Plus size={18} />
-          Create New Course
-        </button>
       </div>
 
       {/* Course Cards Grid */}

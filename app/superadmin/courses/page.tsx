@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { BookOpen, Users, Layers, Loader } from "lucide-react";
+import { BookOpen, Users, Layers, Loader, Plus, Edit3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface Course {
   id: string;
@@ -21,6 +22,7 @@ export default function SuperAdminCoursePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetchCourses();
@@ -66,13 +68,22 @@ export default function SuperAdminCoursePage() {
   return (
     <div className="space-y-8 pb-12">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-          Course <span className="text-[#2A0066]">Management</span>
-        </h1>
-        <p className="text-slate-500 mt-1 text-sm font-medium">
-          Manage curriculum offerings across the platform.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            Course <span className="text-[#2A0066]">Management</span>
+          </h1>
+          <p className="text-slate-500 mt-1 text-sm font-medium">
+            Manage curriculum offerings across the platform.
+          </p>
+        </div>
+        <button
+          className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#2A0066] text-white rounded-2xl text-sm font-bold shadow-xl shadow-[#2A0066]/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+          onClick={() => router.push("/superadmin/addCourse")}
+        >
+          <Plus size={18} />
+          Create New Course
+        </button>
       </div>
 
       {/* Course Cards Grid */}
@@ -161,6 +172,16 @@ export default function SuperAdminCoursePage() {
                 <span className="text-lg font-black text-[#2A0066]">
                   ₹{course.price}
                 </span>
+                <div className="flex gap-2">
+                  <button
+                    className="p-2 bg-white text-slate-400 hover:text-[#2A0066] rounded-xl border border-slate-100 transition shadow-sm cursor-pointer"
+                    onClick={() =>
+                      router.push(`/superadmin/course/${course.id}`)
+                    }
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}

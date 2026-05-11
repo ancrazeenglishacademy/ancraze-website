@@ -116,7 +116,7 @@ export default function UserManagementPage() {
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
+          <div className="p-3 bg-[#2A0066]/5 text-[#2A0066] rounded-2xl">
             <Users size={24} />
           </div>
           <div>
@@ -244,7 +244,7 @@ export default function UserManagementPage() {
                           size={14}
                           className={
                             user.role === "superadmin"
-                              ? "text-purple-600"
+                              ? "text-[#2A0066]"
                               : "text-amber-500"
                           }
                         />

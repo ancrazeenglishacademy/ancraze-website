@@ -165,7 +165,7 @@ export default function StaffPage() {
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
+          <div className="p-3 bg-[#2A0066]/5 text-[#2A0066] rounded-2xl">
             <UserCheck size={24} />
           </div>
           <div>
@@ -266,7 +266,7 @@ export default function StaffPage() {
                       <span
                         className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase ${
                           staff.role === "admin"
-                            ? "text-purple-600 bg-purple-50"
+                            ? "text-[#2A0066] bg-[#2A0066]/5"
                             : staff.role === "trainer"
                               ? "text-amber-600 bg-amber-50"
                               : "text-slate-500 bg-slate-100"

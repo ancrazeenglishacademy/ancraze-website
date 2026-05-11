@@ -190,7 +190,7 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
            </div>
 
            <div className="flex items-center gap-3 text-white font-bold opacity-80">
-              <span className="hidden sm:inline italic uppercase text-xs tracking-widest font-black">Trainer Panel</span>
+              <span className="hidden sm:inline uppercase text-xs tracking-widest font-black">Trainer Panel</span>
               <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
                  <Image
                     src="https://res.cloudinary.com/dvj3mphwu/image/upload/v1768824256/Asset_6_4x-8_1_fkpe8l.png"

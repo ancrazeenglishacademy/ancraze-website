@@ -442,7 +442,7 @@ export default function CourseDetailPage() {
       }
 
       alert("Course deleted successfully!");
-      router.push("/dashboard/course");
+      router.push("/superadmin/courses");
     } catch (error) {
       console.error("Error deleting course:", error);
       alert("Error deleting course");
@@ -612,7 +612,7 @@ export default function CourseDetailPage() {
                     <div 
                       key={day.id} 
                       className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all group flex items-center justify-between cursor-pointer"
-                      onClick={() => router.push(`/dashboard/course/${courseId}/day/${day.id}`)}
+                      onClick={() => router.push(`/superadmin/course/${courseId}/day/${day.id}`)}
                     >
                       <div className="flex items-center gap-6">
                         <div className="h-14 w-14 bg-[#2A0066]/5 rounded-2xl flex items-center justify-center text-[#2A0066] font-black group-hover:bg-[#2A0066] group-hover:text-white transition-all">
@@ -638,6 +638,15 @@ export default function CourseDetailPage() {
                           className="p-3 bg-slate-50 text-slate-400 hover:text-[#2A0066] rounded-xl border border-slate-100 transition"
                         >
                           <Edit3 size={18} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDay(day.id);
+                          }}
+                          className="p-3 bg-slate-50 text-slate-400 hover:text-red-500 rounded-xl border border-slate-100 transition"
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
@@ -672,6 +681,14 @@ export default function CourseDetailPage() {
               className="w-full mt-6 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800"
             >
               Edit Course Details
+            </button>
+            <button
+              onClick={handleDeleteCourse}
+              disabled={modalLoading}
+              className="w-full mt-3 py-3 border border-red-100 text-red-500 rounded-2xl font-bold text-sm hover:bg-red-50 transition flex items-center justify-center gap-2"
+            >
+              <Trash2 size={16} />
+              Delete Course
             </button>
           </div>
         </div>

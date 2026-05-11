@@ -45,7 +45,11 @@ export default function DashboardPage() {
       setLoading(true);
 
       // Fetch students
-      const studentsRes = await fetch("/api/students?role=student");
+      const studentsRes = await fetch("/api/students?role=student", {
+        headers: {
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+      });
       if (studentsRes.ok) {
         const studentsData = await studentsRes.json();
         const students = studentsData.students || [];
@@ -63,7 +67,11 @@ export default function DashboardPage() {
       }
 
       // Fetch courses
-      const coursesRes = await fetch("/api/courses");
+      const coursesRes = await fetch("/api/courses", {
+        headers: {
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+      });
       if (coursesRes.ok) {
         const coursesData = await coursesRes.json();
         const coursesArray = coursesData.courses || [];
@@ -126,13 +134,6 @@ export default function DashboardPage() {
             </span>
           </p>
         </div>
-        <button
-          className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-[#2A0066] text-white rounded-2xl text-sm font-bold shadow-xl shadow-[#2A0066]/20 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
-          onClick={() => router.push("/dashboard/addCourse")}
-        >
-          <Plus size={18} />
-          Create New Course
-        </button>
       </div>
 
       {/* Main KPI Grid - 3 cards only */}

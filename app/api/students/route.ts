@@ -31,13 +31,16 @@ const checkRateLimit = (ip: string) => {
 
 const checkApiKey = (request: NextRequest) => {
   const apiKey = request.headers.get("x-api-key");
-  const validApiKey = process.env.INTERNAL_API_KEY || process.env.NEXT_PUBLIC_INTERNAL_API_KEY;
-  
+  const validApiKey =
+    process.env.INTERNAL_API_KEY || process.env.NEXT_PUBLIC_INTERNAL_API_KEY;
+
   if (!validApiKey) {
-    console.warn("⚠️ NO INTERNAL_API_KEY or NEXT_PUBLIC_INTERNAL_API_KEY is set in environment variables.");
-    return true; 
+    console.warn(
+      "⚠️ NO INTERNAL_API_KEY or NEXT_PUBLIC_INTERNAL_API_KEY is set in environment variables.",
+    );
+    return true;
   }
-  
+
   return apiKey === validApiKey;
 };
 
@@ -58,7 +61,10 @@ export async function GET(request: NextRequest) {
 
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
   }
 
   try {
@@ -118,8 +124,8 @@ export async function GET(request: NextRequest) {
 
         // Filter by role if provided
         if (requestedRole) return u.role === requestedRole;
-        
-    // Default student/user/trainer roles
+
+        // Default student/user/trainer roles
         return (
           u.role === "student" ||
           u.role === "user" ||
@@ -150,7 +156,10 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ success: true, students: studentsWithCourses }, { status: 200 });
+    return NextResponse.json(
+      { success: true, students: studentsWithCourses },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("❌ Error fetching students:", error);
     return NextResponse.json(
@@ -170,7 +179,10 @@ export async function POST(request: NextRequest) {
 
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
   }
 
   try {
@@ -259,7 +271,10 @@ export async function PATCH(request: NextRequest) {
 
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
   }
 
   try {
@@ -316,7 +331,10 @@ export async function DELETE(request: NextRequest) {
 
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
   }
 
   try {
