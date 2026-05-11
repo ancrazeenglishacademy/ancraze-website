@@ -308,7 +308,7 @@ function FeatureSection() {
                     <h3 className="text-xl font-black text-white">
                       {course.title}
                     </h3>
-                    <button className="px-5 py-2.5 bg-[#E30613] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
+                    <button className="px-5 py-2.5 bg-[#2A0066] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-[#5500CC] hover:scale-105 transition-all duration-300">
                       Join Now
                     </button>
                   </div>
