@@ -11,7 +11,7 @@ async function createUsers() {
       const value = line.substring(index + 1).trim();
       env[key] = value;
     }
-  });
+  });   
 
   if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_PRIVATE_KEY) {
     console.error("Missing FIREBASE_PRIVATE_KEY in .env.local");
