@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminStorage } from '@/lib/firebaseAdmin';
+export const dynamic = 'force-dynamic';
 import * as admin from 'firebase-admin';
 
 // Simple in-memory rate limiter
