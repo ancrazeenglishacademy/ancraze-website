@@ -258,10 +258,13 @@ export default function DayDetailPage() {
 
       setModules(modules.map(m => m.id === editingModule.id ? { ...m, title: editModuleTitle, description: editModuleDescription, questions: editModuleQuestions, videoUrl, duration: editModuleDuration } : m));
       setShowEditModuleModal(false);
+      setEditModuleVideoFile(null);
     } catch (error) {
        console.error(error);
     } finally {
       setModalLoading(false);
+      setUploadProgress(null);
+      setUploadStats(null);
     }
   };
 
@@ -306,7 +309,11 @@ export default function DayDetailPage() {
             </button>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setUploadProgress(null);
+              setUploadStats(null);
+              setShowModal(true);
+            }}
             className="flex items-center justify-center gap-2 px-6 py-4 bg-[#2A0066] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#2A0066]/20 hover:opacity-95 transition-all"
           >
             <Plus size={18} />
@@ -332,6 +339,8 @@ export default function DayDetailPage() {
               <div 
                 key={module.id} 
                 onClick={() => {
+                  setUploadProgress(null);
+                  setUploadStats(null);
                   setEditingModule(module);
                   setEditModuleTitle(module.title);
                   setEditModuleDescription(module.description || "");
@@ -357,6 +366,8 @@ export default function DayDetailPage() {
                    <button 
                      onClick={(e) => {
                        e.stopPropagation();
+                       setUploadProgress(null);
+                       setUploadStats(null);
                        setEditingModule(module);
                        setEditModuleTitle(module.title);
                        setEditModuleDescription(module.description || "");
@@ -383,6 +394,8 @@ export default function DayDetailPage() {
               <div 
                 key={module.id} 
                 onClick={() => {
+                  setUploadProgress(null);
+                  setUploadStats(null);
                   setEditingModule(module);
                   setEditModuleTitle(module.title);
                   setEditModuleDescription(module.description || "");
