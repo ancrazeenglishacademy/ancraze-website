@@ -13,6 +13,8 @@ import {
   X,
   LogOut,
   ChevronRight,
+  ChevronLeft,
+  Sparkles,
 } from "lucide-react";
 
 export default function SuperAdminLayout({
@@ -23,7 +25,7 @@ export default function SuperAdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [authorized, setAuthorized] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true); // Default open on desktop
 
   useEffect(() => {
     const userDataCookie = Cookies.get("userData");
@@ -38,7 +40,6 @@ export default function SuperAdminLayout({
       }
     }
 
-    // Check if blocked
     if (userData.isBlocked === true) {
       router.replace("/blocked");
       return;
@@ -89,8 +90,22 @@ export default function SuperAdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900 font-sans">
-      {/* Sidebar Overlay */}
+    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900 font-sans relative overflow-x-hidden">
+      {/* Desktop Sidebar (Collapsible) */}
+      <aside
+        className={`hidden lg:flex fixed top-0 left-0 bottom-0 z-50 w-72 flex-col bg-gradient-to-b from-[#180036] via-[#250059] to-[#12002A] text-white border-r border-white/10 shadow-[10px_0_40px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <SidebarContent
+          isActive={isActive}
+          router={router}
+          setOpen={setOpen}
+          handleLogout={handleLogout}
+        />
+      </aside>
+
+      {/* Mobile Drawer Overlay (< lg) */}
       <AnimatePresence>
         {open && (
           <>
@@ -99,7 +114,7 @@ export default function SuperAdminLayout({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 bg-[#2A0066]/40 backdrop-blur-md z-[60]"
+              className="fixed inset-0 bg-[#180036]/60 backdrop-blur-md z-[60] lg:hidden"
             />
 
             <motion.aside
@@ -107,7 +122,7 @@ export default function SuperAdminLayout({
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 z-[70] h-full w-72 bg-[#2A0066] text-white shadow-[20px_0_50px_rgba(42,0,102,0.2)] flex flex-col"
+              className="fixed top-0 left-0 bottom-0 z-[70] w-72 bg-gradient-to-b from-[#180036] via-[#250059] to-[#12002A] text-white shadow-[20px_0_50px_rgba(0,0,0,0.4)] flex flex-col lg:hidden border-r border-white/10"
             >
               <SidebarContent
                 isActive={isActive}
@@ -120,38 +135,53 @@ export default function SuperAdminLayout({
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-20 bg-[#2A0066] sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8">
+      {/* Main Content Area */}
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+          open ? "lg:pl-72" : "lg:pl-0"
+        }`}
+      >
+        {/* Top Header */}
+        <header className="h-20 bg-[#2A0066] sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8 border-b border-white/10 shadow-md">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setOpen(true)}
-              className="p-2 rounded-xl text-white hover:bg-white/10 transition cursor-pointer shadow-sm"
+              onClick={() => setOpen(!open)}
+              className="p-2.5 rounded-xl text-white bg-white/10 hover:bg-white/20 transition cursor-pointer shadow-sm border border-white/15 active:scale-95"
+              aria-label="Toggle navigation menu"
+              title={open ? "Collapse Sidebar" : "Expand Sidebar"}
             >
               <Menu size={22} />
             </button>
+            <div className="hidden sm:flex items-center gap-2 text-white/80">
+              <Sparkles size={16} className="text-purple-300 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-widest text-purple-200">
+                Super Admin Console
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="hidden md:flex flex-col items-end">
-              <span className="text-sm font-bold text-white">Super Admin</span>
-              <span className="text-[10px] text-emerald-400 font-bold">
-                ● Online
+              <span className="text-sm font-black text-white tracking-tight">
+                Super Admin
+              </span>
+              <span className="text-[10px] text-emerald-400 font-extrabold tracking-wider uppercase flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Online
               </span>
             </div>
-            <div className="h-10 w-10 overflow-hidden rounded-xl relative">
+            <div className="h-10 w-10 overflow-hidden rounded-2xl relative border-2 border-purple-400/30 p-1 bg-white shadow-md">
               <Image
-                src="https://res.cloudinary.com/dvj3mphwu/image/upload/v1768824256/Asset_6_4x-8_1_fkpe8l.png"
+                src="/logo.png"
                 alt="Avatar"
                 fill
-                className="object-contain"
+                className="object-contain p-0.5"
               />
             </div>
           </div>
         </header>
 
-        {/* Body */}
+        {/* Page Content */}
         <main className="p-4 sm:p-6 w-full min-h-screen overflow-x-hidden">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -166,42 +196,54 @@ export default function SuperAdminLayout({
   );
 }
 
-function SidebarContent({ isActive, router, setOpen, handleLogout }: any) {
+function SidebarContent({
+  isActive,
+  router,
+  setOpen,
+  handleLogout,
+}: any) {
   return (
-    <>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-10">
+    <div className="flex flex-col h-full p-5 justify-between">
+      <div>
+        {/* Brand Header */}
+        <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="relative h-10 w-10 flex-shrink-0">
+            <div className="relative h-11 w-11 flex-shrink-0 bg-white rounded-2xl p-1.5 border border-white/30 shadow-lg shadow-black/20">
               <Image
-                src="https://res.cloudinary.com/dvj3mphwu/image/upload/v1768824256/Asset_6_4x-8_1_fkpe8l.png"
-                alt="Logo"
+                src="/logo.png"
+                alt="Ancraze Logo"
                 fill
-                className="object-contain"
+                className="object-contain p-1"
                 priority
               />
             </div>
-            <span className="text-lg font-bold tracking-tight uppercase">
-              ANCRAZE
-            </span>
+            <div className="flex flex-col">
+              <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-100 to-indigo-200 uppercase">
+                ANCRAZE
+              </span>
+              <span className="text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/20 self-start mt-0.5">
+                SUPER ADMIN
+              </span>
+            </div>
           </div>
 
           <button
             onClick={() => setOpen(false)}
-            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200 cursor-pointer text-white"
+            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200 cursor-pointer text-white border border-white/10"
+            title="Collapse Sidebar"
           >
-            <X size={24} />
+            <ChevronLeft size={20} />
           </button>
         </div>
 
-        <nav className="space-y-2">
+        {/* Navigation Items */}
+        <nav className="space-y-2.5">
           <SidebarItem
             icon={<ShieldAlert size={20} />}
             label="Super Admin Panel"
             active={isActive("/superadmin")}
             onClick={() => {
               router.push("/superadmin");
-              setOpen(false);
             }}
           />
           <SidebarItem
@@ -210,7 +252,6 @@ function SidebarContent({ isActive, router, setOpen, handleLogout }: any) {
             active={isActive("/superadmin/users")}
             onClick={() => {
               router.push("/superadmin/users");
-              setOpen(false);
             }}
           />
           <SidebarItem
@@ -219,25 +260,35 @@ function SidebarContent({ isActive, router, setOpen, handleLogout }: any) {
             active={isActive("/superadmin/courses")}
             onClick={() => {
               router.push("/superadmin/courses");
-              setOpen(false);
             }}
           />
         </nav>
       </div>
 
-      <div className="mt-auto p-6 border-t border-white/10">
+      {/* Footer Logout Section */}
+      <div className="pt-4 border-t border-white/10">
+        <div className="bg-white/5 rounded-2xl p-3 border border-white/10 backdrop-blur-md mb-3 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-white border border-white/30 flex items-center justify-center relative shadow-sm">
+            <Image src="/logo.png" alt="User" fill className="object-contain p-1" />
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold text-white truncate">Super Admin</span>
+            <span className="text-[10px] text-purple-300 font-medium truncate">System Control</span>
+          </div>
+        </div>
+
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-100 transition-all duration-200 group cursor-pointer"
+          className="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl text-red-300 bg-red-500/10 hover:bg-red-500 hover:text-white transition-all duration-200 group cursor-pointer border border-red-500/20 shadow-sm font-bold text-sm"
         >
           <LogOut
-            size={20}
+            size={18}
             className="group-hover:-translate-x-1 transition-transform"
           />
-          <span className="font-semibold">Log Out</span>
+          <span>Log Out</span>
         </button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -245,17 +296,19 @@ function SidebarItem({ icon, label, active, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 cursor-pointer ${
+      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer ${
         active
-          ? "bg-white text-[#2A0066] shadow-lg"
-          : "text-white/70 hover:bg-white/10 hover:text-white"
+          ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/35 border-l-4 border-white font-bold translate-x-1"
+          : "text-slate-300 hover:text-white hover:bg-white/10 hover:translate-x-1 font-semibold"
       }`}
     >
       <div className="flex items-center gap-3">
-        {icon}
-        <span className="font-semibold text-sm">{label}</span>
+        <span className={active ? "text-white" : "text-purple-300/80"}>
+          {icon}
+        </span>
+        <span className="text-sm tracking-wide">{label}</span>
       </div>
-      {active && <ChevronRight size={16} />}
+      {active && <ChevronRight size={16} className="text-white/80" />}
     </button>
   );
 }

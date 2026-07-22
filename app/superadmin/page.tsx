@@ -1,4 +1,5 @@
 "use client";
+
 import Cookies from "js-cookie";
 import { useState, useEffect } from "react";
 import {
@@ -7,7 +8,11 @@ import {
   UserPlus,
   MoreHorizontal,
   Loader,
-  ShieldAlert
+  Shield,
+  ArrowRight,
+  TrendingUp,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -42,7 +47,6 @@ export default function SuperAdminPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-
       const headers = {
         "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
       };
@@ -108,21 +112,43 @@ export default function SuperAdminPage() {
   if (!mounted) return null;
 
   return (
-    <div className="space-y-6 md:space-y-10 pb-12 px-1 sm:px-0">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-            Super Admin <span className="text-[#2A0066]">Overview</span>
-          </h1>
-          <p className="text-slate-500 mt-1 text-sm font-medium">
-            Welcome back,{" "}
-            <span className="text-[#2A0066] font-bold uppercase">
-              {fullName || role || "Super Admin"}
-            </span>
-          </p>
+    <div className="space-y-8 pb-12 px-1 sm:px-0">
+      
+      {/* Premium Gradient Greeting Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#2A0066] via-[#3d0080] to-[#5a00b3] p-8 md:p-10 text-white shadow-[0_20px_50px_rgba(42,0,102,0.15)]"
+      >
+        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-15 pointer-events-none hidden md:block">
+          <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent scale-150 rounded-full blur-xl" />
         </div>
-      </div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold text-purple-200 tracking-wider uppercase">
+              <Sparkles size={12} className="animate-spin text-purple-300" />
+              Live Workspace
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-white">{fullName || role || "Super Admin"}</span>
+            </h1>
+            <p className="text-purple-100/80 text-sm max-w-xl font-medium leading-relaxed">
+              Manage users, configure courses, monitor operations and customize your English Learning platform from the dashboard.
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <button 
+              onClick={() => router.push("/superadmin/courses")}
+              className="px-6 py-3 rounded-2xl bg-white text-[#2A0066] font-bold text-sm shadow-lg hover:bg-purple-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            >
+              Add Course
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Main KPI Grid - 3 cards */}
       {loading ? (
@@ -130,42 +156,51 @@ export default function SuperAdminPage() {
           <Loader size={32} className="animate-spin text-[#2A0066]" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <KPICard
             label="Total Platform Users"
             value={totalUsers.toString()}
             icon={<Users size={22} />}
-            percentage={`${totalUsers} active accounts`}
+            desc="Registered active platform accounts"
+            trend={`${totalUsers} Total`}
+            color="from-purple-500 to-indigo-600"
           />
           <KPICard
-            label="Total Courses"
+            label="Total Course Modules"
             value={totalCourses.toString()}
             icon={<Presentation size={22} />}
-            percentage="Platform wide courses"
+            desc="Syllabus courses globally active"
+            trend="Live Academy Catalog"
+            color="from-blue-500 to-sky-600"
           />
           <KPICard
-            label="This Month Users"
+            label="This Month Signups"
             value={getThisMonthUsers().toString()}
             icon={<UserPlus size={22} />}
-            percentage="↑ New Registrations"
+            desc="New registrations in current month"
+            trend="↑ Increasing Activity"
+            color="from-emerald-500 to-teal-600"
             isHighlight
           />
         </div>
       )}
 
       {/* Table Section */}
-      <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-4">
+      <div className="bg-white/80 backdrop-blur-lg rounded-[32px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
+        <div className="p-6 md:p-8 border-b border-slate-100/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-50/50 to-white">
           <div>
-            <h3 className="text-lg md:text-xl font-bold text-slate-900">
-              Recent Signups
-            </h3>
-            <p className="text-slate-400 text-[11px] md:text-xs font-medium mt-1">
-              Latest users across the platform
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-purple-600" />
+              <h3 className="text-lg md:text-xl font-black text-slate-900 tracking-tight">
+                Recent Platform Registrations
+              </h3>
+            </div>
+            <p className="text-slate-400 text-xs font-medium mt-1">
+              Real-time update of latest signups on the database
             </p>
           </div>
           <button
-            className="text-[#2A0066] font-bold text-xs md:text-sm hover:underline whitespace-nowrap cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-purple-50 text-[#2A0066] hover:bg-purple-100 font-bold text-xs md:text-sm transition-all cursor-pointer shadow-sm active:scale-95"
             onClick={() => router.push("/superadmin/users")}
           >
             View All Users
@@ -174,23 +209,23 @@ export default function SuperAdminPage() {
 
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full min-w-[600px]">
-            <thead className="bg-slate-50/50">
-              <tr className="text-slate-400 text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-black">
-                <th className="px-5 md:px-8 py-4 text-left">User Name</th>
-                <th className="px-5 md:px-8 py-4 text-left">Role</th>
-                <th className="px-5 md:px-8 py-4 text-left">Registration Date</th>
+            <thead>
+              <tr className="text-slate-400 text-[10px] uppercase tracking-[0.2em] font-extrabold border-b border-slate-100 bg-slate-50/50">
+                <th className="px-6 md:px-8 py-4 text-left font-black">User Details</th>
+                <th className="px-6 md:px-8 py-4 text-left font-black">Role / Access</th>
+                <th className="px-6 md:px-8 py-4 text-left font-black">Registered On</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100/60 bg-white/50">
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="px-8 py-12 text-center">
-                    <Loader size={24} className="animate-spin text-[#2A0066] mx-auto" />
+                  <td colSpan={3} className="px-8 py-16 text-center">
+                    <Loader size={28} className="animate-spin text-[#2A0066] mx-auto" />
                   </td>
                 </tr>
               ) : recentUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-8 py-12 text-center text-slate-400">
+                  <td colSpan={3} className="px-8 py-16 text-center text-slate-400 font-medium">
                     No users registered yet
                   </td>
                 </tr>
@@ -198,7 +233,8 @@ export default function SuperAdminPage() {
                 recentUsers.map((user) => (
                   <UserRow
                     key={user.id}
-                    name={user.fullName || "Unknown"}
+                    name={user.fullName || "Unknown User"}
+                    email={user.email || "no-email@platform.com"}
                     role={user.role || "user"}
                     date={formatDate(user.createdAt)}
                   />
@@ -212,45 +248,53 @@ export default function SuperAdminPage() {
   );
 }
 
-// --- Responsive Helper Components ---
+// --- Premium Card Helper Components ---
 
 function KPICard({
   label,
   value,
   icon,
-  percentage,
+  desc,
+  trend,
+  color,
   isHighlight = false,
 }: {
   label: string;
   value: string;
   icon: React.ReactNode;
-  percentage: string;
+  desc: string;
+  trend: string;
+  color: string;
   isHighlight?: boolean;
 }) {
   return (
-    <motion.div className="p-5 md:p-7 rounded-2xl cursor-pointer border transition-all duration-300 bg-white border-slate-100 shadow-sm hover:shadow-md ">
-      <div className="flex justify-between items-start mb-4 md:mb-6">
-        <div
-          className={`p-2.5 md:p-3.5 rounded-xl md:rounded-2xl ${isHighlight ? "bg-[#2A0066] text-white" : "bg-[#2A0066]/5 text-[#2A0066]"}`}
-        >
-          {icon}
-        </div>
-        <button className="text-slate-300 cursor-pointer">
-          <MoreHorizontal size={20} />
-        </button>
-      </div>
+    <motion.div 
+      whileHover={{ y: -4 }}
+      className="p-6 md:p-8 rounded-[28px] cursor-pointer bg-white border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all duration-300 flex flex-col justify-between"
+    >
       <div>
-        <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em]">
+        <div className="flex justify-between items-start mb-6">
+          <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${color} text-white shadow-lg shadow-black/5`}>
+            {icon}
+          </div>
+          <button className="text-slate-300 hover:text-slate-500 cursor-pointer">
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
+        
+        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
           {label}
         </p>
-        <h4 className="text-xl md:text-3xl font-black text-slate-900 mt-1">
+        <h4 className="text-3xl md:text-4xl font-black text-slate-900 mt-2 tracking-tight">
           {value}
         </h4>
-        <p
-          className={`text-[9px] md:text-[10px] font-bold mt-2 ${isHighlight ? "text-[#2A0066]" : "text-slate-400"}`}
-        >
-          {percentage}
-        </p>
+      </div>
+      
+      <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between text-xs font-bold text-slate-500">
+        <span className="text-slate-400 font-medium">{desc}</span>
+        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600`}>
+          {trend}
+        </span>
       </div>
     </motion.div>
   );
@@ -258,37 +302,54 @@ function KPICard({
 
 function UserRow({
   name,
+  email,
   role,
   date,
 }: {
   name: string;
+  email: string;
   role: string;
   date: string;
 }) {
+  const getRoleColors = (role: string) => {
+    switch (role.toLowerCase()) {
+      case "superadmin":
+        return "bg-purple-100 text-purple-700 border-purple-200/50";
+      case "admin":
+        return "bg-blue-100 text-blue-700 border-blue-200/50";
+      case "trainer":
+        return "bg-indigo-100 text-indigo-700 border-indigo-200/50";
+      default:
+        return "bg-slate-100 text-slate-600 border-slate-200/50";
+    }
+  };
+
   return (
-    <tr className="hover:bg-slate-50/50 transition-colors group cursor-pointer">
-      <td className="px-5 md:px-8 py-4 md:py-6 ">
-        <div className="flex items-center gap-3 md:gap-4">
-          <div className="h-8 w-8 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-[#2A0066]/5 flex items-center justify-center font-bold text-[#2A0066] border border-[#2A0066]/10 group-hover:bg-[#2A0066] group-hover:text-white transition-all">
+    <tr className="hover:bg-slate-50/50 transition-colors group cursor-pointer border-b border-slate-100/40">
+      <td className="px-6 md:px-8 py-5">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-purple-500/10 to-indigo-50/20 border border-purple-100 flex items-center justify-center font-black text-purple-600 group-hover:from-purple-600 group-hover:to-indigo-600 group-hover:text-white transition-all shadow-sm">
             {name.charAt(0).toUpperCase()}
           </div>
-          <span className="text-xs md:text-sm font-bold text-slate-700 group-hover:text-[#2A0066] transition-colors">
-            {name}
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-slate-800 group-hover:text-[#2A0066] transition-colors leading-tight">
+              {name}
+            </span>
+            <span className="text-slate-400 text-xs font-medium mt-0.5">
+              {email}
+            </span>
+          </div>
+        </div>
+      </td>
+      <td className="px-6 md:px-8 py-5">
+        <div className="flex items-center">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border capitalize shadow-sm ${getRoleColors(role)}`}>
+            <Shield size={12} />
+            {role}
           </span>
         </div>
       </td>
-      <td className="px-5 md:px-8 py-4 md:py-6">
-        <div className="flex items-center gap-2">
-          <ShieldAlert
-            size={14}
-            className={role === "superadmin" ? "text-[#2A0066]" : "text-amber-500"}
-          />
-          <code className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded capitalize">
-            {role}
-          </code>
-        </div>
-      </td>
-      <td className="px-5 md:px-8 py-4 md:py-6 text-[10px] md:text-sm text-slate-400 font-medium whitespace-nowrap">
+      <td className="px-6 md:px-8 py-5 text-xs text-slate-400 font-bold whitespace-nowrap">
         {date}
       </td>
     </tr>

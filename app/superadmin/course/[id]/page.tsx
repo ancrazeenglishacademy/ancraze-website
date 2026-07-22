@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { storage } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Plus,
   ChevronRight,
@@ -73,6 +75,7 @@ export default function CourseDetailPage() {
   >([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   // Fetch course details and modules
   useEffect(() => {
@@ -233,10 +236,33 @@ export default function CourseDetailPage() {
     }
   };
 
-  const handleSubmitModule = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const uploadFile = (file: File, path: string, onProgress: (progress: number) => void): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const storageRef = ref(storage, path);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress(Math.round(progress));
+        },
+        (error) => reject(error),
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(url);
+        }
+      );
+    });
+  };
+
+  const handleSubmitModule = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!moduleTitle.trim()) {
       alert("Please enter a module title");
+      return;
+    }
+    if (!moduleDay) {
+      alert("Please select a day for the module");
       return;
     }
     if (moduleTitle.trim().length < 3) {
@@ -245,28 +271,20 @@ export default function CourseDetailPage() {
     }
 
     setModalLoading(true);
+    setUploadProgress(0);
     try {
       // First, handle video upload if exists
       let videoUrl = '';
       if (videoFile) {
         try {
-          const videoFormData = new FormData();
-          videoFormData.append('video', videoFile!);
-          videoFormData.append('courseId', courseId);
-
-          const videoRes = await fetch('/api/upload-video', {
-            method: 'POST',
-            body: videoFormData,
+          const cleanName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+          const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
+          videoUrl = await uploadFile(videoFile, videoPath, (progress) => {
+            setUploadProgress(progress);
           });
-
-          if (videoRes.ok) {
-            const videoData = await videoRes.json();
-            videoUrl = videoData.videoUrl;
-            console.log('✅ Video uploaded:', videoUrl);
-          }
+          console.log('✅ Video uploaded:', videoUrl);
         } catch (videoError) {
           console.error('⚠️ Video upload failed (continuing without video):', videoError);
-          // Continue without video
         }
       }
 
@@ -326,6 +344,7 @@ export default function CourseDetailPage() {
       alert(`Error creating module: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setModalLoading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -484,19 +503,11 @@ export default function CourseDetailPage() {
 
       // Upload new video if selected
       if (editModuleVideoFile) {
-        const videoFormData = new FormData();
-        videoFormData.append("video", editModuleVideoFile!);
-        videoFormData.append("courseId", courseId);
-
-        const videoRes = await fetch("/api/upload-video", {
-          method: "POST",
-          body: videoFormData,
+        const cleanName = editModuleVideoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
+        videoUrl = await uploadFile(editModuleVideoFile, videoPath, (progress) => {
+          setUploadProgress(progress);
         });
-
-        if (videoRes.ok) {
-          const videoData = await videoRes.json();
-          videoUrl = videoData.videoUrl;
-        }
       }
 
       const response = await fetch("/api/modules/update", {
@@ -1007,6 +1018,12 @@ export default function CourseDetailPage() {
                       </p>
                     </label>
                   </div>
+                  {uploadProgress !== null && (
+                    <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden relative">
+                      <div className="bg-[#2A0066] h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                      <p className="text-[10px] font-black text-[#2A0066] mt-1.5 text-right">Uploading: {uploadProgress}%</p>
+                    </div>
+                  )}
                   {editModuleVideoUrl && !editModuleVideoFile && (
                     <p className="text-xs text-slate-500 mt-2">Current video: {editModuleVideoUrl.split('/').pop()}</p>
                   )}
@@ -1212,6 +1229,12 @@ export default function CourseDetailPage() {
                       <p className="text-xs text-slate-400 mt-1">MP4, WebM, or other video formats</p>
                     </label>
                   </div>
+                  {uploadProgress !== null && (
+                    <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden relative">
+                      <div className="bg-[#2A0066] h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                      <p className="text-[10px] font-black text-[#2A0066] mt-1.5 text-right">Uploading: {uploadProgress}%</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Practice Questions Section */}

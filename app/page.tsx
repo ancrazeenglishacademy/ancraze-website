@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import {
@@ -26,7 +27,6 @@ import {
 import Link from "next/link";
 import { useEffect } from "react";
 import Cookies from "js-cookie";
-import Image from "next/image";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -65,8 +65,8 @@ function Navbar({ user }: { user: any }) {
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-3 group cursor-pointer"
         >
-          <div className="w-10 h-10 bg-[#2A0066] rounded-xl flex items-center justify-center shadow-lg shadow-[#2A0066]/20 group-hover:rotate-6 transition-transform duration-300">
-            <span className="font-black text-lg text-white">A</span>
+          <div className="w-10 h-10 bg-[#2A0066] rounded-xl flex items-center justify-center shadow-lg shadow-[#2A0066]/20 group-hover:rotate-6 transition-transform duration-300 relative p-1">
+            <Image src="/logo.png" alt="Ancraze Logo" width={40} height={40} className="object-contain" />
           </div>
           <span className="text-xl font-black text-gray-900 tracking-tight">
             Ancraze
@@ -449,8 +449,8 @@ function Footer() {
           {/* Brand */}
           <div className="space-y-6 lg:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-xl shadow-black/10">
-                <span className="font-black text-lg text-[#2A0066]">A</span>
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-xl shadow-black/10 relative p-1">
+                <Image src="/logo.png" alt="Ancraze Logo" width={40} height={40} className="object-contain" />
               </div>
               <span className="font-black text-2xl tracking-tighter text-white">
                 Ancraze
