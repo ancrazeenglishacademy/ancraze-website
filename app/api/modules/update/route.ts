@@ -68,6 +68,7 @@ export async function PUT(request: NextRequest) {
       day,
       description,
       thumbnailUrl,
+      videoQualities,
     } = body;
 
     if (!courseId || !moduleId) {
@@ -89,6 +90,7 @@ export async function PUT(request: NextRequest) {
     if (day !== undefined) updateData.day = day;
     if (description !== undefined) updateData.description = description;
     if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl;
+      if (videoQualities !== undefined) updateData.videoQualities = videoQualities;
 
     // Update module in Firestore
     await adminDb

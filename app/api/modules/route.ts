@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     let day = '';
     let description = '';
     let thumbnailUrl = '';
+    let videoQualities: any = null;
 
     try {
       console.log('🔄 Parsing request body...');
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
       day = body.day || '';
       description = body.description || '';
       thumbnailUrl = body.thumbnailUrl || '';
+      videoQualities = body.videoQualities || null;
 
       console.log('✅ Request parsed successfully');
       console.log('  - courseId:', courseId);
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
       day: body.day || '',
       description: description || '',
       thumbnailUrl: thumbnailUrl || '',
+      videoQualities: videoQualities || null,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
     };

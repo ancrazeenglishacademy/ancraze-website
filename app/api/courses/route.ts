@@ -279,6 +279,7 @@ export async function GET(request: NextRequest) {
         day.modules.forEach((module: any) => {
           if (!hasPurchased && globalModuleCount >= 3) {
             module.videoUrl = "";
+            module.videoQualities = null;
             module.isLocked = true;
           } else {
             module.isLocked = false;
