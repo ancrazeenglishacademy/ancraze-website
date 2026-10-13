@@ -8,7 +8,7 @@ const checkApiKey = (request: NextRequest) => {
     process.env.INTERNAL_API_KEY || process.env.NEXT_PUBLIC_INTERNAL_API_KEY;
 
   if (!validApiKey) {
-    console.warn("⚠️ NO INTERNAL_API_KEY is set in environment variables.");
+    console.warn("NO INTERNAL_API_KEY is set in environment variables.");
     return true; // fallback if not set
   }
 
@@ -30,10 +30,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add courseId to enrolledCourses array using FieldValue.arrayUnion
-    await (adminDb as any).collection("users").doc(userId).update({
+    if (!adminDb) {
+      throw new Error("Firebase Admin services not available");
+    }
+
+    // Try direct doc reference first
+    let userDocRef = (adminDb as any).collection("users").doc(userId);
+    const userDoc = await userDocRef.get();
+
+    if (!userDoc.exists) {
+      // Fallback: check if doc is keyed by a query where uid or userId equals userId
+      const uidQuery = await (adminDb as any).collection("users").where("uid", "==", userId).limit(1).get();
+      if (!uidQuery.empty) {
+        userDocRef = uidQuery.docs[0].ref;
+      } else {
+        const userIdQuery = await (adminDb as any).collection("users").where("userId", "==", userId).limit(1).get();
+        if (!userIdQuery.empty) {
+          userDocRef = userIdQuery.docs[0].ref;
+        } else {
+          return NextResponse.json(
+            { success: false, message: "User not found" },
+            { status: 404 }
+          );
+        }
+      }
+    }
+
+    // Add courseId to enrolledCourses array using FieldValue.arrayUnion with merge: true
+    await userDocRef.set({
       enrolledCourses: admin.firestore.FieldValue.arrayUnion(courseId),
-    });
+    }, { merge: true });
 
     return NextResponse.json({ success: true, message: "Successfully enrolled" });
   } catch (error: any) {
