@@ -22,6 +22,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import FirebaseVideoPicker from "@/app/componets/FirebaseVideoPicker";
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -68,6 +69,7 @@ export default function CourseDetailPage() {
   const [moduleTitle, setModuleTitle] = useState("");
   const [moduleDay, setModuleDay] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [selectedFirebaseVideoUrl, setSelectedFirebaseVideoUrl] = useState("");
   const [videoPreview, setVideoPreview] = useState("");
   const [moduleDuration, setModuleDuration] = useState("");
   const [questions, setQuestions] = useState<
@@ -270,7 +272,7 @@ export default function CourseDetailPage() {
     setUploadProgress(0);
     try {
       // First, handle video upload if exists
-      let videoUrl = '';
+      let videoUrl = selectedFirebaseVideoUrl;
       if (videoFile) {
         try {
           const cleanName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
@@ -328,6 +330,7 @@ export default function CourseDetailPage() {
       setModuleDay("");
       setVideoFile(null);
       setVideoPreview("");
+      setSelectedFirebaseVideoUrl("");
       setQuestions([]);
       setModuleDuration("");
       setCurrentQuestion("");
@@ -1169,34 +1172,26 @@ export default function CourseDetailPage() {
                   />
                 </div>
 
-                {/* Video Upload */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Upload Video
-                  </label>
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-[#2A0066] transition">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoChange}
-                      disabled={modalLoading}
-                      className="hidden"
-                      id="video-upload"
-                    />
-                    <label htmlFor="video-upload" className="cursor-pointer block">
-                      <Upload size={24} className="mx-auto mb-2 text-slate-400" />
-                      <p className="text-sm font-bold text-slate-600">
-                        {videoFile ? videoFile.name : "Click to upload video"}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">MP4, WebM, or other video formats</p>
-                    </label>
-                  </div>
-                  {uploadProgress !== null && (
-                    <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden relative">
-                      <div className="bg-[#2A0066] h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                      <p className="text-[10px] font-black text-[#2A0066] mt-1.5 text-right">Uploading: {uploadProgress}%</p>
-                    </div>
-                  )}
+                {/* Video Selection / Upload */}
+                <div className="mb-6">
+                  <FirebaseVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={selectedFirebaseVideoUrl}
+                    onVideoSelect={(v) => {
+                      if (v.source === "upload" && v.file) {
+                        setVideoFile(v.file);
+                        setSelectedFirebaseVideoUrl("");
+                      } else {
+                        setSelectedFirebaseVideoUrl(v.url);
+                        setVideoFile(null);
+                      }
+                    }}
+                    onClearVideo={() => {
+                      setSelectedFirebaseVideoUrl("");
+                      setVideoFile(null);
+                    }}
+                    uploadProgress={uploadProgress}
+                  />
                 </div>
 
                 {/* Practice Questions Section */}

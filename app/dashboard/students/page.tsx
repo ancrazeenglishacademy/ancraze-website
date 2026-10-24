@@ -164,7 +164,7 @@ export default function StudentsPage() {
     );
 
     return (
-        <div className="space-y-8 pb-12">
+        <div className="space-y-5 pb-8">
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
@@ -185,8 +185,8 @@ export default function StudentsPage() {
             </div>
 
             {/* Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                         <Users size={24} />
                     </div>
@@ -205,21 +205,21 @@ export default function StudentsPage() {
                     placeholder="Search by name, email or Login ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-[#2A0066] outline-none transition-all font-medium"
+                    className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200/80 rounded-xl shadow-sm focus:ring-2 focus:ring-[#2A0066] outline-none transition-all font-medium"
                 />
             </div>
 
             {/* Students List */}
-            <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto scrollbar-hide">
                     <table className="w-full min-w-[800px] text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-50">
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Student</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Login ID</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Courses</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Joined</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                <th className="px-5 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Student</th>
+                                <th className="px-5 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Login ID</th>
+                                <th className="px-5 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Courses</th>
+                                <th className="px-5 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">Joined</th>
+                                <th className="px-5 py-3 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -248,9 +248,9 @@ export default function StudentsPage() {
                                         className="hover:bg-slate-50/50 transition-colors cursor-pointer"
                                         onClick={() => router.push(`/dashboard/students/${student.id}`)}
                                     >
-                                        <td className="px-6 py-5">
+                                        <td className="px-5 py-3 sm:py-3.5">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 bg-[#2A0066]/5 rounded-xl flex items-center justify-center text-[#2A0066] font-black text-sm border border-[#2A0066]/10">
+                                                <div className="h-9 w-9 bg-[#2A0066]/5 rounded-xl flex items-center justify-center text-[#2A0066] font-black text-sm border border-[#2A0066]/10">
                                                     {student.fullName ? student.fullName.charAt(0).toUpperCase() : "U"}
                                                 </div>
                                                 <div>
@@ -264,13 +264,13 @@ export default function StudentsPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5">
+                                        <td className="px-5 py-3 sm:py-3.5">
                                             <div className="flex items-center gap-2">
                                                 <Key size={14} className="text-amber-500" />
                                                 <code className="text-sm font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{student.loginId}</code>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5">
+                                        <td className="px-5 py-3 sm:py-3.5">
                                             <div className="flex -space-x-2">
                                                 {(student.enrolledCoursesDetails?.length || 0) > 0 ? (
                                                     <span className="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-xl border border-blue-100 uppercase tracking-widest whitespace-nowrap">
@@ -281,7 +281,7 @@ export default function StudentsPage() {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5">
+                                        <td className="px-5 py-3 sm:py-3.5">
                                             <div className="flex items-center gap-2 text-slate-500">
                                                 <Calendar size={14} />
                                                 <span className="text-xs font-medium">

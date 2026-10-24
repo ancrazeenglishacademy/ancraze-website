@@ -22,6 +22,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import FirebaseVideoPicker from "@/app/componets/FirebaseVideoPicker";
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -68,6 +69,7 @@ export default function CourseDetailPage() {
   const [moduleTitle, setModuleTitle] = useState("");
   const [moduleDay, setModuleDay] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [selectedFirebaseVideoUrl, setSelectedFirebaseVideoUrl] = useState("");
   const [videoPreview, setVideoPreview] = useState("");
   const [moduleDuration, setModuleDuration] = useState("");
   const [questions, setQuestions] = useState<
@@ -274,7 +276,7 @@ export default function CourseDetailPage() {
     setUploadProgress(0);
     try {
       // First, handle video upload if exists
-      let videoUrl = '';
+      let videoUrl = selectedFirebaseVideoUrl;
       if (videoFile) {
         try {
           const cleanName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
@@ -332,6 +334,7 @@ export default function CourseDetailPage() {
       setModuleDay("");
       setVideoFile(null);
       setVideoPreview("");
+      setSelectedFirebaseVideoUrl("");
       setQuestions([]);
       setModuleDuration("");
       setCurrentQuestion("");
@@ -549,9 +552,9 @@ export default function CourseDetailPage() {
   };
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 lg:px-6 space-y-8 ">
+    <div className="max-w-7xl mx-auto px-4 lg:px-6 space-y-5 pb-8 ">
       {/* Sticky Top Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="h-12 w-12 sm:h-14 sm:w-14 bg-[#2A0066] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#2A0066]/20">
             <PlayCircle size={26} />
@@ -583,7 +586,7 @@ export default function CourseDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column: Toggled Curriculum */}
         <div className="xl:col-span-2 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
@@ -1207,34 +1210,26 @@ export default function CourseDetailPage() {
                   />
                 </div>
 
-                {/* Video Upload */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Upload Video
-                  </label>
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-[#2A0066] transition">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoChange}
-                      disabled={modalLoading}
-                      className="hidden"
-                      id="video-upload"
-                    />
-                    <label htmlFor="video-upload" className="cursor-pointer block">
-                      <Upload size={24} className="mx-auto mb-2 text-slate-400" />
-                      <p className="text-sm font-bold text-slate-600">
-                        {videoFile ? videoFile.name : "Click to upload video"}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">MP4, WebM, or other video formats</p>
-                    </label>
-                  </div>
-                  {uploadProgress !== null && (
-                    <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden relative">
-                      <div className="bg-[#2A0066] h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                      <p className="text-[10px] font-black text-[#2A0066] mt-1.5 text-right">Uploading: {uploadProgress}%</p>
-                    </div>
-                  )}
+                {/* Video Selection / Upload */}
+                <div className="mb-6">
+                  <FirebaseVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={selectedFirebaseVideoUrl}
+                    onVideoSelect={(v) => {
+                      if (v.source === "upload" && v.file) {
+                        setVideoFile(v.file);
+                        setSelectedFirebaseVideoUrl("");
+                      } else {
+                        setSelectedFirebaseVideoUrl(v.url);
+                        setVideoFile(null);
+                      }
+                    }}
+                    onClearVideo={() => {
+                      setSelectedFirebaseVideoUrl("");
+                      setVideoFile(null);
+                    }}
+                    uploadProgress={uploadProgress}
+                  />
                 </div>
 
                 {/* Practice Questions Section */}

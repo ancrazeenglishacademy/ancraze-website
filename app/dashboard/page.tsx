@@ -120,7 +120,7 @@ export default function DashboardPage() {
   if (!mounted) return null;
 
   return (
-    <div className="space-y-6 md:space-y-10 pb-12 px-1 sm:px-0">
+    <div className="space-y-5 pb-8 px-1 sm:px-0">
       {/* Header Section - Responsive stacking */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
           <Loader size={32} className="animate-spin text-[#2A0066]" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           <KPICard
             label="Total Students"
             value={totalStudents.toString()}
@@ -166,8 +166,8 @@ export default function DashboardPage() {
       )}
 
       {/* Table Section - Full Width with Horizontal Scroll for Mobile */}
-      <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-4">
           <div>
             <h3 className="text-lg md:text-xl font-bold text-slate-900">
               Recent Joinees
@@ -189,11 +189,11 @@ export default function DashboardPage() {
           <table className="w-full min-w-[600px]">
             <thead className="bg-slate-50/50">
               <tr className="text-slate-400 text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-black">
-                <th className="px-5 md:px-8 py-4 text-left">Student Name</th>
-                <th className="px-5 md:px-8 py-4 text-left">
+                <th className="px-5 py-3 text-left">Student Name</th>
+                <th className="px-5 py-3 text-left">
                   Enrolled Courses
                 </th>
-                <th className="px-5 md:px-8 py-4 text-left">
+                <th className="px-5 py-3 text-left">
                   Registration Date
                 </th>
               </tr>
@@ -259,10 +259,10 @@ function KPICard({
   isHighlight?: boolean;
 }) {
   return (
-    <motion.div className="p-5 md:p-7 rounded-2xl cursor-pointer border transition-all duration-300 bg-white border-slate-100 shadow-sm hover:shadow-md ">
-      <div className="flex justify-between items-start mb-4 md:mb-6">
+    <motion.div className="p-4 sm:p-5 rounded-2xl cursor-pointer border transition-all duration-300 bg-white border-slate-200/80 shadow-sm hover:shadow-md ">
+      <div className="flex justify-between items-start mb-3">
         <div
-          className={`p-2.5 md:p-3.5 rounded-xl md:rounded-2xl ${isHighlight ? "bg-[#2A0066] text-white" : "bg-[#2A0066]/5 text-[#2A0066]"}`}
+          className={`p-2.5 rounded-xl ${isHighlight ? "bg-[#2A0066] text-white" : "bg-[#2A0066]/5 text-[#2A0066]"}`}
         >
           {icon}
         </div>
@@ -274,7 +274,7 @@ function KPICard({
         <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em]">
           {label}
         </p>
-        <h4 className="text-xl md:text-3xl font-black text-slate-900 mt-1">
+        <h4 className="text-2xl font-black text-slate-900 mt-1">
           {value}
         </h4>
         <p
@@ -303,9 +303,9 @@ function StudentRow({
       className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
       onClick={onClick}
     >
-      <td className="px-5 md:px-8 py-4 md:py-6 ">
+      <td className="px-5 py-3 sm:py-3.5 ">
         <div className="flex items-center gap-3 md:gap-4">
-          <div className="h-8 w-8 md:h-10 md:w-10 rounded-xl md:rounded-2xl bg-[#2A0066]/5 flex items-center justify-center font-bold text-[#2A0066] border border-[#2A0066]/10 group-hover:bg-[#2A0066] group-hover:text-white transition-all">
+          <div className="h-9 w-9 rounded-xl bg-[#2A0066]/5 flex items-center justify-center font-bold text-[#2A0066] border border-[#2A0066]/10 group-hover:bg-[#2A0066] group-hover:text-white transition-all">
             {name.charAt(0)}
           </div>
           <span className="text-xs md:text-sm font-bold text-slate-700 group-hover:text-[#2A0066] transition-colors">
@@ -313,10 +313,10 @@ function StudentRow({
           </span>
         </div>
       </td>
-      <td className="px-5 md:px-8 py-4 md:py-6 text-xs md:text-sm text-slate-500 font-semibold">
+      <td className="px-5 py-3 sm:py-3.5 text-xs md:text-sm text-slate-500 font-semibold">
         {classType}
       </td>
-      <td className="px-5 md:px-8 py-4 md:py-6 text-[10px] md:text-sm text-slate-400 font-medium whitespace-nowrap">
+      <td className="px-5 py-3 sm:py-3.5 text-[10px] md:text-sm text-slate-400 font-medium whitespace-nowrap">
         {date}
       </td>
     </tr>

@@ -32,17 +32,20 @@ export async function GET(request: NextRequest) {
             // Try to get a download URL (public URL format for Firebase Storage)
             const encodedName = encodeURIComponent(file.name);
             const bucketName = bucket.name;
-            const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedName}?alt=media`;
+            const token = metadata.metadata?.firebaseStorageDownloadTokens;
+            const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodedName}?alt=media${
+              token ? `&token=${token.split(',')[0]}` : ''
+            }`;
 
             // Extract a clean display name
             const parts = file.name.split('/');
             const fileName = parts[parts.length - 1];
-            const folder = parts.slice(0, -1).join('/');
+            const folder = parts.slice(0, -1).join('/') || '/';
 
             return {
               name: fileName,
               fullPath: file.name,
-              folder: folder || '/',
+              folder,
               downloadUrl,
               size: parseInt(metadata.size || '0'),
               contentType: metadata.contentType || 'video/mp4',
@@ -59,10 +62,18 @@ export async function GET(request: NextRequest) {
     // Sort by updated date descending (newest first)
     validVideos.sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
 
+    const folders = Array.from(new Set(validVideos.map((v: any) => v.folder))).sort();
+    const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ancrazeenglish';
+    const consoleUrl = `https://console.firebase.google.com/project/${projectId}/storage/${bucket.name}/files`;
+
     return NextResponse.json(
       {
         success: true,
         videos: validVideos,
+        folders,
+        bucketName: bucket.name,
+        projectId,
+        consoleUrl,
         total: validVideos.length,
       },
       { status: 200 }

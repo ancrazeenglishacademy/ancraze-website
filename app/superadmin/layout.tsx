@@ -90,7 +90,7 @@ export default function SuperAdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900 font-sans relative overflow-x-hidden">
+    <div className="flex min-h-screen bg-[#F1F5F9] text-slate-900 font-sans relative overflow-x-hidden">
       {/* Desktop Sidebar (Collapsible) */}
       <aside
         className={`hidden lg:flex fixed top-0 left-0 bottom-0 z-50 w-72 flex-col bg-gradient-to-b from-[#180036] via-[#250059] to-[#12002A] text-white border-r border-white/10 shadow-[10px_0_40px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
@@ -142,7 +142,7 @@ export default function SuperAdminLayout({
         }`}
       >
         {/* Top Header */}
-        <header className="h-20 bg-[#2A0066] sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8 border-b border-white/10 shadow-md">
+        <header className="h-16 bg-[#2A0066] sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-white/10 shadow-md">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setOpen(!open)}
@@ -150,7 +150,7 @@ export default function SuperAdminLayout({
               aria-label="Toggle navigation menu"
               title={open ? "Collapse Sidebar" : "Expand Sidebar"}
             >
-              <Menu size={22} />
+              <Menu size={20} />
             </button>
             <div className="hidden sm:flex items-center gap-2 text-white/80">
               <Sparkles size={16} className="text-purple-300 animate-pulse" />
@@ -182,14 +182,16 @@ export default function SuperAdminLayout({
         </header>
 
         {/* Page Content */}
-        <main className="p-4 sm:p-6 w-full min-h-screen overflow-x-hidden">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            {children}
-          </motion.div>
+        <main className="p-4 sm:p-5 lg:p-6 w-full min-h-[calc(100vh-4rem)] overflow-x-hidden">
+          <div className="max-w-7xl mx-auto w-full">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {children}
+            </motion.div>
+          </div>
         </main>
       </div>
     </div>

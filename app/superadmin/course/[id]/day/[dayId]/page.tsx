@@ -19,6 +19,7 @@ import {
   Grid
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import FirebaseVideoPicker from "@/app/componets/FirebaseVideoPicker";
 
 export default function DayDetailPage() {
   const params = useParams();
@@ -40,6 +41,7 @@ export default function DayDetailPage() {
   const [moduleTitle, setModuleTitle] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [selectedFirebaseVideoUrl, setSelectedFirebaseVideoUrl] = useState("");
   const [moduleDuration, setModuleDuration] = useState("");
   const [moduleDescription, setModuleDescription] = useState("");
   const [questions, setQuestions] = useState<Array<{ question: string; answer: string }>>([]);
@@ -53,6 +55,7 @@ export default function DayDetailPage() {
   const [editModuleDescription, setEditModuleDescription] = useState("");
   const [editModuleQuestions, setEditModuleQuestions] = useState<any[]>([]);
   const [editModuleVideoUrl, setEditModuleVideoUrl] = useState("");
+  const [editSelectedFirebaseVideoUrl, setEditSelectedFirebaseVideoUrl] = useState("");
   const [editModuleThumbnailUrl, setEditModuleThumbnailUrl] = useState("");
   const [editModuleVideoFile, setEditModuleVideoFile] = useState<File | null>(null);
   const [editModuleDuration, setEditModuleDuration] = useState("");
@@ -148,17 +151,18 @@ export default function DayDetailPage() {
 
   const handleSubmitModule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!moduleTitle.trim() || !moduleDuration.trim() || !videoFile) {
-      alert("Please fill all required fields: Title, Duration, and Video.");
+    const hasVideo = !!selectedFirebaseVideoUrl || !!videoFile;
+    if (!moduleTitle.trim() || !moduleDuration.trim() || !hasVideo) {
+      alert("Please fill all required fields: Title, Duration, and Video (selected from Firebase or uploaded).");
       return;
     }
 
     setModalLoading(true);
-    setUploadProgress(0);
     try {
-      let videoUrl = "";
+      let videoUrl = selectedFirebaseVideoUrl;
       let thumbnailUrl = "";
       if (videoFile) {
+        setUploadProgress(0);
         const cleanName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
         const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
         videoUrl = await uploadFile(videoFile, videoPath, (progress, transferred, total) => {
@@ -201,6 +205,8 @@ export default function DayDetailPage() {
       setModuleTitle("");
       setModuleDescription("");
       setVideoFile(null);
+      setThumbnailFile(null);
+      setSelectedFirebaseVideoUrl("");
       setQuestions([]);
       setModuleDuration("");
       setUploadProgress(null);
@@ -224,7 +230,7 @@ export default function DayDetailPage() {
       setUploadProgress(0);
     }
     try {
-      let videoUrl = editModuleVideoUrl;
+      let videoUrl = editSelectedFirebaseVideoUrl || editModuleVideoUrl;
       if (editModuleVideoFile) {
         const cleanName = editModuleVideoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
         const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
@@ -259,6 +265,7 @@ export default function DayDetailPage() {
       setModules(modules.map(m => m.id === editingModule.id ? { ...m, title: editModuleTitle, description: editModuleDescription, questions: editModuleQuestions, videoUrl, duration: editModuleDuration } : m));
       setShowEditModuleModal(false);
       setEditModuleVideoFile(null);
+      setEditSelectedFirebaseVideoUrl("");
     } catch (error) {
        console.error(error);
     } finally {
@@ -280,9 +287,9 @@ export default function DayDetailPage() {
   };
 
   return (
-    <div className="max-w-screen-xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 py-5 space-y-5 pb-8">
       {/* Back Button & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => router.push(`/superadmin/course/${courseId}`)}
@@ -314,7 +321,7 @@ export default function DayDetailPage() {
               setUploadStats(null);
               setShowModal(true);
             }}
-            className="flex items-center justify-center gap-2 px-6 py-4 bg-[#2A0066] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#2A0066]/20 hover:opacity-95 transition-all"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2A0066] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#2A0066]/20 hover:opacity-95 transition-all"
           >
             <Plus size={18} />
             Add New Module
@@ -325,11 +332,11 @@ export default function DayDetailPage() {
       {/* Modules List */}
       <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "grid gap-4"}>
         {loading ? (
-          <div className="flex items-center justify-center py-20 bg-white/50 rounded-[32px] border border-dashed border-slate-200">
+          <div className="flex items-center justify-center py-10 bg-white/50 rounded-2xl border border-dashed border-slate-200">
              <Loader size={32} className="animate-spin text-[#2A0066]" />
           </div>
         ) : modules.length === 0 ? (
-          <div className="text-center py-20 bg-white/50 rounded-[32px] border border-dashed border-slate-200">
+          <div className="text-center py-10 bg-white/50 rounded-2xl border border-dashed border-slate-200">
             <PlayCircle size={48} className="text-slate-200 mx-auto mb-4" />
             <p className="text-slate-400 font-bold">No modules added to this day yet</p>
           </div>
@@ -346,12 +353,13 @@ export default function DayDetailPage() {
                   setEditModuleDescription(module.description || "");
                   setEditModuleQuestions(module.questions || []);
                   setEditModuleVideoUrl(module.videoUrl || "");
+                        setEditSelectedFirebaseVideoUrl(module.videoUrl || "");
                   setEditModuleThumbnailUrl(module.thumbnailUrl || "");
                   setEditModuleVideoFile(null);
                   setEditModuleDuration(module.duration || "");
                   setShowEditModuleModal(true);
                 }}
-                className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md hover:border-[#2A0066]/20 transition-all cursor-pointer"
+                className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between group hover:shadow-md hover:border-[#2A0066]/20 transition-all cursor-pointer"
               >
                  <div className="flex items-center gap-6 flex-1">
                     <div className="text-lg font-black text-slate-200 w-8">{String(idx + 1).padStart(2, '0')}</div>
@@ -373,6 +381,7 @@ export default function DayDetailPage() {
                        setEditModuleDescription(module.description || "");
                        setEditModuleQuestions(module.questions || []);
                        setEditModuleVideoUrl(module.videoUrl || "");
+                        setEditSelectedFirebaseVideoUrl(module.videoUrl || "");
                        setEditModuleThumbnailUrl(module.thumbnailUrl || "");
                        setEditModuleVideoFile(null);
                        setEditModuleDuration(module.duration || "");
@@ -401,6 +410,7 @@ export default function DayDetailPage() {
                   setEditModuleDescription(module.description || "");
                   setEditModuleQuestions(module.questions || []);
                   setEditModuleVideoUrl(module.videoUrl || "");
+                        setEditSelectedFirebaseVideoUrl(module.videoUrl || "");
                   setEditModuleThumbnailUrl(module.thumbnailUrl || "");
                   setEditModuleVideoFile(null);
                   setEditModuleDuration(module.duration || "");
@@ -476,33 +486,29 @@ export default function DayDetailPage() {
                     <textarea value={moduleDescription} onChange={e => setModuleDescription(e.target.value)} placeholder="Module description..." rows={3} className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
                   </div>
 
-                  {/* Video Upload */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Module Video (Required) <span className="text-red-500">*</span></label>
-                    <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center hover:border-[#2A0066] transition cursor-pointer relative bg-slate-50/50">
-                      <input type="file" accept="video/*" onChange={handleVideoChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                      <Upload size={32} className="mx-auto mb-3 text-slate-300" />
-                      <p className="text-sm font-bold text-slate-600">
-                        {videoFile ? videoFile.name : "Select Video from Device"}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-1 uppercase font-black">MP4, WebM up to 50MB</p>
-                    </div>
-                    {uploadProgress !== null && (
-                      <div className="w-full bg-slate-100 rounded-full h-3 mt-4 overflow-hidden relative shadow-inner border border-slate-200">
-                        <div 
-                          className="bg-gradient-to-r from-[#2A0066] to-purple-600 h-3 rounded-full transition-all duration-300" 
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
-                        <div className="flex justify-between items-center mt-2 px-1">
-                          <p className="text-[11px] font-black text-slate-500 uppercase tracking-wide">
-                            {uploadStats ? `${(uploadStats.transferred / (1024 * 1024)).toFixed(2)} MB / ${(uploadStats.total / (1024 * 1024)).toFixed(2)} MB` : "Uploading..."}
-                          </p>
-                          <p className="text-[11px] font-black text-[#2A0066]">{uploadProgress}%</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
+                  {/* Video Selection / Upload */}
+                  <FirebaseVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={selectedFirebaseVideoUrl}
+                    onVideoSelect={(v) => {
+                      if (v.source === "upload" && v.file) {
+                        setVideoFile(v.file);
+                        setThumbnailFile(v.thumbnailFile || null);
+                        setSelectedFirebaseVideoUrl("");
+                      } else {
+                        setSelectedFirebaseVideoUrl(v.url);
+                        setVideoFile(null);
+                        setThumbnailFile(null);
+                      }
+                    }}
+                    onClearVideo={() => {
+                      setSelectedFirebaseVideoUrl("");
+                      setVideoFile(null);
+                      setThumbnailFile(null);
+                    }}
+                    uploadProgress={uploadProgress}
+                    uploadStats={uploadStats}
+                  />
 
                   <div className="pt-4 flex gap-3">
                      <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs">Cancel</button>
@@ -542,60 +548,26 @@ export default function DayDetailPage() {
                   </div>
 
                   {/* Video Edit */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Module Video</label>
-                    <div className={`border-2 border-dashed border-slate-200 rounded-3xl p-6 text-center bg-slate-50/50 relative overflow-hidden ${(!editModuleVideoFile && editModuleVideoUrl) ? '' : 'group'}`}>
-                      {(!editModuleVideoFile && editModuleVideoUrl) ? (
-                        <div className="space-y-4">
-                          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center shadow-inner">
-                            <video src={editModuleVideoUrl} poster={editModuleThumbnailUrl} controls className="max-w-full max-h-full relative" />
-                          </div>
-                          <div className="flex gap-3">
-                            <div className="relative flex-1">
-                              <input type="file" accept="video/*" onChange={(e) => setEditModuleVideoFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                              <div className="w-full py-3 bg-white hover:bg-slate-50 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest border border-slate-200 shadow-sm flex items-center justify-center gap-2 transition-colors">
-                                <Upload size={16} /> Change Video
-                              </div>
-                            </div>
-                            <button type="button" onClick={() => { setEditModuleVideoUrl(""); setEditModuleThumbnailUrl(""); }} className="px-4 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors flex items-center justify-center border border-red-100">
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <input type="file" accept="video/*" onChange={(e) => setEditModuleVideoFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
-                          <div className="py-8 relative z-10">
-                            <Upload size={32} className="mx-auto mb-3 text-slate-300" />
-                            <p className="text-sm font-bold text-slate-600">
-                              {editModuleVideoFile ? editModuleVideoFile.name : "Select Video"}
-                            </p>
-                            {editModuleVideoFile && (
-                              <button type="button" onClick={(e) => { e.preventDefault(); setEditModuleVideoFile(null); }} className="mt-4 text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors z-30 relative cursor-pointer inline-flex items-center gap-1">
-                                <X size={14} /> Remove Selected
-                              </button>
-                            )}
-                            {!editModuleVideoFile && <p className="text-[10px] text-slate-400 mt-1 uppercase font-black">MP4, WebM up to 50MB</p>}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    {uploadProgress !== null && (
-                      <div className="w-full bg-slate-100 rounded-full h-3 mt-4 overflow-hidden relative shadow-inner border border-slate-200">
-                        <div 
-                          className="bg-gradient-to-r from-[#2A0066] to-purple-600 h-3 rounded-full transition-all duration-300" 
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
-                        <div className="flex justify-between items-center mt-2 px-1">
-                          <p className="text-[11px] font-black text-slate-500 uppercase tracking-wide">
-                            {uploadStats ? `${(uploadStats.transferred / (1024 * 1024)).toFixed(2)} MB / ${(uploadStats.total / (1024 * 1024)).toFixed(2)} MB` : "Uploading..."}
-                          </p>
-                          <p className="text-[11px] font-black text-[#2A0066]">{uploadProgress}%</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
+                  <FirebaseVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={editSelectedFirebaseVideoUrl || editModuleVideoUrl}
+                    onVideoSelect={(v) => {
+                      if (v.source === "upload" && v.file) {
+                        setEditModuleVideoFile(v.file);
+                        setEditSelectedFirebaseVideoUrl("");
+                      } else {
+                        setEditSelectedFirebaseVideoUrl(v.url);
+                        setEditModuleVideoFile(null);
+                      }
+                    }}
+                    onClearVideo={() => {
+                      setEditSelectedFirebaseVideoUrl("");
+                      setEditModuleVideoUrl("");
+                      setEditModuleVideoFile(null);
+                    }}
+                    uploadProgress={uploadProgress}
+                    uploadStats={uploadStats}
+                  />
 
                   <div className="pt-4 flex gap-3">
                      <button type="button" onClick={() => setShowEditModuleModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs">Cancel</button>
@@ -603,7 +575,7 @@ export default function DayDetailPage() {
                        editModuleTitle !== editingModule.title ||
                        editModuleDescription !== (editingModule.description || "") ||
                        editModuleDuration !== (editingModule.duration || "") ||
-                       editModuleVideoFile !== null
+                       editModuleVideoFile !== null || (editSelectedFirebaseVideoUrl !== "" && editSelectedFirebaseVideoUrl !== editingModule.videoUrl)
                      ) && (
                        <button type="submit" disabled={modalLoading} className="flex-1 py-4 bg-[#2A0066] text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-[#2A0066]/20">
                          {modalLoading ? <Loader className="animate-spin mx-auto" size={20} /> : "Save Changes"}

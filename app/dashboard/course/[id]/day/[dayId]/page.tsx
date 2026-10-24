@@ -24,6 +24,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import FirebaseVideoPicker from "@/app/componets/FirebaseVideoPicker";
 
 export default function DayDetailPage() {
   const params = useParams();
@@ -353,7 +354,7 @@ export default function DayDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 pb-8">
       <div className="flex items-center gap-4">
         <button onClick={() => router.push(`/dashboard/course/${courseId}`)} className="p-3 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition">
           <ChevronLeft size={20} />
@@ -364,7 +365,7 @@ export default function DayDetailPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-slate-800">Modules ({modules.length})</h2>
           <div className="flex items-center gap-3">
@@ -376,18 +377,18 @@ export default function DayDetailPage() {
                 <Grid size={16} />
               </button>
             </div>
-            <button onClick={openCreateModal} className="px-5 py-3 bg-[#2A0066] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#2A0066]/20 flex items-center gap-2">
+            <button onClick={openCreateModal} className="px-4 py-2.5 bg-[#2A0066] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#2A0066]/20 flex items-center gap-2">
               <Plus size={16} /> Add New Module
             </button>
           </div>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center">
+          <div className="py-8 text-center">
             <Loader className="animate-spin mx-auto text-[#2A0066]" size={32} />
           </div>
         ) : modules.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 font-semibold">No modules added to this day yet.</div>
+          <div className="py-8 text-center text-slate-400 font-semibold">No modules added to this day yet.</div>
         ) : (
           <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
             {modules.map((module, index) => (
@@ -409,7 +410,7 @@ export default function DayDetailPage() {
                     if (!firebaseVideosLoaded) loadFirebaseVideos();
                     setShowEditModuleModal(true);
                   }}
-                  className="flex items-center justify-between p-5 bg-slate-50/50 rounded-3xl border border-slate-100 hover:border-purple-200 transition group cursor-pointer"
+                  className="flex items-center justify-between p-3.5 sm:p-4 bg-slate-50/70 rounded-2xl border border-slate-100 hover:border-purple-200 transition group cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-purple-50 flex items-center justify-center rounded-2xl font-black text-[#2A0066]">
@@ -536,145 +537,36 @@ export default function DayDetailPage() {
                     <textarea value={moduleDescription} onChange={e => setModuleDescription(e.target.value)} placeholder="Module description..." rows={3} className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
                   </div>
 
-                  {/* Video Picker — Firebase or Upload */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Module Video <span className="text-red-500">*</span></label>
-
-                    {/* Mode Tabs */}
-                    <div className="flex gap-2 mb-4 p-1 bg-slate-100 rounded-2xl">
-                      <button
-                        type="button"
-                        onClick={() => { setVideoPickerMode('firebase'); if (!firebaseVideosLoaded) loadFirebaseVideos(); }}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                          videoPickerMode === 'firebase'
-                            ? 'bg-[#2A0066] text-white shadow-lg shadow-[#2A0066]/20'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        <FolderOpen size={14} /> Browse Firebase
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setVideoPickerMode('upload')}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                          videoPickerMode === 'upload'
-                            ? 'bg-[#2A0066] text-white shadow-lg shadow-[#2A0066]/20'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        <Upload size={14} /> Upload from Device
-                      </button>
-                    </div>
-
-                    {/* Firebase Browser */}
-                    {videoPickerMode === 'firebase' && (
-                      <div className="space-y-3">
-                        {/* Search + Refresh bar */}
-                        <div className="flex gap-2">
-                          <div className="flex-1 relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                              type="text"
-                              value={firebaseVideoSearch}
-                              onChange={e => setFirebaseVideoSearch(e.target.value)}
-                              placeholder="Search videos by name..."
-                              className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm font-medium text-slate-700 border-none outline-none focus:ring-2 focus:ring-[#2A0066]"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => { setFirebaseVideosLoaded(false); loadFirebaseVideos(); }}
-                            className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-500 transition-colors"
-                            title="Refresh list"
-                          >
-                            <RefreshCw size={16} className={firebaseVideosLoading ? 'animate-spin' : ''} />
-                          </button>
-                        </div>
-
-                        {/* Selected Preview */}
-                        {selectedFirebaseVideo && (
-                          <div className="flex items-center gap-3 p-3 bg-[#2A0066]/5 border border-[#2A0066]/20 rounded-2xl">
-                            <CheckCircle2 size={18} className="text-[#2A0066] flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-black text-[#2A0066] truncate">{selectedFirebaseVideo.name}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">{(selectedFirebaseVideo.size / (1024 * 1024)).toFixed(1)} MB — selected</p>
-                            </div>
-                            <button type="button" onClick={() => setSelectedFirebaseVideo(null)} className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors">
-                              <X size={14} />
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Video Grid */}
-                        {firebaseVideosLoading ? (
-                          <div className="py-8 text-center">
-                            <Loader className="animate-spin mx-auto text-[#2A0066]" size={24} />
-                            <p className="text-xs font-bold text-slate-400 mt-2">Loading videos from Firebase...</p>
-                          </div>
-                        ) : firebaseVideos.filter(v => v.name.toLowerCase().includes(firebaseVideoSearch.toLowerCase())).length === 0 ? (
-                          <div className="py-8 text-center">
-                            <Film size={32} className="mx-auto text-slate-200 mb-2" />
-                            <p className="text-xs font-bold text-slate-400">
-                              {firebaseVideos.length === 0 ? 'No videos found in Firebase Storage' : 'No videos match your search'}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="max-h-[260px] overflow-y-auto space-y-2 pr-1">
-                            {firebaseVideos
-                              .filter(v => v.name.toLowerCase().includes(firebaseVideoSearch.toLowerCase()))
-                              .map((video, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => setSelectedFirebaseVideo(video)}
-                                  className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all border ${
-                                    selectedFirebaseVideo?.fullPath === video.fullPath
-                                      ? 'bg-[#2A0066]/5 border-[#2A0066]/30'
-                                      : 'bg-slate-50 border-transparent hover:border-slate-200 hover:bg-white'
-                                  }`}
-                                >
-                                  <div className="w-10 h-10 rounded-xl bg-[#2A0066]/10 flex items-center justify-center flex-shrink-0">
-                                    {selectedFirebaseVideo?.fullPath === video.fullPath
-                                      ? <CheckCircle2 size={18} className="text-[#2A0066]" />
-                                      : <Film size={18} className="text-[#2A0066]/60" />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-black text-slate-800 truncate">{video.name}</p>
-                                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{video.folder !== '/' ? video.folder : 'Root'} • {(video.size / (1024 * 1024)).toFixed(1)} MB</p>
-                                  </div>
-                                </button>
-                              ))
-                            }
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Upload from Device */}
-                    {videoPickerMode === 'upload' && (
-                      <div>
-                        <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center hover:border-[#2A0066] transition cursor-pointer relative bg-slate-50/50">
-                          <input type="file" accept="video/*" onChange={handleVideoChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                          <Upload size={32} className="mx-auto mb-3 text-slate-300" />
-                          <p className="text-sm font-bold text-slate-600">
-                            {videoFile ? videoFile.name : "Select Video from Device"}
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-1 uppercase font-black">MP4, WebM up to 10GB</p>
-                        </div>
-                        {uploadProgress !== null && (
-                          <div className="w-full bg-slate-100 rounded-full h-3 mt-4 overflow-hidden relative shadow-inner border border-slate-200">
-                            <div className="bg-gradient-to-r from-[#2A0066] to-purple-600 h-3 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                            <div className="flex justify-between items-center mt-2 px-1">
-                              <p className="text-[11px] font-black text-slate-500 uppercase tracking-wide">
-                                {uploadStats ? `${(uploadStats.transferred / (1024 * 1024)).toFixed(2)} MB / ${(uploadStats.total / (1024 * 1024)).toFixed(2)} MB` : "Uploading..."}
-                              </p>
-                              <p className="text-[11px] font-black text-[#2A0066]">{uploadProgress}%</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  {/* Video Selection / Upload */}
+                  <FirebaseVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={selectedFirebaseVideo?.downloadUrl || ""}
+                    onVideoSelect={(v) => {
+                      if (v.source === "upload" && v.file) {
+                        setVideoFile(v.file);
+                        setThumbnailFile(v.thumbnailFile || null);
+                        setSelectedFirebaseVideo(null);
+                        setVideoPickerMode("upload");
+                      } else {
+                        setSelectedFirebaseVideo({
+                          name: v.name,
+                          fullPath: v.name,
+                          downloadUrl: v.url,
+                          size: v.size || 0,
+                        });
+                        setVideoFile(null);
+                        setThumbnailFile(null);
+                        setVideoPickerMode("firebase");
+                      }
+                    }}
+                    onClearVideo={() => {
+                      setSelectedFirebaseVideo(null);
+                      setVideoFile(null);
+                      setThumbnailFile(null);
+                    }}
+                    uploadProgress={uploadProgress}
+                    uploadStats={uploadStats}
+                  />
 
                   <div className="pt-4 flex gap-3">
                      <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs">Cancel</button>
@@ -713,171 +605,35 @@ export default function DayDetailPage() {
                     <textarea value={editModuleDescription} onChange={e => setEditModuleDescription(e.target.value)} placeholder="Module description..." rows={3} className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
                   </div>
 
-                  {/* Video Picker */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Module Video</label>
+                  {/* Video Edit */}
+                  <FirebaseVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={editSelectedFirebaseVideo?.downloadUrl || editModuleVideoUrl}
+                    onVideoSelect={(v) => {
+                      if (v.source === "upload" && v.file) {
+                        setEditModuleVideoFile(v.file);
+                        setEditSelectedFirebaseVideo(null);
+                        setEditVideoPickerMode("upload");
+                      } else {
+                        setEditSelectedFirebaseVideo({
+                          name: v.name,
+                          fullPath: v.name,
+                          downloadUrl: v.url,
+                          size: v.size || 0,
+                        });
+                        setEditModuleVideoFile(null);
+                        setEditVideoPickerMode("firebase");
+                      }
+                    }}
+                    onClearVideo={() => {
+                      setEditSelectedFirebaseVideo(null);
+                      setEditModuleVideoUrl("");
+                      setEditModuleVideoFile(null);
+                    }}
+                    uploadProgress={uploadProgress}
+                    uploadStats={uploadStats}
+                  />
 
-                    {/* Current Video Preview (if exists and not replacing) */}
-                    {editModuleVideoUrl && !editSelectedFirebaseVideo && editVideoPickerMode !== 'upload' && (
-                      <div className="mb-4 space-y-3">
-                        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black flex items-center justify-center shadow-inner">
-                          <video src={editModuleVideoUrl} poster={editModuleThumbnailUrl} controls className="max-w-full max-h-full" />
-                        </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Current video — select a new one below to replace it</p>
-                      </div>
-                    )}
-
-                    {/* Mode Tabs */}
-                    <div className="flex gap-2 mb-4 p-1 bg-slate-100 rounded-2xl">
-                      <button
-                        type="button"
-                        onClick={() => { setEditVideoPickerMode('firebase'); if (!firebaseVideosLoaded) loadFirebaseVideos(); }}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                          editVideoPickerMode === 'firebase'
-                            ? 'bg-[#2A0066] text-white shadow-lg shadow-[#2A0066]/20'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        <FolderOpen size={14} /> Browse Firebase
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditVideoPickerMode('upload')}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                          editVideoPickerMode === 'upload'
-                            ? 'bg-[#2A0066] text-white shadow-lg shadow-[#2A0066]/20'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        <Upload size={14} /> Upload from Device
-                      </button>
-                    </div>
-
-                    {/* Firebase Browser (edit) */}
-                    {editVideoPickerMode === 'firebase' && (
-                      <div className="space-y-3">
-                        <div className="flex gap-2">
-                          <div className="flex-1 relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                              type="text"
-                              value={editFirebaseVideoSearch}
-                              onChange={e => setEditFirebaseVideoSearch(e.target.value)}
-                              placeholder="Search videos by name..."
-                              className="w-full pl-9 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm font-medium text-slate-700 border-none outline-none focus:ring-2 focus:ring-[#2A0066]"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => { setFirebaseVideosLoaded(false); loadFirebaseVideos(); }}
-                            className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-500 transition-colors"
-                          >
-                            <RefreshCw size={16} className={firebaseVideosLoading ? 'animate-spin' : ''} />
-                          </button>
-                        </div>
-
-                        {editSelectedFirebaseVideo && (
-                          <div className="flex items-center gap-3 p-3 bg-[#2A0066]/5 border border-[#2A0066]/20 rounded-2xl">
-                            <CheckCircle2 size={18} className="text-[#2A0066] flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-black text-[#2A0066] truncate">{editSelectedFirebaseVideo.name}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">{(editSelectedFirebaseVideo.size / (1024 * 1024)).toFixed(1)} MB — will replace current video</p>
-                            </div>
-                            <button type="button" onClick={() => setEditSelectedFirebaseVideo(null)} className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg">
-                              <X size={14} />
-                            </button>
-                          </div>
-                        )}
-
-                        {firebaseVideosLoading ? (
-                          <div className="py-8 text-center">
-                            <Loader className="animate-spin mx-auto text-[#2A0066]" size={24} />
-                            <p className="text-xs font-bold text-slate-400 mt-2">Loading videos from Firebase...</p>
-                          </div>
-                        ) : firebaseVideos.filter(v => v.name.toLowerCase().includes(editFirebaseVideoSearch.toLowerCase())).length === 0 ? (
-                          <div className="py-8 text-center">
-                            <Film size={32} className="mx-auto text-slate-200 mb-2" />
-                            <p className="text-xs font-bold text-slate-400">
-                              {firebaseVideos.length === 0 ? 'No videos found in Firebase Storage' : 'No videos match your search'}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1">
-                            {firebaseVideos
-                              .filter(v => v.name.toLowerCase().includes(editFirebaseVideoSearch.toLowerCase()))
-                              .map((video, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => setEditSelectedFirebaseVideo(video)}
-                                  className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all border ${
-                                    editSelectedFirebaseVideo?.fullPath === video.fullPath
-                                      ? 'bg-[#2A0066]/5 border-[#2A0066]/30'
-                                      : 'bg-slate-50 border-transparent hover:border-slate-200 hover:bg-white'
-                                  }`}
-                                >
-                                  <div className="w-10 h-10 rounded-xl bg-[#2A0066]/10 flex items-center justify-center flex-shrink-0">
-                                    {editSelectedFirebaseVideo?.fullPath === video.fullPath
-                                      ? <CheckCircle2 size={18} className="text-[#2A0066]" />
-                                      : <Film size={18} className="text-[#2A0066]/60" />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-black text-slate-800 truncate">{video.name}</p>
-                                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{video.folder !== '/' ? video.folder : 'Root'} • {(video.size / (1024 * 1024)).toFixed(1)} MB</p>
-                                  </div>
-                                </button>
-                              ))
-                            }
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Upload from Device (edit) */}
-                    {editVideoPickerMode === 'upload' && (
-                      <div>
-                        <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center hover:border-[#2A0066] transition cursor-pointer relative bg-slate-50/50">
-                          <input type="file" accept="video/*" onChange={(e) => setEditModuleVideoFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                          <Upload size={32} className="mx-auto mb-3 text-slate-300" />
-                          <p className="text-sm font-bold text-slate-600">
-                            {editModuleVideoFile ? editModuleVideoFile.name : "Select Video from Device"}
-                          </p>
-                          {editModuleVideoFile && (
-                            <button type="button" onClick={(e) => { e.preventDefault(); setEditModuleVideoFile(null); }} className="mt-4 text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 inline-flex items-center gap-1">
-                              <X size={14} /> Remove Selected
-                            </button>
-                          )}
-                          {!editModuleVideoFile && <p className="text-[10px] text-slate-400 mt-1 uppercase font-black">MP4, WebM</p>}
-                        </div>
-                        {uploadProgress !== null && (
-                          <div className="w-full bg-slate-100 rounded-full h-3 mt-4 overflow-hidden relative shadow-inner border border-slate-200">
-                            <div className="bg-gradient-to-r from-[#2A0066] to-purple-600 h-3 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                            <div className="flex justify-between items-center mt-2 px-1">
-                              <p className="text-[11px] font-black text-slate-500 uppercase tracking-wide">
-                                {uploadStats ? `${(uploadStats.transferred / (1024 * 1024)).toFixed(2)} MB / ${(uploadStats.total / (1024 * 1024)).toFixed(2)} MB` : "Uploading..."}
-                              </p>
-                              <p className="text-[11px] font-black text-[#2A0066]">{uploadProgress}%</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Questions Edit */}
-                  <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Practice Questions</label>
-                    <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2">
-                        {editModuleQuestions.map((q, idx) => (
-                          <div key={idx} className="bg-slate-50 p-4 rounded-2xl flex items-start justify-between gap-3 border border-slate-100">
-                             <div className="flex-1">
-                               <p className="text-xs font-bold text-slate-800">Q: {q.question}</p>
-                             </div>
-                             <button type="button" onClick={() => setEditModuleQuestions(editModuleQuestions.filter((_, i) => i !== idx))} className="text-red-400 p-1"><X size={14} /></button>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
                   <div className="pt-4 flex gap-3">
                      <button type="button" onClick={() => setShowEditModuleModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs">Cancel</button>
                      <button type="submit" disabled={modalLoading} className="flex-1 py-4 bg-[#2A0066] text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-[#2A0066]/20">

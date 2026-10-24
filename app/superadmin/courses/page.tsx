@@ -66,47 +66,47 @@ export default function SuperAdminCoursePage() {
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-5 pb-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
             Course <span className="text-[#2A0066]">Management</span>
           </h1>
-          <p className="text-slate-500 mt-1 text-sm font-medium">
+          <p className="text-slate-500 mt-0.5 text-xs sm:text-sm font-medium">
             Manage curriculum offerings across the platform.
           </p>
         </div>
         <button
-          className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#2A0066] text-white rounded-2xl text-sm font-bold shadow-xl shadow-[#2A0066]/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2A0066] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-[#2A0066]/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer flex-shrink-0"
           onClick={() => router.push("/superadmin/addCourse")}
         >
-          <Plus size={18} />
+          <Plus size={16} />
           Create New Course
         </button>
       </div>
 
       {/* Course Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 mt-4">
         {loading && (
-          <div className="col-span-full flex items-center justify-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <Loader className="animate-spin text-[#2A0066]" size={32} />
-              <p className="text-slate-500 font-medium">Loading courses...</p>
+          <div className="col-span-full flex items-center justify-center py-10">
+            <div className="flex flex-col items-center gap-2">
+              <Loader className="animate-spin text-[#2A0066]" size={28} />
+              <p className="text-slate-500 text-xs font-medium">Loading courses...</p>
             </div>
           </div>
         )}
 
         {error && !loading && (
-          <div className="col-span-full bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <div className="col-span-full bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700">
             Error: {error}
           </div>
         )}
 
         {!loading && courses.length === 0 && !error && (
-          <div className="col-span-full text-center py-12">
-            <BookOpen size={48} className="text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 text-lg">
+          <div className="col-span-full text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200">
+            <BookOpen size={36} className="text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-500 text-sm font-bold">
               No courses found on the platform.
             </p>
           </div>
@@ -116,70 +116,72 @@ export default function SuperAdminCoursePage() {
           {courses.map((course) => (
             <motion.div
               key={course.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden"
+              className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all group overflow-hidden flex flex-col justify-between"
             >
-              {/* Card Thumbnail */}
-              <div className="h-56 bg-slate-100 relative overflow-hidden">
-                {course.coverImage ? (
-                  <Image
-                    src={course.coverImage}
-                    alt={course.title}
-                    fill
-                    className="w-full h-full object-cover transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-[#2A0066]/5 flex items-center justify-center">
-                    <BookOpen size={48} className="text-[#2A0066]/20" />
-                  </div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-black text-slate-900 leading-tight group-hover:text-[#2A0066] transition-colors line-clamp-2">
-                    {course.title}
-                  </h3>
+              <div>
+                {/* Card Thumbnail */}
+                <div className="h-44 bg-slate-100 relative overflow-hidden">
+                  {course.coverImage ? (
+                    <Image
+                      src={course.coverImage}
+                      alt={course.title}
+                      fill
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-[#2A0066]/5 flex items-center justify-center">
+                      <BookOpen size={36} className="text-[#2A0066]/20" />
+                    </div>
+                  )}
                 </div>
-                <p className="text-slate-800 text-xs font-bold pt-2 line-clamp-2 block h-[40px]">
-                  {course.description}
-                </p>
 
-                <p className="text-slate-400 text-xs font-bold italic pt-2">
-                  Teacher: {course.instructor}
-                </p>
-
-                <div className="grid grid-cols-2 gap-4 border-t border-slate-50 pt-6 mt-6">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Users size={16} className="text-[#2A0066]" />
-                    <span className="text-xs font-bold">
-                      {course.students.toLocaleString()} Students
-                    </span>
+                {/* Content */}
+                <div className="p-4 sm:p-5">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-bold text-slate-900 leading-snug group-hover:text-[#2A0066] transition-colors line-clamp-1 text-sm sm:text-base">
+                      {course.title}
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <Layers size={16} className="text-[#2A0066]" />
-                    <span className="text-xs font-bold">
-                      {course.moduleCount} Modules
-                    </span>
+                  <p className="text-slate-600 text-xs font-medium pt-1 line-clamp-2 h-[34px]">
+                    {course.description}
+                  </p>
+
+                  <p className="text-slate-400 text-[11px] font-semibold pt-1">
+                    Teacher: {course.instructor || "Platform Faculty"}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 mt-3">
+                    <div className="flex items-center gap-1.5 text-slate-500">
+                      <Users size={14} className="text-[#2A0066]" />
+                      <span className="text-[11px] font-bold">
+                        {course.students.toLocaleString()} Students
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-500">
+                      <Layers size={14} className="text-[#2A0066]" />
+                      <span className="text-[11px] font-bold">
+                        {course.moduleCount} Modules
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Actions Footer */}
-              <div className="px-6 py-4 bg-slate-50/50 flex items-center justify-between border-t border-slate-50">
-                <span className="text-lg font-black text-[#2A0066]">
+              <div className="px-4 sm:px-5 py-3 bg-slate-50/70 flex items-center justify-between border-t border-slate-100">
+                <span className="text-base font-black text-[#2A0066]">
                   ₹{course.price}
                 </span>
                 <div className="flex gap-2">
                   <button
-                    className="p-2 bg-white text-slate-400 hover:text-[#2A0066] rounded-xl border border-slate-100 transition shadow-sm cursor-pointer"
+                    className="p-1.5 bg-white text-slate-400 hover:text-[#2A0066] rounded-lg border border-slate-200/80 transition shadow-xs cursor-pointer"
                     onClick={() =>
                       router.push(`/superadmin/course/${course.id}`)
                     }
                   >
-                    <Edit3 size={16} />
+                    <Edit3 size={15} />
                   </button>
                 </div>
               </div>

@@ -100,30 +100,30 @@ export default function UserManagementPage() {
   });
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-5 pb-8">
       {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
             User <span className="text-[#2A0066]">Management</span>
           </h1>
-          <p className="text-slate-500 mt-1 text-sm font-medium">
+          <p className="text-slate-500 mt-0.5 text-xs sm:text-sm font-medium">
             Manage roles, permissions, and accounts across the platform.
           </p>
         </div>
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-[#2A0066]/5 text-[#2A0066] rounded-2xl">
-            <Users size={24} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-[#2A0066]/10 text-[#2A0066] rounded-xl">
+            <Users size={22} />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
               Total Users
             </p>
-            <h3 className="text-2xl font-black text-slate-900">
+            <h3 className="text-2xl font-black text-slate-900 mt-0.5">
               {users.length}
             </h3>
           </div>
@@ -131,24 +131,24 @@ export default function UserManagementPage() {
       </div>
 
       {/* Search Bar & Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-            size={20}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
           />
           <input
             type="text"
             placeholder="Search by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-[#2A0066] outline-none transition-all font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/80 rounded-xl shadow-xs focus:ring-2 focus:ring-[#2A0066] outline-none transition-all font-medium text-xs sm:text-sm"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-6 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-[#2A0066] outline-none transition-all font-medium cursor-pointer text-slate-700 min-w-[160px]"
+          className="px-4 py-2.5 bg-white border border-slate-200/80 rounded-xl shadow-xs focus:ring-2 focus:ring-[#2A0066] outline-none transition-all font-medium cursor-pointer text-slate-700 min-w-[140px] text-xs sm:text-sm"
         >
           <option value="all">All Roles</option>
           <option value="superadmin">Super Admin</option>
@@ -160,38 +160,38 @@ export default function UserManagementPage() {
       </div>
 
       {/* Users List */}
-      <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full min-w-[800px] text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-50">
-                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">
+              <tr className="border-b border-slate-100 bg-slate-50/60">
+                <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                   Joined
                 </th>
-                <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">
+                <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider text-right">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100/60 bg-white">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
+                  <td colSpan={5} className="px-5 py-10 text-center">
+                    <div className="flex flex-col items-center gap-2">
                       <Loader
                         className="animate-spin text-[#2A0066]"
-                        size={32}
+                        size={28}
                       />
-                      <p className="text-slate-500 font-medium">
+                      <p className="text-slate-500 text-xs font-medium">
                         Loading users...
                       </p>
                     </div>
@@ -199,10 +199,10 @@ export default function UserManagementPage() {
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3 opacity-40">
-                      <SearchX size={48} />
-                      <p className="text-lg font-bold">No users found</p>
+                  <td colSpan={5} className="px-5 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2 opacity-40">
+                      <SearchX size={36} />
+                      <p className="text-sm font-bold">No users found</p>
                     </div>
                   </td>
                 </tr>
@@ -210,18 +210,18 @@ export default function UserManagementPage() {
                 filteredUsers.map((user) => (
                   <tr
                     key={user.id}
-                    className="hover:bg-slate-50/50 transition-colors cursor-pointer"
+                    className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                   >
-                    <td className="px-6 py-5">
+                    <td className="px-5 py-3 sm:py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-[#2A0066]/5 rounded-xl flex items-center justify-center text-[#2A0066]">
-                          <User size={20} />
+                        <div className="h-8 w-8 bg-[#2A0066]/10 rounded-xl flex items-center justify-center text-[#2A0066] font-bold text-xs flex-shrink-0">
+                          <User size={16} />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 leading-none">
+                          <p className="font-bold text-slate-900 text-xs sm:text-sm leading-tight">
                             {user.fullName || "Unnamed User"}
                           </p>
-                          <p className="text-[11px] text-slate-400 mt-1 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                          <p className="text-[11px] text-slate-400 mt-0.5 flex flex-col sm:flex-row gap-1 sm:gap-2">
                             <span>{user.email}</span>
                             {user.role === "student" &&
                               user.createdByAdminName && (
@@ -238,38 +238,38 @@ export default function UserManagementPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
+                    <td className="px-5 py-3 sm:py-3.5">
+                      <div className="flex items-center gap-1.5">
                         <ShieldAlert
-                          size={14}
+                          size={13}
                           className={
                             user.role === "superadmin"
                               ? "text-[#2A0066]"
                               : "text-amber-500"
                           }
                         />
-                        <code className="text-sm font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded capitalize">
+                        <code className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded capitalize">
                           {user.role || "user"}
                         </code>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <td className="px-5 py-3 sm:py-3.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                           Active
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2 text-slate-500">
-                        <Calendar size={14} />
+                    <td className="px-5 py-3 sm:py-3.5">
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <Calendar size={13} />
                         <span className="text-xs font-medium">
                           {new Date(user.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-right w-24">
+                    <td className="px-5 py-3 sm:py-3.5 text-right w-24">
                       <button
                         onClick={() => {
                           setUserToEdit(user);
