@@ -6,7 +6,6 @@ const checkApiKey = (request: NextRequest) => {
   const validApiKey = process.env.INTERNAL_API_KEY || process.env.NEXT_PUBLIC_INTERNAL_API_KEY;
   
   if (!validApiKey) {
-    console.warn("⚠️ NO INTERNAL_API_KEY or NEXT_PUBLIC_INTERNAL_API_KEY is set in environment variables.");
     return true; 
   }
   
@@ -37,61 +36,61 @@ export async function GET(request: NextRequest) {
       const populatedTask: any = {
         id: docId,
         ...taskData,
-        createdAt: taskData.createdAt?.toDate?.() || taskData.createdAt,
-        dueDate: taskData.dueDate?.toDate?.() || taskData.dueDate,
-        updatedAt: taskData.updatedAt?.toDate?.() || taskData.updatedAt,
+        createdAt: taskData.createdAt?.toDate?.()?.toISOString() || taskData.createdAt || new Date().toISOString(),
+        dueDate: taskData.dueDate?.toDate?.()?.toISOString() || taskData.dueDate || null,
+        updatedAt: taskData.updatedAt?.toDate?.()?.toISOString() || taskData.updatedAt || null,
+        evaluatedAt: taskData.evaluatedAt?.toDate?.()?.toISOString() || taskData.evaluatedAt || null,
       };
 
       // Populate student details
       if (taskData.studentId) {
-        const studentDoc = await adminDb.collection("users").doc(taskData.studentId).get();
-        if (studentDoc.exists) {
-          const studentData = studentDoc.data();
-          populatedTask.student = {
-            id: studentDoc.id,
-            fullName: studentData.fullName,
-            email: studentData.email,
-            photoURL: studentData.photoURL || null,
-          };
+        try {
+          const studentDoc = await adminDb.collection("users").doc(taskData.studentId).get();
+          if (studentDoc.exists) {
+            const studentData = studentDoc.data();
+            populatedTask.student = {
+              id: studentDoc.id,
+              fullName: studentData.fullName,
+              email: studentData.email,
+              loginId: studentData.loginId || null,
+              photoURL: studentData.photoURL || null,
+            };
+          }
+        } catch (sErr) {
+          console.warn("Could not populate student", sErr);
         }
       }
 
       // Populate trainer details
       if (taskData.trainerId) {
-        const trainerDoc = await adminDb.collection("users").doc(taskData.trainerId).get();
-        if (trainerDoc.exists) {
-          const trainerData = trainerDoc.data();
-          populatedTask.trainer = {
-            id: trainerDoc.id,
-            fullName: trainerData.fullName,
-            email: trainerData.email,
-            photoURL: trainerData.photoURL || null,
-          };
+        try {
+          const trainerDoc = await adminDb.collection("users").doc(taskData.trainerId).get();
+          if (trainerDoc.exists) {
+            const trainerData = trainerDoc.data();
+            populatedTask.trainer = {
+              id: trainerDoc.id,
+              fullName: trainerData.fullName,
+              email: trainerData.email,
+              photoURL: trainerData.photoURL || null,
+            };
+          }
+        } catch (tErr) {
+          console.warn("Could not populate trainer", tErr);
         }
       }
 
       return populatedTask;
     };
 
-    // If taskId is provided, fetch and return a single task
+    // If taskId is provided, fetch single task
     if (taskId) {
       const doc = await adminDb.collection("tasks").doc(taskId).get();
       if (!doc.exists) {
-        return NextResponse.json(
-          { error: "Task not found" },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: "Task not found" }, { status: 404 });
       }
       
       const populatedTask = await populateTask(doc.data(), doc.id);
-      
-      return NextResponse.json(
-        {
-          success: true,
-          task: populatedTask,
-        },
-        { status: 200 }
-      );
+      return NextResponse.json({ success: true, task: populatedTask }, { status: 200 });
     }
 
     let query = adminDb.collection("tasks");
@@ -100,11 +99,6 @@ export async function GET(request: NextRequest) {
       query = query.where("studentId", "==", studentId);
     } else if (trainerId) {
       query = query.where("trainerId", "==", trainerId);
-    } else {
-      return NextResponse.json(
-        { error: "Either studentId or trainerId is required" },
-        { status: 400 }
-      );
     }
 
     const snapshot = await query.get();
@@ -114,11 +108,10 @@ export async function GET(request: NextRequest) {
       snapshot.docs.map((doc: any) => populateTask(doc.data(), doc.id))
     );
 
-    // Perform sorting in-memory to avoid the need for composite indexes in Firestore
     tasks.sort((a: any, b: any) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
-      return dateB - dateA; // Descending order
+      return dateB - dateA;
     });
 
     return NextResponse.json({ success: true, tasks }, { status: 200 });
@@ -133,7 +126,6 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/tasks
- * Trainer assigns a task to a student
  */
 export async function POST(request: NextRequest) {
   if (!checkApiKey(request)) {
@@ -146,12 +138,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, studentId, trainerId, dueDate } = body;
+    const {
+      title,
+      description,
+      studentId,
+      trainerId,
+      dueDate,
+      taskType = "assignment", // 'assignment' | 'exercise' | 'quiz' | 'speaking_recording'
+      audioRecordingUrl = null,
+      submission = "",
+    } = body;
 
-    // Validation
-    if (!title || !studentId || !trainerId) {
+    if (!title || !studentId) {
       return NextResponse.json(
-        { error: "Title, Student ID, and Trainer ID are required" },
+        { error: "Title and Student ID are required" },
         { status: 400 }
       );
     }
@@ -160,10 +160,14 @@ export async function POST(request: NextRequest) {
       title,
       description: description || "",
       studentId,
-      trainerId,
+      trainerId: trainerId || null,
+      taskType,
       dueDate: dueDate ? new Date(dueDate) : null,
-      status: "pending", // Default status
-      submission: "",
+      status: "pending", // 'pending' | 'submitted' | 'approved' | 'needs_correction'
+      submission,
+      audioRecordingUrl,
+      trainerFeedback: "",
+      score: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -190,7 +194,6 @@ export async function POST(request: NextRequest) {
 
 /**
  * PATCH /api/tasks
- * Update task status or details
  */
 export async function PATCH(request: NextRequest) {
   if (!checkApiKey(request)) {
@@ -203,7 +206,18 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { taskId, status, submission, title, description, dueDate } = body;
+    const {
+      taskId,
+      status,
+      submission,
+      audioRecordingUrl,
+      trainerFeedback,
+      score,
+      title,
+      description,
+      dueDate,
+      taskType,
+    } = body;
 
     if (!taskId) {
       return NextResponse.json({ error: "Task ID is required" }, { status: 400 });
@@ -213,11 +227,17 @@ export async function PATCH(request: NextRequest) {
       updatedAt: new Date(),
     };
 
-    // Fields that can be updated by anyone (usually student submitting or trainer approving)
-    if (status) updateData.status = status;
+    if (status) {
+      updateData.status = status;
+      if (status === "approved" || status === "needs_correction") {
+        updateData.evaluatedAt = new Date();
+      }
+    }
     if (submission !== undefined) updateData.submission = submission;
-
-    // Fields usually updated only by trainer
+    if (audioRecordingUrl !== undefined) updateData.audioRecordingUrl = audioRecordingUrl;
+    if (trainerFeedback !== undefined) updateData.trainerFeedback = trainerFeedback;
+    if (score !== undefined) updateData.score = score !== null ? Number(score) : null;
+    if (taskType) updateData.taskType = taskType;
     if (title) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (dueDate) updateData.dueDate = new Date(dueDate);
@@ -225,7 +245,7 @@ export async function PATCH(request: NextRequest) {
     await adminDb.collection("tasks").doc(taskId).update(updateData);
 
     return NextResponse.json(
-      { success: true, message: "Task updated successfully" },
+      { success: true, message: "Task evaluated / updated successfully" },
       { status: 200 }
     );
   } catch (error: any) {
@@ -239,7 +259,6 @@ export async function PATCH(request: NextRequest) {
 
 /**
  * DELETE /api/tasks
- * Delete a task
  */
 export async function DELETE(request: NextRequest) {
   if (!checkApiKey(request)) {

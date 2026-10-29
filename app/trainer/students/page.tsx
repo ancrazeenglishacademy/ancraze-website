@@ -7,17 +7,17 @@ import {
   Calendar,
   ChevronRight,
   User,
+  BookOpen,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-
 import Cookies from "js-cookie";
 
 export default function TrainerStudents() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("all");
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchMyStudents();
@@ -27,7 +27,6 @@ export default function TrainerStudents() {
     try {
       setLoading(true);
       
-      // Extract trainer ID from the client-accessible 'userData' cookie
       const userDataCookie = Cookies.get("userData");
       let trainerUid = "";
       
@@ -40,10 +39,13 @@ export default function TrainerStudents() {
         }
       }
 
+      if (!trainerUid) {
+        trainerUid = Cookies.get("uid") || "";
+      }
+
       const apiKey = process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "";
       
       if (!trainerUid) {
-        console.warn("No trainer UID found in session");
         setLoading(false);
         return;
       }
@@ -60,16 +62,23 @@ export default function TrainerStudents() {
     }
   };
 
+  const filteredStudents = students.filter(
+    (s) =>
+      s.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.loginId?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6 relative px-1 sm:px-0 pb-12">
+    <div className="space-y-6 relative pb-12">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-[#2A0066]">
-            Student <span className="text-slate-900">Management</span>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+            Assigned <span className="text-[#2A0066]">Students Roster</span>
           </h1>
-          <p className="text-slate-500 font-bold text-sm">
-            View, track, and support your assigned students.
+          <p className="text-slate-500 font-medium text-xs sm:text-sm">
+            View and manage exclusively the learners allocated to your instructional guidance.
           </p>
         </div>
       </div>
@@ -82,32 +91,34 @@ export default function TrainerStudents() {
               <Users size={20} />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Students</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Assigned Learners</p>
               <h4 className="text-2xl font-black text-slate-900 leading-none">{students.length}</h4>
             </div>
           </div>
         </div>
 
         {/* Search Layer */}
-        <div className="bg-white p-2 rounded-2xl md:rounded-[24px] border border-slate-100 shadow-sm flex items-center gap-4 px-6 group focus-within:ring-2 focus-within:ring-[#2A0066]/20 transition-all flex-1 h-full min-h-[88px] md:min-h-[auto]">
+        <div className="bg-white p-2 rounded-2xl md:rounded-[24px] border border-slate-100 shadow-sm flex items-center gap-4 px-6 group focus-within:ring-2 focus-within:ring-[#2A0066]/20 transition-all flex-1 h-full min-h-[56px]">
           <Search size={18} className="text-slate-300 group-focus-within:text-[#2A0066]" />
           <input 
-            placeholder="Search by name, email or Login ID..." 
-            className="w-full bg-transparent border-none focus:ring-0 py-4 text-sm font-bold text-slate-600 placeholder:text-slate-300 outline-none"
+            placeholder="Search by student name, email, or Student ID..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent border-none focus:ring-0 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 outline-none"
           />
         </div>
       </div>
 
       {/* Responsive List */}
-      <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto scrollbar-hide">
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
           <div className="min-w-[800px]">
             {/* Table Head */}
-            <div className="grid grid-cols-12 gap-4 px-8 py-4 bg-slate-50/50 border-b border-slate-100">
-               <div className="col-span-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</div>
-               <div className="col-span-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Login ID</div>
-               <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Courses</div>
-               <div className="col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Joined</div>
+            <div className="grid grid-cols-12 gap-4 px-8 py-4 bg-slate-50/50 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+               <div className="col-span-5">Student</div>
+               <div className="col-span-3">Student ID</div>
+               <div className="col-span-2">Enrolled Course</div>
+               <div className="col-span-2">Joined Date</div>
             </div>
 
             {/* Table Body */}
@@ -115,44 +126,41 @@ export default function TrainerStudents() {
               {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center opacity-40">
                   <div className="h-10 w-10 border-4 border-[#2A0066] border-t-transparent rounded-full animate-spin" />
-                  <p className="font-black text-[10px] uppercase tracking-widest mt-4">Synchronizing Cohort...</p>
+                  <p className="font-black text-[10px] uppercase tracking-widest mt-4">Loading assigned cohort...</p>
                 </div>
-              ) : students.length > 0 ? (
-                students.map((student, idx) => (
+              ) : filteredStudents.length > 0 ? (
+                filteredStudents.map((student, idx) => (
                   <motion.div 
                     key={student.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="grid grid-cols-12 gap-4 px-8 py-6 items-center hover:bg-slate-50/50 transition duration-300 group relative"
+                    transition={{ delay: idx * 0.03 }}
+                    className="grid grid-cols-12 gap-4 px-8 py-5 items-center hover:bg-slate-50/50 transition duration-200 group"
                   >
                     {/* Student Info */}
                     <div className="col-span-5 flex items-center gap-4 w-full">
-                      <div className="h-12 w-12 bg-[#2A0066]/5 rounded-xl flex shrink-0 items-center justify-center text-[#2A0066] group-hover:bg-[#2A0066] group-hover:text-white transition-all font-black text-lg border border-[#2A0066]/10">
+                      <div className="h-11 w-11 bg-[#2A0066]/5 rounded-2xl flex shrink-0 items-center justify-center text-[#2A0066] group-hover:bg-[#2A0066] group-hover:text-white transition-all font-black text-sm border border-[#2A0066]/10">
                         {student.fullName ? student.fullName.charAt(0).toUpperCase() : "U"}
                       </div>
                       <div className="min-w-0 pr-4">
                         <h4 className="text-sm font-black text-slate-900 truncate tracking-tight">{student.fullName}</h4>
-                        <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{student.email}</p>
-                        <span className="inline-block mt-1 px-2 py-0.5 bg-slate-50 text-[8px] font-black text-slate-500 uppercase tracking-widest border border-slate-100 rounded-md">
-                          Trainer: {Cookies.get("fullName") || "Me"}
-                        </span>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">{student.email}</p>
                       </div>
                     </div>
 
                     {/* Login ID */}
                     <div className="col-span-3 flex items-center gap-2">
-                      <Key size={14} className="text-orange-400" />
-                      <code className="px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg text-xs font-mono font-bold text-[#2A0066]">
+                      <Key size={14} className="text-amber-500" />
+                      <code className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800">
                         {student.loginId || "---"}
                       </code>
                     </div>
 
                     {/* Course Count */}
                     <div className="col-span-2">
-                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                          {student.enrolledCoursesDetails?.length || 0} {(student.enrolledCoursesDetails?.length === 1) ? 'Course' : 'Courses'}
-                       </div>
+                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-[#2A0066] rounded-xl text-[10px] font-black uppercase tracking-wider border border-purple-100">
+                          {student.enrolledCoursesDetails?.[0]?.title || "Active Course"}
+                       </span>
                     </div>
 
                     {/* Joined Date */}
@@ -164,8 +172,8 @@ export default function TrainerStudents() {
                 ))
               ) : (
                 <div className="py-24 text-center">
-                   <Users size={48} className="mx-auto text-slate-100 mb-4" />
-                   <p className="text-slate-400 font-bold italic text-sm">No students found matching your search or roster.</p>
+                   <Users size={48} className="mx-auto text-slate-200 mb-4" />
+                   <p className="text-slate-400 font-bold text-xs">No students found matching your search or roster.</p>
                 </div>
               )}
             </div>

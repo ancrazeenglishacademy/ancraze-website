@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Cookies from "js-cookie";
-import { 
-  Users, 
-  CheckSquare, 
-  LayoutDashboard, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Users,
+  CheckSquare,
+  TrendingUp,
+  MessageCircleQuestion,
+  AlertTriangle,
   Menu,
-  X,
-  ChevronRight,
   ChevronLeft,
+  ChevronRight,
+  LogOut,
   Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,12 +22,13 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function TrainerLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true); // Default open on desktop
   const [authorized, setAuthorized] = useState(false);
+  const [fullName, setFullName] = useState("Trainer Instructor");
   const pathname = usePathname();
   const router = useRouter();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const userDataCookie = Cookies.get("userData");
-    let userData: { role?: string; isBlocked?: boolean } = {};
+    let userData: { role?: string; isBlocked?: boolean; fullName?: string } = {};
 
     if (userDataCookie) {
       try {
@@ -41,8 +44,15 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
       return;
     }
 
+    if (userData.fullName) {
+      setFullName(userData.fullName);
+    } else {
+      const storedName = Cookies.get("fullName");
+      if (storedName) setFullName(storedName);
+    }
+
     const role = userData.role || Cookies.get("role");
-    if (role === "trainer") {
+    if (role === "trainer" || role === "superadmin" || role === "admin") {
       setAuthorized(true);
     } else {
       router.replace("/login");
@@ -72,23 +82,29 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
   };
 
   const menuItems = [
-    { title: "Trainer Panel", icon: <LayoutDashboard size={20} />, href: "/trainer" },
-    { title: "Student Management", icon: <Users size={20} />, href: "/trainer/students" },
-    { title: "Task Management", icon: <CheckSquare size={20} />, href: "/trainer/tasks" },
+    { title: "Trainer Console", icon: <LayoutDashboard size={19} />, href: "/trainer" },
+    { title: "Assigned Students", icon: <Users size={19} />, href: "/trainer/students" },
+    { title: "Task Evaluation & Audio", icon: <CheckSquare size={19} />, href: "/trainer/tasks" },
+    { title: "Progress Tracking", icon: <TrendingUp size={19} />, href: "/trainer/progress" },
+    { title: "Student Support Desk", icon: <MessageCircleQuestion size={19} />, href: "/trainer/support" },
+    { title: "Lagging Student Reports", icon: <AlertTriangle size={19} />, href: "/trainer/reports" },
   ];
 
   if (!authorized) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-16 w-16 border-4 border-slate-100 border-t-[#2A0066] rounded-full animate-spin" />
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verifying Trainer Access...</p>
+          <div className="h-14 w-14 border-4 border-slate-100 border-t-[#2A0066] rounded-full animate-spin" />
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Verifying Trainer Access...</p>
         </div>
       </div>
     );
   }
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => {
+    if (path === "/trainer") return pathname === "/trainer";
+    return pathname.startsWith(path);
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans relative overflow-x-hidden">
@@ -104,10 +120,11 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
           router={router}
           setSidebarOpen={setSidebarOpen}
           handleLogout={handleLogout}
+          fullName={fullName}
         />
       </aside>
 
-      {/* Mobile Drawer Overlay (< lg) */}
+      {/* Mobile Drawer Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -132,6 +149,7 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
                 router={router}
                 setSidebarOpen={setSidebarOpen}
                 handleLogout={handleLogout}
+                fullName={fullName}
               />
             </motion.aside>
           </>
@@ -145,7 +163,7 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
         }`}
       >
         {/* Top Header */}
-        <header className="h-20 bg-[#2A0066] sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8 border-b border-white/10 shadow-md">
+        <header className="h-16 bg-[#2A0066] sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 lg:px-8 border-b border-white/10 shadow-md">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -153,12 +171,12 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
               aria-label="Toggle navigation menu"
               title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
             >
-              <Menu size={22} />
+              <Menu size={20} />
             </button>
             <div className="hidden sm:flex items-center gap-2 text-white/80">
               <Sparkles size={16} className="text-purple-300 animate-pulse" />
               <span className="text-xs font-bold uppercase tracking-widest text-purple-200">
-                Trainer Portal Console
+                Trainer Instructional Portal
               </span>
             </div>
           </div>
@@ -166,11 +184,11 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
           <div className="flex items-center gap-3">
             <div className="hidden md:flex flex-col items-end">
               <span className="text-sm font-black text-white tracking-tight">
-                Trainer Account
+                {fullName}
               </span>
               <span className="text-[10px] text-emerald-400 font-extrabold tracking-wider uppercase flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                Online
+                Instructor Online
               </span>
             </div>
             <div className="h-10 w-10 overflow-hidden rounded-2xl relative border-2 border-purple-400/30 p-1 bg-white shadow-md">
@@ -185,11 +203,11 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
         </header>
 
         {/* Dynamic Content */}
-        <main className="p-4 sm:p-8 w-full min-h-screen overflow-x-hidden">
+        <main className="p-4 sm:p-6 lg:p-8 w-full min-h-[calc(100vh-4rem)] overflow-x-hidden">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.25 }}
           >
             {children}
           </motion.div>
@@ -205,12 +223,13 @@ function SidebarContent({
   router,
   setSidebarOpen,
   handleLogout,
+  fullName,
 }: any) {
   return (
-    <div className="flex flex-col h-full p-5 justify-between">
+    <div className="flex flex-col h-full p-4 sm:p-5 justify-between overflow-y-auto">
       <div>
         {/* Brand Header */}
-        <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/10">
+        <div className="flex items-center justify-between mb-6 pb-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="relative h-11 w-11 flex-shrink-0 bg-white rounded-2xl p-1.5 border border-white/30 shadow-lg shadow-black/20">
               <Image
@@ -233,7 +252,7 @@ function SidebarContent({
 
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200 cursor-pointer text-white border border-white/10"
+            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200 cursor-pointer text-white border border-white/10 lg:hidden"
             title="Collapse Sidebar"
           >
             <ChevronLeft size={20} />
@@ -241,7 +260,7 @@ function SidebarContent({
         </div>
 
         {/* Navigation Items */}
-        <nav className="space-y-2.5">
+        <nav className="space-y-1.5">
           {menuItems.map((item: any) => (
             <SidebarItem
               key={item.title}
@@ -257,14 +276,14 @@ function SidebarContent({
       </div>
 
       {/* Footer Logout Section */}
-      <div className="pt-4 border-t border-white/10">
+      <div className="pt-4 mt-6 border-t border-white/10">
         <div className="bg-white/5 rounded-2xl p-3 border border-white/10 backdrop-blur-md mb-3 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-white border border-white/30 flex items-center justify-center relative shadow-sm">
             <Image src="/logo.png" alt="User" fill className="object-contain p-1" />
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold text-white truncate">Trainer Account</span>
-            <span className="text-[10px] text-purple-300 font-medium truncate">Instructor</span>
+            <span className="text-xs font-bold text-white truncate">{fullName}</span>
+            <span className="text-[10px] text-purple-300 font-medium truncate">Assigned Instructor</span>
           </div>
         </div>
 
@@ -272,10 +291,7 @@ function SidebarContent({
           onClick={handleLogout}
           className="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl text-red-300 bg-red-500/10 hover:bg-red-500 hover:text-white transition-all duration-200 group cursor-pointer border border-red-500/20 shadow-sm font-bold text-sm"
         >
-          <LogOut
-            size={18}
-            className="group-hover:-translate-x-1 transition-transform"
-          />
+          <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
           <span>Log Out</span>
         </button>
       </div>
@@ -297,7 +313,7 @@ function SidebarItem({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer ${
+      className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition-all duration-200 cursor-pointer text-left ${
         active
           ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/35 border-l-4 border-white font-bold translate-x-1"
           : "text-slate-300 hover:text-white hover:bg-white/10 hover:translate-x-1 font-semibold"
@@ -307,9 +323,9 @@ function SidebarItem({
         <span className={active ? "text-white" : "text-purple-300/80"}>
           {icon}
         </span>
-        <span className="text-sm tracking-wide">{label}</span>
+        <span className="text-xs sm:text-sm tracking-wide">{label}</span>
       </div>
-      {active && <ChevronRight size={16} className="text-white/80" />}
+      {active && <ChevronRight size={15} className="text-white/80" />}
     </button>
   );
 }

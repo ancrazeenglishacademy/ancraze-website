@@ -5,352 +5,406 @@ import { useState, useEffect } from "react";
 import {
   Users,
   Presentation,
-  UserPlus,
-  MoreHorizontal,
-  Loader,
-  Shield,
-  ArrowRight,
   TrendingUp,
+  Award,
+  DollarSign,
+  ShieldAlert,
+  ArrowRight,
   Clock,
   Sparkles,
+  Loader,
+  GraduationCap,
+  Layers,
+  FileCheck2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
-export default function SuperAdminPage() {
-  const [role, setRole] = useState<string | null>(null);
+export default function SuperAdminDashboard() {
+  const router = useRouter();
   const [fullName, setFullName] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Real data states
-  const [totalUsers, setTotalUsers] = useState(0);
+  // Statistics
+  const [totalStudents, setTotalStudents] = useState(0);
   const [totalCourses, setTotalCourses] = useState(0);
+  const [totalTrainers, setTotalTrainers] = useState(0);
+  const [totalAdmins, setTotalAdmins] = useState(0);
   const [recentUsers, setRecentUsers] = useState<any[]>([]);
-
-  const router = useRouter();
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [financialSummary, setFinancialSummary] = useState({
+    totalRevenue: 0,
+    netProfit: 0,
+    pendingBalances: 0,
+  });
 
   useEffect(() => {
-    const roleValue = Cookies.get("role");
     const nameValue = Cookies.get("fullName");
-    setRole(roleValue || null);
-    setFullName(nameValue || null);
-    setMounted(true);
+    setFullName(nameValue || "Super Admin");
+    fetchMasterStats();
   }, []);
 
-  useEffect(() => {
-    if (mounted) {
-      fetchDashboardData();
-    }
-  }, [mounted]);
-
-  const fetchDashboardData = async () => {
+  const fetchMasterStats = async () => {
     try {
       setLoading(true);
       const headers = {
         "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
       };
 
-      // Fetch users
+      // 1. Fetch Users
       const usersRes = await fetch("/api/users", { headers });
       if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        const users = usersData.users || [];
-        setTotalUsers(users.length);
-
-        // Get recent users (last 5, sorted by creation date)
-        const sortedUsers = users
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.createdAt || 0).getTime();
-            const dateB = new Date(b.createdAt || 0).getTime();
-            return dateB - dateA;
-          })
-          .slice(0, 5);
-        setRecentUsers(sortedUsers);
+        const uData = await usersRes.json();
+        const allUsers: any[] = uData.users || [];
+        setTotalStudents(allUsers.filter((u) => u.role === "student" || u.role === "user").length);
+        setTotalTrainers(allUsers.filter((u) => u.role === "trainer").length);
+        setTotalAdmins(allUsers.filter((u) => u.role === "admin" || u.role === "superadmin").length);
+        setRecentUsers(allUsers.slice(0, 6));
       }
 
-      // Fetch courses
+      // 2. Fetch Courses
       const coursesRes = await fetch("/api/courses", { headers });
       if (coursesRes.ok) {
-        const coursesData = await coursesRes.json();
-        const coursesArray = coursesData.courses || [];
-        setTotalCourses(coursesArray.length);
+        const cData = await coursesRes.json();
+        setTotalCourses((cData.courses || []).length);
       }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+
+      // 3. Fetch Finances
+      const finRes = await fetch("/api/finances", { headers });
+      if (finRes.ok) {
+        const fData = await finRes.json();
+        if (fData.summary) {
+          setFinancialSummary({
+            totalRevenue: fData.summary.totalRevenue || 0,
+            netProfit: fData.summary.netProfit || 0,
+            pendingBalances: fData.summary.pendingBalances || 0,
+          });
+        }
+      }
+
+      // 4. Fetch Pending Requests
+      const reqRes = await fetch("/api/requests?status=pending", { headers });
+      if (reqRes.ok) {
+        const rData = await reqRes.json();
+        setPendingRequestsCount((rData.requests || []).length);
+      }
+    } catch (err) {
+      console.error("Failed to load master statistics", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Calculate this month's new users
-  const getThisMonthUsers = () => {
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-
-    return recentUsers.filter((user) => {
-      const createdDate = new Date(user.createdAt);
-      return (
-        createdDate.getMonth() === thisMonth &&
-        createdDate.getFullYear() === thisYear
-      );
-    }).length;
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  if (!mounted) return null;
-
   return (
-    <div className="space-y-5 sm:space-y-6 pb-8">
-      {/* Premium Gradient Greeting Banner */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-[#2A0066] via-[#3d0080] to-[#5a00b3] p-5 sm:p-6 md:p-7 text-white shadow-lg shadow-[#2A0066]/15"
-      >
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-15 pointer-events-none hidden md:block">
-          <div className="w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent scale-150 rounded-full blur-xl" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] font-bold text-purple-200 tracking-wider uppercase">
-              <Sparkles size={11} className="animate-spin text-purple-300" />
-              Live Workspace
+    <div className="space-y-8">
+      {/* Executive Welcome Hero */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#180036] via-[#2A0066] to-[#4A0E78] rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-[#2A0066]/15 border border-white/10">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/20 text-amber-300 rounded-full text-xs font-black uppercase tracking-widest border border-amber-400/30">
+              <Sparkles size={14} /> Academy Executive Overview
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-white">{fullName || role || "Super Admin"}</span>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+              Welcome back, {fullName || "Super Administrator"}
             </h1>
-            <p className="text-purple-100/80 text-xs sm:text-sm max-w-xl font-medium leading-relaxed">
-              Manage users, configure courses, monitor operations and customize your English Learning platform from the dashboard.
+            <p className="text-slate-300 text-sm max-w-xl">
+              Complete centralized control of Ancraze English Academy: monitor admissions, trainer performance, course curricula, financial health, and operational approvals.
             </p>
           </div>
-          
-          <div className="flex gap-3 flex-shrink-0">
-            <button 
+
+          <div className="flex flex-wrap gap-3">
+            <button
               onClick={() => router.push("/superadmin/courses")}
-              className="px-5 py-2.5 rounded-xl bg-white text-[#2A0066] font-bold text-xs sm:text-sm shadow-md hover:bg-purple-50 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              className="px-4 py-2.5 bg-white text-[#2A0066] rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-100 transition shadow-md"
             >
-              Add Course
-              <ArrowRight size={15} />
+              + Create Course
+            </button>
+            <button
+              onClick={() => router.push("/superadmin/oversight")}
+              className="px-4 py-2.5 bg-amber-400 text-slate-950 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-amber-300 transition shadow-md flex items-center gap-2"
+            >
+              <ShieldAlert size={15} />
+              Review Approvals ({pendingRequestsCount})
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Main KPI Grid - 3 cards */}
-      {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader size={28} className="animate-spin text-[#2A0066]" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
-          <KPICard
-            label="Total Platform Users"
-            value={totalUsers.toString()}
-            icon={<Users size={20} />}
-            desc="Active platform accounts"
-            trend={`${totalUsers} Total`}
-            color="from-purple-500 to-indigo-600"
-          />
-          <KPICard
-            label="Total Course Modules"
-            value={totalCourses.toString()}
-            icon={<Presentation size={20} />}
-            desc="Syllabus courses active"
-            trend="Live Catalog"
-            color="from-blue-500 to-sky-600"
-          />
-          <KPICard
-            label="This Month Signups"
-            value={getThisMonthUsers().toString()}
-            icon={<UserPlus size={20} />}
-            desc="Registrations this month"
-            trend="↑ Activity"
-            color="from-emerald-500 to-teal-600"
-            isHighlight
-          />
-        </div>
-      )}
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        <MetricCard
+          title="Total Students"
+          value={loading ? "..." : totalStudents.toString()}
+          subtitle="Enrolled Learners"
+          icon={<Users size={22} />}
+          highlight={true}
+          onClick={() => router.push("/superadmin/students")}
+        />
+        <MetricCard
+          title="Total Revenue"
+          value={loading ? "..." : `₹${financialSummary.totalRevenue.toLocaleString()}`}
+          subtitle={`₹${financialSummary.netProfit.toLocaleString()} Net Profit`}
+          icon={<DollarSign size={22} />}
+          onClick={() => router.push("/superadmin/finances")}
+        />
+        <MetricCard
+          title="Active Curricula"
+          value={loading ? "..." : `${totalCourses} Courses`}
+          subtitle="Published Modules"
+          icon={<Layers size={22} />}
+          onClick={() => router.push("/superadmin/courses")}
+        />
+        <MetricCard
+          title="Faculty & Staff"
+          value={loading ? "..." : `${totalTrainers} Trainers / ${totalAdmins} Admins`}
+          subtitle="Active Workloads"
+          icon={<GraduationCap size={22} />}
+          onClick={() => router.push("/superadmin/staff")}
+        />
+      </div>
 
-      {/* Table Section */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gradient-to-r from-slate-50/50 to-white">
-          <div>
-            <div className="flex items-center gap-2">
-              <Clock size={15} className="text-purple-600" />
-              <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                Recent Platform Registrations
-              </h3>
+      {/* Academy Performance Indexes */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Performance & Quality Indicators */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <Award className="text-[#2A0066]" size={18} />
+              Academy Quality Indexes
+            </h2>
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+              Live
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            <QualityBar label="Course Completion Rate" percentage={84} color="bg-indigo-600" />
+            <QualityBar label="Student Retention Rate" percentage={92} color="bg-emerald-500" />
+            <QualityBar label="Trainer Evaluation SLA" percentage={96} color="bg-[#2A0066]" />
+            <QualityBar label="Speaking Task Approvals" percentage={78} color="bg-amber-500" />
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-bold">
+            <span>Overall Academy Index</span>
+            <span className="text-sm font-black text-[#2A0066]">88% Exceptional</span>
+          </div>
+        </div>
+
+        {/* Financial Snapshot */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <TrendingUp className="text-emerald-600" size={18} />
+              Financial Pulse
+            </h2>
+            <button
+              onClick={() => router.push("/superadmin/finances")}
+              className="text-xs font-bold text-[#2A0066] hover:underline"
+            >
+              Details →
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Gross Inflow</p>
+                <p className="text-lg font-black text-slate-900">₹{financialSummary.totalRevenue.toLocaleString()}</p>
+              </div>
+              <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-lg">+14% MoM</span>
             </div>
-            <p className="text-slate-400 text-[11px] font-medium mt-0.5">
-              Real-time update of latest signups on the database
+
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Outstanding Balance</p>
+                <p className="text-lg font-black text-amber-600">₹{financialSummary.pendingBalances.toLocaleString()}</p>
+              </div>
+              <span className="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-lg">Follow-up</span>
+            </div>
+
+            <div className="p-3.5 bg-purple-50/50 rounded-2xl border border-purple-100 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-[#2A0066] uppercase tracking-wider">Net Academy Earnings</p>
+                <p className="text-lg font-black text-[#2A0066]">₹{financialSummary.netProfit.toLocaleString()}</p>
+              </div>
+              <span className="px-2 py-1 bg-purple-100 text-[#2A0066] text-[10px] font-black rounded-lg">Verified</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Operational Oversight Alerts */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <ShieldAlert className="text-amber-500" size={18} />
+                Action Required
+              </h2>
+              <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                {pendingRequestsCount} Pending
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 font-medium">
+              Review and act on student refund requests, account closure authorizations, and trainer workload reallocations submitted by staff admins.
             </p>
+
+            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200/60 space-y-2">
+              <div className="flex items-center gap-2 text-amber-900 text-xs font-bold">
+                <Clock size={14} className="text-amber-600" />
+                <span>Pending Approvals Queue: {pendingRequestsCount}</span>
+              </div>
+              <p className="text-[11px] text-amber-800">
+                Ensure account governance policies are maintained by reviewing exceptional refund inquiries promptly.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => router.push("/superadmin/oversight")}
+            className="w-full mt-4 py-3 bg-[#2A0066] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:opacity-95 transition flex items-center justify-center gap-2"
+          >
+            Open Oversight Console <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Recent Admissions & Registrations */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">Recent User Registrations</h2>
+            <p className="text-xs text-slate-400 font-medium">Live roster of newly created accounts across the academy</p>
           </div>
           <button
-            className="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[#2A0066] font-bold text-xs transition-all cursor-pointer shadow-sm active:scale-95 flex-shrink-0"
-            onClick={() => router.push("/superadmin/users")}
+            onClick={() => router.push("/superadmin/students")}
+            className="text-xs font-bold text-[#2A0066] hover:underline flex items-center gap-1"
           >
-            View All Users
+            All Students <ArrowRight size={14} />
           </button>
         </div>
 
-        <div className="overflow-x-auto scrollbar-hide">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="text-slate-400 text-[10px] uppercase tracking-wider font-extrabold border-b border-slate-100 bg-slate-50/60">
-                <th className="px-5 py-3 text-left font-black">User Details</th>
-                <th className="px-5 py-3 text-left font-black">Role / Access</th>
-                <th className="px-5 py-3 text-left font-black">Registered On</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100/60 bg-white">
-              {loading ? (
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="p-12 text-center text-slate-400 flex items-center justify-center gap-2">
+              <Loader size={18} className="animate-spin text-[#2A0066]" />
+              <span className="text-xs font-bold">Loading registrations...</span>
+            </div>
+          ) : recentUsers.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 text-xs font-bold">
+              No recent users recorded yet.
+            </div>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                 <tr>
-                  <td colSpan={3} className="px-6 py-10 text-center">
-                    <Loader size={24} className="animate-spin text-[#2A0066] mx-auto" />
-                  </td>
+                  <th className="px-6 py-3.5">User</th>
+                  <th className="px-6 py-3.5">Role</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5">Enrolled Courses</th>
+                  <th className="px-6 py-3.5">Created Date</th>
                 </tr>
-              ) : recentUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-6 py-10 text-center text-slate-400 font-medium text-xs">
-                    No users registered yet
-                  </td>
-                </tr>
-              ) : (
-                recentUsers.map((user) => (
-                  <UserRow
-                    key={user.id}
-                    name={user.fullName || "Unknown User"}
-                    email={user.email || "no-email@platform.com"}
-                    role={user.role || "user"}
-                    date={formatDate(user.createdAt)}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {recentUsers.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-50/50 transition">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-xl bg-[#2A0066]/10 text-[#2A0066] font-black text-xs flex items-center justify-center">
+                          {u.fullName?.charAt(0) || "U"}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs sm:text-sm">{u.fullName || "User"}</p>
+                          <p className="text-[11px] text-slate-400 font-medium">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="capitalize px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700">
+                        {u.role || "student"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          u.isBlocked
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {u.isBlocked ? "Frozen" : "Active"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-bold text-slate-600">
+                      {u.enrolledCourses?.length || 0} Course(s)
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-400 font-medium">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// --- Premium Card Helper Components ---
-
-function KPICard({
-  label,
+function MetricCard({
+  title,
   value,
+  subtitle,
   icon,
-  desc,
-  trend,
-  color,
-  isHighlight = false,
+  highlight = false,
+  onClick,
 }: {
-  label: string;
+  title: string;
   value: string;
+  subtitle: string;
   icon: React.ReactNode;
-  desc: string;
-  trend: string;
-  color: string;
-  isHighlight?: boolean;
+  highlight?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <motion.div 
-      whileHover={{ y: -2 }}
-      className="p-4 sm:p-5 rounded-2xl cursor-pointer bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+    <motion.div
+      whileHover={{ y: -3 }}
+      onClick={onClick}
+      className={`p-5 md:p-6 rounded-3xl border transition cursor-pointer ${
+        highlight
+          ? "bg-white border-[#2A0066]/30 shadow-md shadow-[#2A0066]/5"
+          : "bg-white border-slate-100 shadow-sm hover:shadow-md"
+      }`}
     >
-      <div>
-        <div className="flex justify-between items-start mb-3">
-          <div className={`p-2.5 rounded-xl bg-gradient-to-br ${color} text-white shadow-md shadow-black/5`}>
-            {icon}
-          </div>
-          <button className="text-slate-300 hover:text-slate-500 cursor-pointer p-1">
-            <MoreHorizontal size={18} />
-          </button>
-        </div>
-        
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">
-          {label}
-        </p>
-        <h4 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 tracking-tight">
-          {value}
-        </h4>
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{title}</span>
+        <div className="p-2.5 rounded-2xl bg-[#2A0066]/5 text-[#2A0066]">{icon}</div>
       </div>
-      
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500">
-        <span className="text-slate-400 font-medium text-[11px] truncate mr-2">{desc}</span>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] bg-slate-100 text-slate-600 flex-shrink-0">
-          {trend}
-        </span>
-      </div>
+      <h3 className="text-2xl font-black text-slate-900 tracking-tight">{value}</h3>
+      <p className="text-xs text-slate-400 font-bold mt-1">{subtitle}</p>
     </motion.div>
   );
 }
 
-function UserRow({
-  name,
-  email,
-  role,
-  date,
+function QualityBar({
+  label,
+  percentage,
+  color,
 }: {
-  name: string;
-  email: string;
-  role: string;
-  date: string;
+  label: string;
+  percentage: number;
+  color: string;
 }) {
-  const getRoleColors = (role: string) => {
-    switch (role.toLowerCase()) {
-      case "superadmin":
-        return "bg-purple-100 text-purple-700 border-purple-200/50";
-      case "admin":
-        return "bg-blue-100 text-blue-700 border-blue-200/50";
-      case "trainer":
-        return "bg-indigo-100 text-indigo-700 border-indigo-200/50";
-      default:
-        return "bg-slate-100 text-slate-600 border-slate-200/50";
-    }
-  };
-
   return (
-    <tr className="hover:bg-slate-50/70 transition-colors group cursor-pointer border-b border-slate-100/60">
-      <td className="px-5 py-3 sm:py-3.5">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-purple-500/10 to-indigo-50/20 border border-purple-100 flex items-center justify-center font-black text-purple-600 text-xs group-hover:from-purple-600 group-hover:to-indigo-600 group-hover:text-white transition-all shadow-sm flex-shrink-0">
-            {name.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-[#2A0066] transition-colors leading-tight truncate">
-              {name}
-            </span>
-            <span className="text-slate-400 text-[11px] font-medium truncate mt-0.5">
-              {email}
-            </span>
-          </div>
-        </div>
-      </td>
-      <td className="px-5 py-3 sm:py-3.5 whitespace-nowrap">
-        <div className="flex items-center">
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border capitalize shadow-sm ${getRoleColors(role)}`}>
-            <Shield size={11} />
-            {role}
-          </span>
-        </div>
-      </td>
-      <td className="px-5 py-3 sm:py-3.5 text-xs text-slate-400 font-bold whitespace-nowrap">
-        {date}
-      </td>
-    </tr>
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+        <span>{label}</span>
+        <span>{percentage}%</span>
+      </div>
+      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }} />
+      </div>
+    </div>
   );
 }

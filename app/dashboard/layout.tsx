@@ -5,14 +5,18 @@ import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import {
   LayoutDashboard,
+  UserPlus,
+  UsersRound,
+  UserCheck,
+  ShieldCheck,
+  Activity,
+  Megaphone,
+  HelpCircle,
   BookOpen,
   Menu,
-  X,
-  LogOut,
-  ChevronRight,
   ChevronLeft,
-  UsersRound,
-  User,
+  ChevronRight,
+  LogOut,
   Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -55,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const role = userData.role || Cookies.get("role");
     setUserRole(role || null);
 
-    if (role === "admin" || role === "user" || role === "superadmin") {
+    if (role === "admin" || role === "superadmin" || role === "user") {
       setAuthorized(true);
     } else {
       router.replace("/");
@@ -84,7 +88,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/");
   };
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => {
+    if (path === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname.startsWith(path);
+  };
 
   if (!authorized) {
     return (
@@ -99,7 +108,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F1F5F9] text-slate-900 font-sans relative overflow-x-hidden">
+    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900 font-sans relative overflow-x-hidden">
       {/* Desktop Sidebar (Collapsible) */}
       <aside
         className={`hidden lg:flex fixed top-0 left-0 bottom-0 z-50 w-72 flex-col bg-gradient-to-b from-[#180036] via-[#250059] to-[#12002A] text-white border-r border-white/10 shadow-[10px_0_40px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-in-out ${
@@ -168,7 +177,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="hidden sm:flex items-center gap-2 text-white/80">
               <Sparkles size={16} className="text-purple-300 animate-pulse" />
               <span className="text-xs font-bold uppercase tracking-widest text-purple-200">
-                Admin Management Portal
+                Admin Student Operations Console
               </span>
             </div>
           </div>
@@ -180,7 +189,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </span>
               <span className="text-[10px] text-emerald-400 font-extrabold tracking-wider uppercase flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                Online
+                Active Admin
               </span>
             </div>
             <div className="h-10 w-10 overflow-hidden rounded-2xl relative border-2 border-purple-400/30 p-1 bg-white shadow-md">
@@ -195,12 +204,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Body */}
-        <main className="p-4 sm:p-5 lg:p-6 w-full min-h-[calc(100vh-4rem)] overflow-x-hidden">
+        <main className="p-4 sm:p-6 lg:p-8 w-full min-h-[calc(100vh-4rem)] overflow-x-hidden">
           <div className="max-w-7xl mx-auto w-full">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25 }}
             >
               {children}
             </motion.div>
@@ -219,11 +228,23 @@ function SidebarContent({
   userRole,
   fullName,
 }: any) {
+  const adminMenuItems = [
+    { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={19} /> },
+    { label: "Registration & Onboarding", href: "/dashboard/registration", icon: <UserPlus size={19} /> },
+    { label: "Student Records", href: "/dashboard/students", icon: <UsersRound size={19} /> },
+    { label: "Trainer Allocation", href: "/dashboard/allocations", icon: <UserCheck size={19} /> },
+    { label: "Account Management", href: "/dashboard/accounts", icon: <ShieldCheck size={19} /> },
+    { label: "Student Monitoring", href: "/dashboard/monitoring", icon: <Activity size={19} /> },
+    { label: "Announcements", href: "/dashboard/communications", icon: <Megaphone size={19} /> },
+    { label: "Support & Refunds", href: "/dashboard/support-requests", icon: <HelpCircle size={19} /> },
+    { label: "Courses & Days", href: "/dashboard/course", icon: <BookOpen size={19} /> },
+  ];
+
   return (
-    <div className="flex flex-col h-full p-5 justify-between">
+    <div className="flex flex-col h-full p-4 sm:p-5 justify-between overflow-y-auto">
       <div>
         {/* Brand Header */}
-        <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/10">
+        <div className="flex items-center justify-between mb-6 pb-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="relative h-11 w-11 flex-shrink-0 bg-white rounded-2xl p-1.5 border border-white/30 shadow-lg shadow-black/20">
               <Image
@@ -246,7 +267,7 @@ function SidebarContent({
 
           <button
             onClick={() => setOpen(false)}
-            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200 cursor-pointer text-white border border-white/10"
+            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200 cursor-pointer text-white border border-white/10 lg:hidden"
             title="Collapse Sidebar"
           >
             <ChevronLeft size={20} />
@@ -254,46 +275,21 @@ function SidebarContent({
         </div>
 
         {/* Navigation Items */}
-        <nav className="space-y-2.5">
-          <SidebarItem
-            icon={<LayoutDashboard size={20} />}
-            label="Dashboard"
-            active={isActive("/dashboard")}
-            onClick={() => {
-              router.push("/dashboard");
-            }}
-          />
-          <SidebarItem
-            icon={<BookOpen size={20} />}
-            label="Courses"
-            active={isActive("/dashboard/course")}
-            onClick={() => {
-              router.push("/dashboard/course");
-            }}
-          />
-          <SidebarItem
-            icon={<UsersRound size={20} />}
-            label="Students"
-            active={isActive("/dashboard/students")}
-            onClick={() => {
-              router.push("/dashboard/students");
-            }}
-          />
-          {userRole === "admin" && (
+        <nav className="space-y-1.5">
+          {adminMenuItems.map((item) => (
             <SidebarItem
-              icon={<User size={20} />}
-              label="Trainer"
-              active={isActive("/dashboard/staff")}
-              onClick={() => {
-                router.push("/dashboard/staff");
-              }}
+              key={item.href}
+              icon={item.icon}
+              label={item.label}
+              active={isActive(item.href)}
+              onClick={() => router.push(item.href)}
             />
-          )}
+          ))}
         </nav>
       </div>
 
-      {/* Footer Logout Section */}
-      <div className="pt-4 border-t border-white/10">
+      {/* Footer Profile & Logout */}
+      <div className="pt-4 mt-6 border-t border-white/10">
         <div className="bg-white/5 rounded-2xl p-3 border border-white/10 backdrop-blur-md mb-3 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-white border border-white/30 flex items-center justify-center relative shadow-sm">
             <Image src="/logo.png" alt="User" fill className="object-contain p-1" />
@@ -310,10 +306,7 @@ function SidebarContent({
           onClick={handleLogout}
           className="flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl text-red-300 bg-red-500/10 hover:bg-red-500 hover:text-white transition-all duration-200 group cursor-pointer border border-red-500/20 shadow-sm font-bold text-sm"
         >
-          <LogOut
-            size={18}
-            className="group-hover:-translate-x-1 transition-transform"
-          />
+          <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
           <span>Log Out</span>
         </button>
       </div>
@@ -321,21 +314,11 @@ function SidebarContent({
   );
 }
 
-function SidebarItem({
-  icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function SidebarItem({ icon, label, active, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer ${
+      className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition-all duration-200 cursor-pointer text-left ${
         active
           ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/35 border-l-4 border-white font-bold translate-x-1"
           : "text-slate-300 hover:text-white hover:bg-white/10 hover:translate-x-1 font-semibold"
@@ -345,9 +328,9 @@ function SidebarItem({
         <span className={active ? "text-white" : "text-purple-300/80"}>
           {icon}
         </span>
-        <span className="text-sm tracking-wide">{label}</span>
+        <span className="text-xs sm:text-sm tracking-wide">{label}</span>
       </div>
-      {active && <ChevronRight size={16} className="text-white/80" />}
+      {active && <ChevronRight size={15} className="text-white/80" />}
     </button>
   );
 }

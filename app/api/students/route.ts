@@ -4,7 +4,7 @@ import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; lastRequest: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 50; // 50 requests per minute per IP
+const MAX_REQUESTS = 60; // 60 requests per minute per IP
 
 const checkRateLimit = (ip: string) => {
   const now = Date.now();
@@ -44,14 +44,14 @@ const checkApiKey = (request: NextRequest) => {
   return apiKey === validApiKey;
 };
 
-// Helper to generate a random login ID
+// Helper to generate a random login ID with academy prefix
 const generateLoginId = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 6; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return result;
+  return `ANC-${result}`;
 };
 
 export async function GET(request: NextRequest) {
@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
           student: {
             id: doc.id,
             ...data,
+            accountStatus: data.accountStatus || (data.isBlocked ? "frozen" : "active"),
             createdAt:
               data.createdAt?.toDate?.()?.toISOString() ||
               new Date().toISOString(),
@@ -111,13 +112,19 @@ export async function GET(request: NextRequest) {
     const snapshot = await (adminDb as any).collection("users").get();
 
     const students = snapshot.docs
-      .map((doc: any) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt:
-          doc.data().createdAt?.toDate?.()?.toISOString() ||
-          new Date().toISOString(),
-      }))
+      .map((doc: any) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          accountStatus: data.accountStatus || (data.isBlocked ? "frozen" : "active"),
+          createdAt:
+            data.createdAt?.toDate?.()?.toISOString() ||
+            new Date().toISOString(),
+          lastLoginAt:
+            data.lastLoginAt?.toDate?.()?.toISOString() || null,
+        };
+      })
       .filter((u: any) => {
         // Filter by trainerId if provided
         if (trainerIdFilter && u.trainerId !== trainerIdFilter) return false;
@@ -134,7 +141,7 @@ export async function GET(request: NextRequest) {
         );
       });
 
-    // Resolve course details for each student (without modules)
+    // Resolve course details for each student
     const coursesSnapshot = await (adminDb as any).collection("courses").get();
     const coursesMap = new Map();
     coursesSnapshot.docs.forEach((doc: any) => {
@@ -142,6 +149,15 @@ export async function GET(request: NextRequest) {
         id: doc.id,
         ...doc.data(),
       });
+    });
+
+    // Resolve trainer details
+    const trainersMap = new Map();
+    snapshot.docs.forEach((doc: any) => {
+      const d = doc.data();
+      if (d.role === "trainer") {
+        trainersMap.set(doc.id, d.fullName || "Trainer");
+      }
     });
 
     const studentsWithCourses = students.map((student: any) => {
@@ -152,6 +168,7 @@ export async function GET(request: NextRequest) {
 
       return {
         ...student,
+        trainerName: student.trainerId ? trainersMap.get(student.trainerId) || "Assigned Trainer" : null,
         enrolledCoursesDetails,
       };
     });
@@ -191,7 +208,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, fullName, enrolledCourses } = body;
+    const { email, fullName, enrolledCourses, phone, trainerId, customLoginId, initialFee, paymentStatus } = body;
 
     if (!email || !fullName) {
       return NextResponse.json(
@@ -211,7 +228,7 @@ export async function POST(request: NextRequest) {
       if (err.code !== "auth/user-not-found") throw err;
     }
 
-    const loginId = generateLoginId();
+    const loginId = customLoginId || generateLoginId();
 
     // Get admin details from cookies
     const adminUid = request.cookies.get("uid")?.value;
@@ -228,10 +245,16 @@ export async function POST(request: NextRequest) {
       uid: userRecord.uid,
       email,
       fullName,
-      loginId, // Store the plain loginId for admin reference
+      loginId, // Store the plain loginId for admin/student reference
+      phone: phone || null,
       role: "student",
-      trainerId: body.trainerId || null,
+      trainerId: trainerId || null,
       enrolledCourses: enrolledCourses || [],
+      accountStatus: "active",
+      isBlocked: false,
+      deviceId: null,
+      initialFee: initialFee || null,
+      paymentStatus: paymentStatus || "completed",
       createdAt: new Date(),
       authProvider: "email",
       createdByAdminUid: adminUid || null,
@@ -244,10 +267,31 @@ export async function POST(request: NextRequest) {
       .doc(userRecord.uid)
       .set(studentData);
 
+    // If an initial fee was recorded, log it in financials
+    if (initialFee && Number(initialFee) > 0) {
+      try {
+        await (adminDb as any).collection("finances").add({
+          type: "revenue",
+          title: `Admission Fee - ${fullName}`,
+          amount: Number(initialFee),
+          currency: "INR",
+          studentId: userRecord.uid,
+          studentName: fullName,
+          courseId: enrolledCourses?.[0] || null,
+          status: paymentStatus || "completed",
+          paymentMethod: "Admission Intake",
+          invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+          createdAt: new Date(),
+        });
+      } catch (finErr) {
+        console.warn("Could not auto-log admission finance record", finErr);
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
-        message: "Student added successfully",
+        message: "Student registered successfully",
         student: studentData,
       },
       { status: 201 },
@@ -283,7 +327,43 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { studentId, fullName, enrolledCourses, resetDeviceId, role } = body;
+    const {
+      studentId,
+      studentIds,
+      fullName,
+      email,
+      phone,
+      enrolledCourses,
+      resetDeviceId,
+      role,
+      trainerId,
+      isBlocked,
+      accountStatus,
+      notes,
+    } = body;
+
+    // Handle bulk update (e.g. bulk trainer allocation or mass freeze)
+    if (studentIds && Array.isArray(studentIds) && studentIds.length > 0) {
+      const bulkUpdate: any = {};
+      if (trainerId !== undefined) bulkUpdate.trainerId = trainerId;
+      if (isBlocked !== undefined) {
+        bulkUpdate.isBlocked = isBlocked;
+        bulkUpdate.accountStatus = isBlocked ? "frozen" : "active";
+      }
+      if (accountStatus) bulkUpdate.accountStatus = accountStatus;
+
+      const batch = (adminDb as any).batch();
+      studentIds.forEach((id: string) => {
+        const ref = (adminDb as any).collection("users").doc(id);
+        batch.update(ref, bulkUpdate);
+      });
+      await batch.commit();
+
+      return NextResponse.json(
+        { success: true, message: `Updated ${studentIds.length} students` },
+        { status: 200 }
+      );
+    }
 
     if (!studentId) {
       return NextResponse.json(
@@ -294,11 +374,19 @@ export async function PATCH(request: NextRequest) {
 
     const updateData: any = {};
     if (fullName) updateData.fullName = fullName;
+    if (email) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
     if (enrolledCourses) updateData.enrolledCourses = enrolledCourses;
     if (resetDeviceId) updateData.deviceId = null; // Option to clear deviceId for student
     if (role) updateData.role = role;
-    const { trainerId } = body;
     if (trainerId !== undefined) updateData.trainerId = trainerId;
+    if (isBlocked !== undefined) {
+      updateData.isBlocked = isBlocked;
+      if (isBlocked && !accountStatus) updateData.accountStatus = "frozen";
+      if (!isBlocked && (!accountStatus || accountStatus === "frozen")) updateData.accountStatus = "active";
+    }
+    if (accountStatus) updateData.accountStatus = accountStatus;
+    if (notes !== undefined) updateData.notes = notes;
 
     await (adminDb as any)
       .collection("users")

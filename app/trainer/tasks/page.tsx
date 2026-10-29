@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import {
   CheckCircle2,
@@ -12,33 +13,58 @@ import {
   MoreHorizontal,
   X,
   Loader,
-  Edit3
+  Edit3,
+  Mic,
+  RotateCcw,
+  Check,
+  MessageSquare,
+  Award,
+  Volume2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cookies from "js-cookie";
 
+interface TaskItem {
+  id: string;
+  title: string;
+  description: string;
+  taskType?: "assignment" | "exercise" | "quiz" | "speaking_recording";
+  studentId: string;
+  student?: {
+    id: string;
+    fullName: string;
+    email: string;
+    loginId?: string;
+  };
+  status: "pending" | "submitted" | "approved" | "needs_correction" | "completed";
+  submission?: string;
+  audioRecordingUrl?: string;
+  trainerFeedback?: string;
+  score?: number;
+  dueDate?: string;
+  createdAt: string;
+}
+
 export default function TrainerTasks() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterDate, setFilterDate] = useState("");
+  const [filterType, setFilterType] = useState("all");
 
-  // Modal states
+  // Create Task Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  // Form states
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
+  const [taskType, setTaskType] = useState<"assignment" | "exercise" | "quiz" | "speaking_recording">("assignment");
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [dueDate, setDueDate] = useState("");
 
-  // Edit states
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<any>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editStatus, setEditStatus] = useState("");
+  // Evaluate Task Modal
+  const [evaluatingTask, setEvaluatingTask] = useState<TaskItem | null>(null);
+  const [evalScore, setEvalScore] = useState<string>("");
+  const [evalFeedback, setEvalFeedback] = useState<string>("");
+  const [evaluatingLoading, setEvaluatingLoading] = useState(false);
 
   const trainerId = (function () {
     const userData = Cookies.get("userData");
@@ -49,7 +75,7 @@ export default function TrainerTasks() {
         return null;
       }
     }
-    return null;
+    return Cookies.get("uid") || null;
   })();
 
   useEffect(() => {
@@ -76,21 +102,8 @@ export default function TrainerTasks() {
     }
   };
 
-  // Lock scroll when modal is open
-  useEffect(() => {
-    if (isModalOpen || isEditModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isModalOpen, isEditModalOpen]);
-
   const fetchStudents = async () => {
     try {
-      // Use the existing student API which already supports trainerId filtering
       const res = await fetch(`/api/students?trainerId=${trainerId}`, {
         headers: {
           "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
@@ -105,10 +118,7 @@ export default function TrainerTasks() {
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskTitle || !selectedStudentId) {
-      alert("Please enter a title and select a student.");
-      return;
-    }
+    if (!taskTitle || !selectedStudentId) return;
 
     try {
       setSubmitting(true);
@@ -121,20 +131,21 @@ export default function TrainerTasks() {
         body: JSON.stringify({
           title: taskTitle,
           description: taskDescription,
+          taskType,
           studentId: selectedStudentId,
-          trainerId: trainerId,
+          trainerId,
           dueDate: dueDate || null,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to create task");
+      if (!res.ok) throw new Error("Failed to assign task");
 
       setIsModalOpen(false);
       setTaskTitle("");
       setTaskDescription("");
       setSelectedStudentId("");
       setDueDate("");
-      fetchTasks(); // Refresh list
+      await fetchTasks();
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -142,36 +153,11 @@ export default function TrainerTasks() {
     }
   };
 
-  const updateTaskStatus = async (taskId: string, newStatus: string) => {
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
-        },
-        body: JSON.stringify({ taskId, status: newStatus }),
-      });
-      if (res.ok) fetchTasks();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleOpenEdit = (task: any) => {
-    setEditingTask(task);
-    setEditTitle(task.title);
-    setEditDescription(task.description);
-    setEditStatus(task.status);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTask || !trainerId) return;
+  const handleEvaluateDecision = async (decision: "approved" | "needs_correction") => {
+    if (!evaluatingTask) return;
 
     try {
-      setSubmitting(true);
+      setEvaluatingLoading(true);
       const res = await fetch("/api/tasks", {
         method: "PATCH",
         headers: {
@@ -179,473 +165,446 @@ export default function TrainerTasks() {
           "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
         body: JSON.stringify({
-          taskId: editingTask.id,
-          title: editTitle,
-          description: editDescription,
-          status: editStatus,
+          taskId: evaluatingTask.id,
+          status: decision,
+          score: evalScore ? Number(evalScore) : evaluatingTask.score || 85,
+          trainerFeedback: evalFeedback,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update task");
+      if (!res.ok) throw new Error("Failed to evaluate task");
 
-      setIsEditModalOpen(false);
-      fetchTasks();
+      setEvaluatingTask(null);
+      setEvalScore("");
+      setEvalFeedback("");
+      await fetchTasks();
     } catch (err: any) {
-      alert("Error updating task: " + err.message);
+      alert(err.message);
     } finally {
-      setSubmitting(false);
+      setEvaluatingLoading(false);
     }
   };
 
+  const openEvaluation = (task: TaskItem) => {
+    setEvaluatingTask(task);
+    setEvalScore(task.score ? task.score.toString() : "85");
+    setEvalFeedback(task.trainerFeedback || "");
+  };
+
   const filteredTasks = tasks.filter((t) => {
-    if (!filterDate) return true;
-    const taskAssignedDate = new Date(t.createdAt).toISOString().split("T")[0];
-    return taskAssignedDate === filterDate;
+    if (filterType === "all") return true;
+    return t.status === filterType;
   });
 
+  const pendingCount = tasks.filter((t) => t.status === "pending" || t.status === "submitted").length;
+  const approvedCount = tasks.filter((t) => t.status === "approved" || t.status === "completed").length;
+  const needsCorrectionCount = tasks.filter((t) => t.status === "needs_correction").length;
+
   return (
-    <div className="space-y-6 md:space-y-10 pb-12 px-1 sm:px-0">
+    <div className="space-y-6 md:space-y-8 pb-12">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-            Task <span className="text-[#2A0066]">Management</span>
+            Task Evaluation & Spoken Audio Review
           </h1>
-          <p className="text-slate-500 mt-1 text-sm font-medium">
-            Track, prioritize, and manage all instructional and administrative tasks.
+          <p className="text-slate-500 mt-1 text-xs md:text-sm font-medium">
+            Review submitted assignments, listen to speaking recordings, grade quizzes, and approve or return tasks for correction.
           </p>
         </div>
         <button
-          className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#2A0066] text-white rounded-2xl text-sm font-bold shadow-xl shadow-[#2A0066]/20 hover:opacity-95 active:scale-95 transition-all cursor-pointer"
           onClick={() => setIsModalOpen(true)}
+          className="flex items-center justify-center gap-2 px-5 py-3 bg-[#2A0066] text-white rounded-2xl text-xs font-bold uppercase tracking-wider shadow-xl shadow-[#2A0066]/20 hover:opacity-95 transition cursor-pointer self-start md:self-auto"
         >
-          <Plus size={18} />
-          Create New Task
+          <Plus size={16} /> Assign New Task
         </button>
       </div>
 
-      {/* Main KPI Grid - 3 cards */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader size={32} className="animate-spin text-[#2A0066]" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <KPICard
-            label="Pending Tasks"
-            value={tasks.filter((t) => t.status === "pending").length.toString()}
-            icon={<Clock size={22} />}
-            percentage="Awaiting action"
-          />
-          <KPICard
-            label="Completed Tasks"
-            value={tasks.filter((t) => t.status === "completed").length.toString()}
-            icon={<CheckCircle2 size={22} />}
-            percentage="Done"
-          />
-          <KPICard
-            label="Tasks In Progress"
-            value={tasks.filter((t) => t.status === "in-progress" || t.status === "progress").length.toString()}
-            icon={<AlertCircle size={22} />}
-            percentage="Active workload"
-            isHighlight
-          />
-        </div>
-      )}
-
-      {/* Task List Section */}
-      <div className="bg-white rounded-[24px] md:rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg md:text-xl font-bold text-slate-900">
-              Active Workload Queue
-            </h3>
-            <p className="text-slate-400 text-[11px] md:text-xs font-medium mt-1">
-              Your assigned tasks and pending reviews
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                <Calendar size={14} />
-              </div>
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-700 outline-none shadow-sm cursor-pointer"
-              />
-              {filterDate && (
-                <button
-                  onClick={() => setFilterDate("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              )}
+      {/* KPI Counters */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Awaiting Review</span>
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+              <Clock size={18} />
             </div>
           </div>
+          <p className="text-2xl font-black text-slate-900">{pendingCount}</p>
+          <p className="text-[11px] text-slate-400 font-bold mt-1">Pending Evaluation</p>
         </div>
 
-        <div className="p-5 md:p-8 bg-slate-50/50">
-          {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center">
-              <Loader className="animate-spin text-[#2A0066]" size={32} />
-              <p className="font-bold text-slate-400 text-sm mt-4">
-                Loading Task Queue...
-              </p>
+        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Approved Tasks</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+              <CheckCircle2 size={18} />
             </div>
-          ) : filteredTasks.length > 0 ? (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-              {filteredTasks.map((task, idx) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  onClick={() => handleOpenEdit(task)}
-                  className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group flex flex-col justify-between"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className="h-10 w-10 bg-[#2A0066]/5 rounded-xl flex items-center justify-center text-[#2A0066] group-hover:bg-[#2A0066] group-hover:text-white transition-all shrink-0">
-                        <FileText size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-base font-bold text-slate-900 group-hover:text-[#2A0066] transition-colors line-clamp-1">
-                          {task.title}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2 min-h-[32px]">
-                          {task.description}
-                        </p>
-                      </div>
-                    </div>
-                    <button className="text-slate-300 hover:text-[#2A0066] transition-colors">
-                      <Edit3 size={18} />
-                    </button>
-                  </div>
-                  
-                  <div className="mt-6 pt-4 border-t border-slate-50 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        <User size={12} className="text-[#2A0066]" />{" "}
-                        {task.student?.fullName || "Unassigned"}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-l border-slate-100 pl-3">
-                        <Calendar size={12} className="text-[#2A0066]" />{" "}
-                        Assigned: {new Date(task.createdAt).toLocaleDateString()}
-                      </span>
-                      {task.dueDate && (
-                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-l border-slate-100 pl-3">
-                          <Clock size={12} className="text-red-500" />{" "}
-                          Deadline: {new Date(task.dueDate).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                    <span
-                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${
-                        task.status === "pending"
-                          ? "bg-orange-50 text-orange-600 border border-orange-100"
-                          : task.status === "progress" || task.status === "in-progress"
-                            ? "bg-blue-50 text-blue-600 border border-blue-100"
-                            : task.status === "rejected"
-                              ? "bg-rose-50 text-rose-600 border border-rose-100"
-                              : "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                      }`}
-                    >
-                      {task.status}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+          </div>
+          <p className="text-2xl font-black text-emerald-600">{approvedCount}</p>
+          <p className="text-[11px] text-slate-400 font-bold mt-1">Passed with SLA</p>
+        </div>
+
+        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Returned for Correction</span>
+            <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+              <RotateCcw size={18} />
             </div>
-          ) : (
-            <div className="py-24 text-center">
-              <FileText size={48} className="mx-auto text-slate-200 mb-4" />
-              <p className="text-slate-500 font-bold text-sm">
-                {filterDate
-                  ? `No tasks found for ${new Date(filterDate).toLocaleDateString()}`
-                  : "No active tasks in your workload queue."}
-              </p>
-              {filterDate && (
-                <button
-                  onClick={() => setFilterDate("")}
-                  className="mt-4 text-[11px] font-black uppercase tracking-widest text-[#2A0066] hover:underline"
-                >
-                  Clear Filter
-                </button>
-              )}
-            </div>
-          )}
+          </div>
+          <p className="text-2xl font-black text-rose-600">{needsCorrectionCount}</p>
+          <p className="text-[11px] text-slate-400 font-bold mt-1">Resubmission Required</p>
         </div>
       </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
+        {[
+          { id: "all", label: "All Tasks" },
+          { id: "pending", label: "Pending Evaluation" },
+          { id: "approved", label: "Approved" },
+          { id: "needs_correction", label: "Needs Correction" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilterType(tab.id)}
+            className={`px-4 py-2 text-xs font-black rounded-xl transition ${
+              filterType === tab.id
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tasks Queue Cards */}
+      <div className="space-y-4">
+        {loading ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center gap-2 bg-white rounded-3xl border border-slate-100">
+            <Loader size={24} className="animate-spin text-[#2A0066]" />
+            <p className="text-xs font-bold text-slate-400">Loading instructional tasks...</p>
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="py-20 text-center bg-white rounded-3xl border border-slate-100 p-8 space-y-2">
+            <FileText size={36} className="text-slate-300 mx-auto" />
+            <p className="text-slate-400 text-xs font-bold">No tasks found under this filter.</p>
+          </div>
+        ) : (
+          filteredTasks.map((task) => (
+            <div
+              key={task.id}
+              className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4 hover:border-purple-200 transition"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-50 text-[#2A0066] border border-purple-100">
+                      {task.taskType === "speaking_recording"
+                        ? "🎙️ Speaking Recording"
+                        : task.taskType === "quiz"
+                        ? "📝 Quiz Assessment"
+                        : task.taskType === "exercise"
+                        ? "✍️ Grammar Exercise"
+                        : "📄 Written Assignment"}
+                    </span>
+
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        task.status === "approved" || task.status === "completed"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : task.status === "needs_correction"
+                          ? "bg-rose-100 text-rose-800"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {task.status.replace("_", " ")}
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-black text-slate-900">{task.title}</h3>
+
+                  <p className="text-xs text-slate-500 font-medium">
+                    Student: <span className="font-bold text-slate-800">{task.student?.fullName || "Student"}</span>{" "}
+                    {task.student?.loginId && (
+                      <span className="font-mono text-[11px] text-slate-400 font-bold">
+                        ({task.student.loginId})
+                      </span>
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  {task.score !== undefined && task.score !== null && (
+                    <span className="px-3 py-1.5 bg-purple-50 text-[#2A0066] rounded-xl text-xs font-black">
+                      Score: {task.score}/100
+                    </span>
+                  )}
+                  <button
+                    onClick={() => openEvaluation(task)}
+                    className="px-4 py-2 bg-[#2A0066] text-white hover:opacity-95 rounded-xl text-xs font-bold transition shadow-md shadow-[#2A0066]/15 flex items-center gap-1.5"
+                  >
+                    <CheckSquare size={14} /> Evaluate & Grade
+                  </button>
+                </div>
+              </div>
+
+              {/* Task Instructions */}
+              {task.description && (
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-700">
+                  <span className="font-bold text-slate-400 block mb-0.5">Prompt:</span>
+                  <p className="font-medium">{task.description}</p>
+                </div>
+              )}
+
+              {/* Audio Player if Speaking Task */}
+              {task.audioRecordingUrl && (
+                <div className="p-3.5 bg-purple-50/50 rounded-2xl border border-purple-100 flex items-center gap-3">
+                  <Volume2 size={20} className="text-[#2A0066]" />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-[#2A0066] mb-1">Student Speaking Voice Submission</p>
+                    <audio controls className="w-full h-8" src={task.audioRecordingUrl} />
+                  </div>
+                </div>
+              )}
+
+              {/* Trainer Feedback snippet if evaluated */}
+              {task.trainerFeedback && (
+                <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-600 flex items-start gap-2">
+                  <MessageSquare size={14} className="text-[#2A0066] mt-0.5 flex-shrink-0" />
+                  <p>
+                    <span className="font-bold text-slate-700">Your Feedback:</span> {task.trainerFeedback}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Evaluate & Grade Modal */}
+      <AnimatePresence>
+        {evaluatingTask && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-100 space-y-6 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Evaluate Task Submission</h3>
+                  <p className="text-xs text-slate-400 font-medium">Student: {evaluatingTask.student?.fullName}</p>
+                </div>
+                <button
+                  onClick={() => setEvaluatingTask(null)}
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-xl bg-slate-50"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Task Title</span>
+                  <p className="text-xs font-bold text-slate-900">{evaluatingTask.title}</p>
+                </div>
+
+                {/* Audio Recording Review */}
+                {evaluatingTask.audioRecordingUrl ? (
+                  <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-[#2A0066] tracking-wider block">
+                      🎙️ Spoken Recording Playback
+                    </span>
+                    <audio controls className="w-full" src={evaluatingTask.audioRecordingUrl} />
+                  </div>
+                ) : (
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-700">
+                    <span className="font-bold text-slate-400 block mb-1">Student Written Submission:</span>
+                    <p className="font-medium italic leading-relaxed">
+                      {evaluatingTask.submission || "No written text submitted. Verify verbal/audio submission."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Score Input */}
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Score (out of 100)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    placeholder="e.g. 85"
+                    value={evalScore}
+                    onChange={(e) => setEvalScore(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-[#2A0066]"
+                  />
+                </div>
+
+                {/* Trainer Correction Notes */}
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Instructional Feedback & Correction Notes *
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Provide constructive feedback on pronunciation, grammar, vocabulary, or slide flow..."
+                    value={evalFeedback}
+                    onChange={(e) => setEvalFeedback(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-[#2A0066]"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={evaluatingLoading}
+                  onClick={() => handleEvaluateDecision("needs_correction")}
+                  className="flex-1 py-3 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                >
+                  <RotateCcw size={15} /> Return for Correction
+                </button>
+                <button
+                  type="button"
+                  disabled={evaluatingLoading}
+                  onClick={() => handleEvaluateDecision("approved")}
+                  className="flex-1 py-3 bg-[#2A0066] text-white hover:opacity-95 rounded-xl text-xs font-bold transition shadow-md shadow-[#2A0066]/15 flex items-center justify-center gap-1.5"
+                >
+                  {evaluatingLoading ? <Loader size={15} className="animate-spin" /> : <Check size={15} />}
+                  Approve Completed Task
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Create Task Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#2A0066]/40 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8 overflow-y-auto"
-            onClick={() => setIsModalOpen(false)}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white rounded-[32px] p-6 md:p-8 w-full max-w-lg shadow-2xl relative my-8"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-100 space-y-6"
             >
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="mb-8">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Assign <span className="text-[#2A0066]">Task</span>
-                </h2>
-                <p className="text-slate-500 font-medium text-sm mt-1">
-                  Create a new task for your student
-                </p>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Assign Task / Speaking Exercise</h3>
+                  <p className="text-xs text-slate-400 font-medium">Issue task directly to your allocated student</p>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-xl bg-slate-50"
+                >
+                  <X size={16} />
+                </button>
               </div>
 
-              <form onSubmit={handleAddTask} className="space-y-6">
+              <form onSubmit={handleAddTask} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    Task Title
-                  </label>
-                  <input
-                    type="text"
-                    value={taskTitle}
-                    onChange={(e) => setTaskTitle(e.target.value)}
-                    placeholder="e.g. Review Lab Report"
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm font-bold text-slate-700 transition-all"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    Assign Student
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Select Allocated Student *
                   </label>
                   <select
+                    required
                     value={selectedStudentId}
                     onChange={(e) => setSelectedStudentId(e.target.value)}
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm font-bold text-slate-700 transition-all cursor-pointer"
-                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
                   >
                     <option value="">Select a student...</option>
                     {students.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.fullName}
+                        {s.fullName} ({s.loginId || s.email})
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    Due Date (Optional)
-                  </label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm font-bold text-slate-700 transition-all"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                      Task Type
+                    </label>
+                    <select
+                      value={taskType}
+                      onChange={(e: any) => setTaskType(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                    >
+                      <option value="speaking_recording">🎙️ Speaking Voice Recording</option>
+                      <option value="assignment">📄 Written Assignment</option>
+                      <option value="exercise">✍️ Grammar Exercise</option>
+                      <option value="quiz">📝 Quiz Evaluation</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    Description / Instructions
-                  </label>
-                  <textarea
-                    value={taskDescription}
-                    onChange={(e) => setTaskDescription(e.target.value)}
-                    placeholder="Enter task details..."
-                    rows={3}
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm font-bold text-slate-700 resize-none transition-all"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex-[2] py-4 bg-[#2A0066] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-[#2A0066]/20 hover:opacity-95 active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    {submitting ? (
-                      <Loader className="animate-spin" size={18} />
-                    ) : (
-                      <>
-                        Assign Task <ArrowRight size={18} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Edit Task Modal */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#2A0066]/40 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8 overflow-y-auto"
-            onClick={() => setIsEditModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white rounded-[32px] p-6 md:p-8 w-full max-w-lg shadow-2xl relative my-8"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="absolute top-6 right-6 p-2 hover:bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="mb-8">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  Edit <span className="text-[#2A0066]">Task</span>
-                </h2>
-                <p className="text-slate-500 font-medium text-sm mt-1">
-                  Update task details for {editingTask?.student?.fullName}
-                </p>
-              </div>
-
-              <form onSubmit={handleUpdateTask} className="space-y-6">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    Task Title
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Task Title *
                   </label>
                   <input
                     type="text"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm font-bold text-slate-700 transition-all"
                     required
+                    placeholder="e.g. Day 4: 2-Minute Speech on Future Ambitions"
+                    value={taskTitle}
+                    onChange={(e) => setTaskTitle(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-[#2A0066]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    Description
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    Instructions / Guidelines
                   </label>
                   <textarea
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
                     rows={3}
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm font-bold text-slate-700 resize-none transition-all"
+                    placeholder="Provide specific guidelines, pronunciation points to emphasize, or word count..."
+                    value={taskDescription}
+                    onChange={(e) => setTaskDescription(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-[#2A0066]"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                    Status
-                  </label>
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm font-bold text-slate-700 transition-all cursor-pointer"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="progress">Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-3 pt-4">
+                <div className="flex gap-3 pt-4 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all"
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-[2] py-4 bg-[#2A0066] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-[#2A0066]/20 hover:opacity-95 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-[#2A0066] text-white rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition flex items-center justify-center gap-2"
                   >
-                    {submitting ? (
-                      <Loader className="animate-spin" size={18} />
-                    ) : (
-                      <>
-                        Update Task <ArrowRight size={18} />
-                      </>
-                    )}
+                    {submitting ? <Loader size={16} className="animate-spin" /> : "Assign Task"}
                   </button>
                 </div>
               </form>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-// --- Responsive Helper Components ---
-
-function KPICard({
-  label,
-  value,
-  icon,
-  percentage,
-  isHighlight = false,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  percentage: string;
-  isHighlight?: boolean;
-}) {
-  return (
-    <motion.div className="p-5 md:p-7 rounded-2xl cursor-pointer border transition-all duration-300 bg-white border-slate-100 shadow-sm hover:shadow-md ">
-      <div className="flex justify-between items-start mb-4 md:mb-6">
-        <div
-          className={`p-2.5 md:p-3.5 rounded-xl md:rounded-2xl ${isHighlight ? "bg-[#2A0066] text-white" : "bg-[#2A0066]/5 text-[#2A0066]"}`}
-        >
-          {icon}
-        </div>
-        <button className="text-slate-300 cursor-pointer">
-          <MoreHorizontal size={20} />
-        </button>
-      </div>
-      <div>
-        <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em]">
-          {label}
-        </p>
-        <h4 className="text-xl md:text-3xl font-black text-slate-900 mt-1">
-          {value}
-        </h4>
-        <p
-          className={`text-[9px] md:text-[10px] font-bold mt-2 ${isHighlight ? "text-[#2A0066]" : "text-slate-400"}`}
-        >
-          {percentage}
-        </p>
-      </div>
-    </motion.div>
   );
 }
