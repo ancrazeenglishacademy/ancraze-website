@@ -114,6 +114,29 @@ export default function MuxVideoPicker({
     return null;
   });
 
+  // Keep selected video in sync if props change
+  useEffect(() => {
+    if (currentPlaybackId && (!selectedVideo || selectedVideo.playbackId !== currentPlaybackId)) {
+      setSelectedVideo({
+        url: `https://stream.mux.com/${currentPlaybackId}.m3u8`,
+        playbackId: currentPlaybackId,
+        thumbnailUrl: `https://image.mux.com/${currentPlaybackId}/thumbnail.jpg`,
+        name: `Mux Video (${currentPlaybackId})`,
+        source: "mux_id",
+      });
+    } else if (!currentPlaybackId && currentVideoUrl && (!selectedVideo || selectedVideo.url !== currentVideoUrl)) {
+      const match = currentVideoUrl.match(/stream\.mux\.com\/([a-zA-Z0-9_-]+)(?:\.m3u8)?/);
+      const pbId = match ? match[1] : "";
+      setSelectedVideo({
+        url: currentVideoUrl,
+        playbackId: pbId,
+        thumbnailUrl: pbId ? `https://image.mux.com/${pbId}/thumbnail.jpg` : "",
+        name: pbId ? `Mux Video (${pbId})` : "Current Video Stream",
+        source: pbId ? "mux_id" : "legacy_url",
+      });
+    }
+  }, [currentPlaybackId, currentVideoUrl]);
+
   // Fetch Mux Library
   const fetchMuxAssets = useCallback(async () => {
     try {
