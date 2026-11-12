@@ -35,13 +35,11 @@ export async function GET(request: NextRequest) {
 
     const formattedAssets = await Promise.all(
       assets.map(async (asset) => {
-        let playbackId = asset.playback_ids?.find((p) => p.policy === "public")?.id;
+        let publicPlaybackId = asset.playback_ids?.find((p) => p.policy === "public")?.id;
 
         // Auto-fix: If asset is ready but has no public playback ID, create one automatically
-        if (!playbackId && asset.status === "ready") {
-          playbackId = await ensurePublicPlaybackId(asset);
-        } else if (!playbackId && asset.playback_ids && asset.playback_ids.length > 0) {
-          playbackId = asset.playback_ids[0].id;
+        if (!publicPlaybackId && asset.status === "ready") {
+          publicPlaybackId = await ensurePublicPlaybackId(asset);
         }
 
         return {
@@ -50,10 +48,10 @@ export async function GET(request: NextRequest) {
           duration: asset.duration,
           aspectRatio: asset.aspect_ratio,
           createdAt: asset.created_at,
-          playbackId: playbackId || null,
-          hasPublicPlaybackId: !!playbackId,
-          streamUrl: playbackId ? getMuxStreamUrl(playbackId) : null,
-          thumbnailUrl: playbackId ? getMuxThumbnailUrl(playbackId) : null,
+          playbackId: publicPlaybackId || null,
+          hasPublicPlaybackId: !!publicPlaybackId,
+          streamUrl: publicPlaybackId ? getMuxStreamUrl(publicPlaybackId) : null,
+          thumbnailUrl: publicPlaybackId ? getMuxThumbnailUrl(publicPlaybackId) : null,
           passthrough: asset.passthrough,
         };
       })

@@ -423,7 +423,7 @@ export default function MuxPlayer({
           <AlertCircle size={36} className="text-rose-400 mb-2" />
           <p className="text-xs font-bold">Unable to load Mux stream</p>
           <p className="text-[10px] text-slate-400 mt-1 max-w-xs text-center">
-            The video may still be encoding on Mux or your network is reconnecting.
+            The video may still be encoding on Mux, requires a Public Playback ID in Mux Dashboard, or your network is reconnecting.
           </p>
           <button
             type="button"

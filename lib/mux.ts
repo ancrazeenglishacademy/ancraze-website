@@ -161,10 +161,10 @@ export async function ensurePublicPlaybackId(asset: MuxAsset): Promise<string> {
   try {
     console.log(`🔑 Creating public playback ID for asset ${asset.id}...`);
     const newPb = await createPlaybackId(asset.id, "public");
-    return newPb.id;
+    return newPb?.id || "";
   } catch (err) {
     console.warn(`Could not create public playback ID for asset ${asset.id}:`, err);
-    return asset.playback_ids?.[0]?.id || "";
+    return "";
   }
 }
 
