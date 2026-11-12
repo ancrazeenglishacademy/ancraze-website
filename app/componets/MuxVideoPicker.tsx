@@ -288,17 +288,39 @@ export default function MuxVideoPicker({
   };
 
   // Select an existing Asset from Mux Library
-  const handleSelectAsset = (asset: MuxVideoItem) => {
-    if (!asset.playbackId) {
-      alert("This video is still preparing on Mux. Please wait a few moments.");
+  const handleSelectAsset = async (asset: MuxVideoItem) => {
+    let playbackId = asset.playbackId;
+
+    // If no playback ID or only signed, request creating a public playback ID automatically
+    if (!playbackId) {
+      try {
+        const res = await fetch("/api/mux/assets", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+          },
+          body: JSON.stringify({ assetId: asset.id }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          playbackId = data.playbackId;
+        }
+      } catch (err) {
+        console.warn("Could not auto-generate public playback ID:", err);
+      }
+    }
+
+    if (!playbackId) {
+      alert("This video does not have a public playback ID yet. In Mux Dashboard, click 'Playback and Thumbnails' and add a Public playback ID.");
       return;
     }
 
     const item = {
-      url: `https://stream.mux.com/${asset.playbackId}.m3u8`,
-      playbackId: asset.playbackId,
+      url: `https://stream.mux.com/${playbackId}.m3u8`,
+      playbackId: playbackId,
       assetId: asset.id,
-      thumbnailUrl: `https://image.mux.com/${asset.playbackId}/thumbnail.jpg`,
+      thumbnailUrl: `https://image.mux.com/${playbackId}/thumbnail.jpg`,
       duration: formatDuration(asset.duration),
       name: asset.passthrough || `Mux Asset ${asset.id.slice(0, 8)}`,
       source: "mux_library" as const,

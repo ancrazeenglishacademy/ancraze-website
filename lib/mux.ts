@@ -129,6 +129,46 @@ export async function getAsset(assetId: string): Promise<MuxAsset> {
 }
 
 /**
+ * Creates a public (or signed) playback ID for an existing Mux asset.
+ */
+export async function createPlaybackId(
+  assetId: string,
+  policy: "public" | "signed" = "public"
+): Promise<MuxPlaybackId> {
+  const headers = getMuxAuthHeaders();
+
+  const response = await fetch(`${MUX_API_BASE}/assets/${assetId}/playback-ids`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ policy }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error?.message || `Failed to create playback ID for asset ${assetId}`);
+  }
+
+  return data.data;
+}
+
+/**
+ * Ensures an asset has a public playback ID. If only signed or none exists, creates one automatically.
+ */
+export async function ensurePublicPlaybackId(asset: MuxAsset): Promise<string> {
+  const publicPb = asset.playback_ids?.find((p) => p.policy === "public");
+  if (publicPb) return publicPb.id;
+
+  try {
+    console.log(`🔑 Creating public playback ID for asset ${asset.id}...`);
+    const newPb = await createPlaybackId(asset.id, "public");
+    return newPb.id;
+  } catch (err) {
+    console.warn(`Could not create public playback ID for asset ${asset.id}:`, err);
+    return asset.playback_ids?.[0]?.id || "";
+  }
+}
+
+/**
  * Lists all video assets from Mux account.
  */
 export async function listAssets(options?: {
