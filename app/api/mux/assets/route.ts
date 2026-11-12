@@ -9,6 +9,9 @@ import {
   getMuxThumbnailUrl,
 } from "@/lib/mux";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const checkApiKey = (request: NextRequest) => {
   const apiKey = request.headers.get("x-api-key");
   const validApiKey =

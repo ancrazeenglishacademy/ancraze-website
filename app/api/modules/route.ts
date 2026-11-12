@@ -3,6 +3,9 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import * as admin from 'firebase-admin';
 import { formatModuleForStreaming } from '@/lib/mux';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: NextRequest) {
   try {
     if (!adminDb) {

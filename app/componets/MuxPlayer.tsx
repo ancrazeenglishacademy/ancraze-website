@@ -144,102 +144,128 @@ export default function MuxPlayer({
     setHasError(false);
     setErrorMessage("");
 
-    // Safari & iOS support HLS natively
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = effectiveStreamUrl;
-      if (autoPlay) {
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((err) => {
-            // Autoplay with sound blocked: fallback to muted autoplay
-            if (err?.name === "NotAllowedError") {
-              console.log("Muting video to satisfy browser autoplay policy...");
-              video.muted = true;
-              setIsMuted(true);
-              setIsAutoMuted(true);
-              video.play().catch(() => {});
+    // Load Hls.js FIRST for all Chromium (Chrome, Edge, Brave, Opera) & Firefox browsers
+    loadHls()
+      .then((Hls) => {
+        if (isDestroyed || !videoRef.current) return;
+
+        if (Hls && Hls.isSupported()) {
+          // Clear any existing native src to prevent MEDIA_ERR_SRC_NOT_SUPPORTED (code: 4)
+          video.removeAttribute("src");
+          video.load();
+
+          hlsInstance = new Hls({
+            enableWorker: true,
+            lowLatencyMode: false, // CRITICAL: Must be false for VOD / recorded videos
+            backBufferLength: 90,
+            maxBufferLength: 60,
+            maxMaxBufferLength: 600,
+            maxBufferSize: 60 * 1000 * 1000,
+            maxBufferHole: 0.5,
+            startLevel: -1, // Auto level selection based on bandwidth
+            autoStartLoad: true,
+          });
+
+          hlsRef.current = hlsInstance;
+          hlsInstance.attachMedia(video);
+
+          hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
+            if (!isDestroyed) {
+              console.log("🎬 Hls.js media attached, loading stream:", effectiveStreamUrl);
+              hlsInstance.loadSource(effectiveStreamUrl);
             }
           });
-        }
-      }
-    } else {
-      // Chromium (Chrome, Edge, Brave, Opera) & Firefox: use Hls.js
-      loadHls()
-        .then((Hls) => {
-          if (isDestroyed || !videoRef.current) return;
 
-          if (Hls && Hls.isSupported()) {
-            hlsInstance = new Hls({
-              enableWorker: true,
-              lowLatencyMode: false, // CRITICAL: Must be false for VOD / recorded videos
-              backBufferLength: 90,
-              maxBufferLength: 60,
-              maxMaxBufferLength: 600,
-              maxBufferSize: 60 * 1000 * 1000,
-              maxBufferHole: 0.5,
-              startLevel: -1, // Auto level selection based on bandwidth
-              autoStartLoad: true,
-            });
-
-            hlsRef.current = hlsInstance;
-            hlsInstance.attachMedia(video);
-
-            hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-              if (!isDestroyed) {
-                hlsInstance.loadSource(effectiveStreamUrl);
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (isDestroyed) return;
+            setIsBuffering(false);
+            setHasError(false);
+            if (autoPlay) {
+              const playPromise = video.play();
+              if (playPromise !== undefined) {
+                playPromise.catch((err) => {
+                  // Autoplay with sound blocked by browser policy: fallback to muted autoplay
+                  if (err?.name === "NotAllowedError") {
+                    console.log("Muting video to satisfy browser autoplay policy...");
+                    video.muted = true;
+                    setIsMuted(true);
+                    setIsAutoMuted(true);
+                    video.play().catch(() => {});
+                  }
+                });
               }
-            });
+            }
+          });
 
-            hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-              if (isDestroyed) return;
+          hlsInstance.on(Hls.Events.ERROR, (_event: any, data: any) => {
+            console.warn("HLS Event Error:", data.type, data.details, data.response?.code);
+
+            // Handle HTTP 403 Forbidden specifically (Signed Playback ID without token)
+            if (data.response?.code === 403) {
               setIsBuffering(false);
-              setHasError(false);
-              if (autoPlay) {
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                  playPromise.catch((err) => {
-                    // Autoplay with sound blocked: fallback to muted autoplay
-                    if (err?.name === "NotAllowedError") {
-                      console.log("Muting video to satisfy browser autoplay policy...");
-                      video.muted = true;
-                      setIsMuted(true);
-                      setIsAutoMuted(true);
-                      video.play().catch(() => {});
-                    }
-                  });
-                }
-              }
-            });
+              setHasError(true);
+              setErrorMessage("Mux Error 403 (Forbidden): This video only has a Signed Playback ID. Please add a Public Playback ID in your Mux Dashboard under 'Playback and Thumbnails'.");
+              return;
+            }
 
-            hlsInstance.on(Hls.Events.ERROR, (_event: any, data: any) => {
-              if (data.fatal) {
-                console.warn("HLS fatal error:", data.type, data.details);
-                switch (data.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    console.log("HLS network error, attempting to reload buffer...");
-                    hlsInstance.startLoad();
-                    break;
-                  case Hls.ErrorTypes.MEDIA_ERROR:
-                    console.log("HLS media error, recovering media buffer...");
-                    hlsInstance.recoverMediaError();
-                    break;
-                  default:
-                    console.warn("HLS unrecoverable error:", data.details);
-                    setIsBuffering(false);
-                    setHasError(true);
-                    setErrorMessage(data.details || "Playback error on stream");
-                    break;
-                }
+            // Handle HTTP 404 Not Found
+            if (data.response?.code === 404) {
+              setIsBuffering(false);
+              setHasError(true);
+              setErrorMessage("Mux Error 404 (Not Found): This video playback ID was not found on Mux.");
+              return;
+            }
+
+            if (data.fatal) {
+              console.warn("HLS fatal error:", data.type, data.details);
+              switch (data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  console.log("HLS network error, attempting to reload buffer...");
+                  hlsInstance.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  console.log("HLS media error, recovering media buffer...");
+                  hlsInstance.recoverMediaError();
+                  break;
+                default:
+                  console.warn("HLS unrecoverable error:", data.details);
+                  setIsBuffering(false);
+                  setHasError(true);
+                  setErrorMessage(data.details || "Playback error on stream");
+                  break;
               }
-            });
+            }
+          });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          // Native Safari / iOS ONLY (where Hls.isSupported() is false)
+          video.src = effectiveStreamUrl;
+          if (autoPlay) {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise.catch((err) => {
+                if (err?.name === "NotAllowedError") {
+                  video.muted = true;
+                  setIsMuted(true);
+                  setIsAutoMuted(true);
+                  video.play().catch(() => {});
+                }
+              });
+            }
           }
-        })
-        .catch((err) => {
-          console.warn("Hls.js loading failed:", err);
+        } else {
+          setHasError(true);
+          setErrorMessage("Your browser does not support HLS video streaming.");
+        }
+      })
+      .catch((err) => {
+        console.warn("Hls.js loading failed:", err);
+        if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = effectiveStreamUrl;
+        } else {
           setHasError(true);
           setErrorMessage("Failed to load Hls.js streaming library");
-        });
-    }
+        }
+      });
 
     return () => {
       isDestroyed = true;
@@ -434,7 +460,12 @@ export default function MuxPlayer({
           const video = videoRef.current;
           console.warn("Video element error event:", video?.error);
           setIsBuffering(false);
+          // If Hls.js is actively attached, let Hls.js error handler manage recovery
+          if (hlsRef.current) {
+            return;
+          }
           setHasError(true);
+          setErrorMessage("Video source could not be played natively.");
         }}
         onEnded={() => {
           setIsPlaying(false);
