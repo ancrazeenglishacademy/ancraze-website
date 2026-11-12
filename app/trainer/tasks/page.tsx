@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Award,
   Volume2,
+  CheckSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Cookies from "js-cookie";

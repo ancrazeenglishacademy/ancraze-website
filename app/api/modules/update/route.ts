@@ -64,6 +64,9 @@ export async function PUT(request: NextRequest) {
       title,
       questions,
       videoUrl,
+      playbackId,
+      assetId,
+      streamType,
       duration,
       day,
       description,
@@ -85,6 +88,17 @@ export async function PUT(request: NextRequest) {
     if (title) updateData.title = title;
     if (questions) updateData.questions = questions;
     if (videoUrl !== undefined) updateData.videoUrl = videoUrl;
+    if (playbackId !== undefined) {
+      updateData.playbackId = playbackId;
+      if (playbackId && !videoUrl) {
+        updateData.videoUrl = `https://stream.mux.com/${playbackId}.m3u8`;
+      }
+      if (playbackId && !thumbnailUrl) {
+        updateData.thumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg`;
+      }
+    }
+    if (assetId !== undefined) updateData.assetId = assetId;
+    if (streamType !== undefined) updateData.streamType = streamType;
     if (duration !== undefined) updateData.duration = duration;
     if (day !== undefined) updateData.day = day;
     if (description !== undefined) updateData.description = description;

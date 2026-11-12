@@ -1,30 +1,23 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Plus,
   ChevronLeft,
   PlayCircle,
   FileText,
-  HelpCircle,
   X,
-  Upload,
   Loader,
   Trash2,
   Settings,
-  GripVertical,
   List,
   Grid,
-  Search,
-  Film,
   CheckCircle2,
-  RefreshCw,
-  FolderOpen,
+  Tv,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import FirebaseVideoPicker from "@/app/componets/FirebaseVideoPicker";
+import MuxVideoPicker from "@/app/componets/MuxVideoPicker";
+import MuxPlayer from "@/app/componets/MuxPlayer";
 
 export default function DayDetailPage() {
   const params = useParams();
@@ -36,102 +29,45 @@ export default function DayDetailPage() {
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  
+
+  // Modals
   const [showModal, setShowModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [showEditModuleModal, setShowEditModuleModal] = useState(false);
   const [editingModule, setEditingModule] = useState<any>(null);
+  const [previewingModule, setPreviewingModule] = useState<any>(null);
 
-  // Module form states
+  // Create form state
   const [moduleTitle, setModuleTitle] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [moduleDuration, setModuleDuration] = useState("");
   const [moduleDescription, setModuleDescription] = useState("");
   const [questions, setQuestions] = useState<Array<{ question: string; answer: string }>>([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [uploadStats, setUploadStats] = useState<{ transferred: number, total: number } | null>(null);
+  const [selectedMuxVideo, setSelectedMuxVideo] = useState<{
+    url: string;
+    playbackId: string;
+    assetId?: string;
+    thumbnailUrl?: string;
+    duration?: string;
+    name: string;
+  } | null>(null);
 
-  // Firebase video browser states (create modal)
-  const [videoPickerMode, setVideoPickerMode] = useState<"upload" | "firebase">("firebase");
-  const [selectedFirebaseVideo, setSelectedFirebaseVideo] = useState<{ name: string; fullPath: string; downloadUrl: string; size: number } | null>(null);
-  const [firebaseVideos, setFirebaseVideos] = useState<any[]>([]);
-  const [firebaseVideosLoading, setFirebaseVideosLoading] = useState(false);
-  const [firebaseVideoSearch, setFirebaseVideoSearch] = useState("");
-  const [firebaseVideosLoaded, setFirebaseVideosLoaded] = useState(false);
-
-  // Firebase video browser states (edit modal)
-  const [editVideoPickerMode, setEditVideoPickerMode] = useState<"upload" | "firebase">("firebase");
-  const [editSelectedFirebaseVideo, setEditSelectedFirebaseVideo] = useState<{ name: string; fullPath: string; downloadUrl: string; size: number } | null>(null);
-  const [editFirebaseVideoSearch, setEditFirebaseVideoSearch] = useState("");
-
-  // Module edit states
+  // Edit form state
   const [editModuleTitle, setEditModuleTitle] = useState("");
   const [editModuleDescription, setEditModuleDescription] = useState("");
-  const [editModuleQuestions, setEditModuleQuestions] = useState<any[]>([]);
-  const [editModuleVideoUrl, setEditModuleVideoUrl] = useState("");
-  const [editModuleThumbnailUrl, setEditModuleThumbnailUrl] = useState("");
-  const [editModuleVideoFile, setEditModuleVideoFile] = useState<File | null>(null);
   const [editModuleDuration, setEditModuleDuration] = useState("");
-
-  const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVideoFile(file);
-      setSelectedFirebaseVideo(null);
-      // Generate thumbnail
-      try {
-        const video = document.createElement("video");
-        video.src = URL.createObjectURL(file);
-        video.currentTime = 0.1;
-        video.onloadeddata = () => {
-          const canvas = document.createElement("canvas");
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const thumb = new File([blob], `thumb_${file.name.split('.')[0]}.jpg`, { type: "image/jpeg" });
-              setThumbnailFile(thumb);
-            }
-          }, "image/jpeg", 0.7);
-        };
-      } catch (err) {
-        console.error("Error generating thumbnail:", err);
-      }
-    }
-  };
-
-  const loadFirebaseVideos = useCallback(async () => {
-    if (firebaseVideosLoading) return;
-    setFirebaseVideosLoading(true);
-    try {
-      const res = await fetch('/api/firebase-videos', {
-        headers: { 'x-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '' },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setFirebaseVideos(data.videos || []);
-        setFirebaseVideosLoaded(true);
-      }
-    } catch (err) {
-      console.error('Error loading Firebase videos:', err);
-    } finally {
-      setFirebaseVideosLoading(false);
-    }
-  }, [firebaseVideosLoading]);
-
-  const openCreateModal = () => {
-    setShowModal(true);
-    setVideoPickerMode('firebase');
-    setSelectedFirebaseVideo(null);
-    setVideoFile(null);
-    setFirebaseVideoSearch('');
-    if (!firebaseVideosLoaded) loadFirebaseVideos();
-  };
+  const [editModuleQuestions, setEditModuleQuestions] = useState<any[]>([]);
+  const [editSelectedMuxVideo, setEditSelectedMuxVideo] = useState<{
+    url: string;
+    playbackId: string;
+    assetId?: string;
+    thumbnailUrl?: string;
+    duration?: string;
+    name: string;
+  } | null>(null);
+  const [editModuleVideoUrl, setEditModuleVideoUrl] = useState("");
+  const [editModulePlaybackId, setEditModulePlaybackId] = useState("");
 
   const addQuestion = () => {
     if (currentQuestion.trim() && currentAnswer.trim()) {
@@ -150,7 +86,7 @@ export default function DayDetailPage() {
       try {
         setLoading(true);
         const headers = { "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "" };
-        
+
         // Fetch specific day info
         const daysRes = await fetch(`/api/days?courseId=${courseId}`, { headers });
         if (daysRes.ok) {
@@ -175,77 +111,52 @@ export default function DayDetailPage() {
     fetchData();
   }, [courseId, dayId]);
 
-  const uploadFile = (file: File, path: string, onProgress: (progress: number, transferred?: number, total?: number) => void): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const storageRef = ref(storage, path);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          onProgress(Math.round(progress), snapshot.bytesTransferred, snapshot.totalBytes);
-        },
-        (error) => reject(error),
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(url);
-        }
-      );
-    });
+  const openCreateModal = () => {
+    setShowModal(true);
+    setModuleTitle("");
+    setModuleDuration("");
+    setModuleDescription("");
+    setSelectedMuxVideo(null);
+    setQuestions([]);
   };
 
   const handleSubmitModule = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Determine final video URL
-    const hasUploadVideo = videoPickerMode === 'upload' && videoFile;
-    const hasFirebaseVideo = videoPickerMode === 'firebase' && selectedFirebaseVideo;
+    if (!moduleTitle.trim()) {
+      alert("Please provide a module title.");
+      return;
+    }
 
-    if (!moduleTitle.trim() || !moduleDuration.trim() || (!hasUploadVideo && !hasFirebaseVideo)) {
-      alert("Please fill all required fields: Title, Duration, and a Video (either uploaded or selected from Firebase).");
+    if (!selectedMuxVideo?.url && !selectedMuxVideo?.playbackId) {
+      alert("Please upload or select a Mux video for this module.");
       return;
     }
 
     setModalLoading(true);
     try {
-      let videoUrl = "";
-      let thumbnailUrl = "";
-
-      if (hasFirebaseVideo) {
-        // Use the already-uploaded Firebase video URL directly
-        videoUrl = selectedFirebaseVideo!.downloadUrl;
-      } else if (hasUploadVideo) {
-        // Upload from device as before
-        setUploadProgress(0);
-        const cleanName = videoFile!.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-        const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
-        videoUrl = await uploadFile(videoFile!, videoPath, (progress, transferred, total) => {
-          setUploadProgress(progress);
-          if (transferred !== undefined && total !== undefined) {
-            setUploadStats({ transferred, total });
-          }
-        });
-        if (thumbnailFile) {
-          const cleanThumbName = thumbnailFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-          const thumbPath = `modules/${courseId}/thumb_${Date.now()}_${cleanThumbName}`;
-          thumbnailUrl = await uploadFile(thumbnailFile, thumbPath, () => {});
-        }
-      }
+      const finalDuration = moduleDuration || selectedMuxVideo?.duration || "10 mins";
+      const finalPlaybackId = selectedMuxVideo?.playbackId || "";
+      const finalVideoUrl = selectedMuxVideo?.url || (finalPlaybackId ? `https://stream.mux.com/${finalPlaybackId}.m3u8` : "");
+      const finalThumbnail = selectedMuxVideo?.thumbnailUrl || (finalPlaybackId ? `https://image.mux.com/${finalPlaybackId}/thumbnail.jpg` : "");
 
       const response = await fetch("/api/modules", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "" 
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
         body: JSON.stringify({
           courseId,
           moduleTitle,
           day: dayId,
-          videoUrl,
-          thumbnailUrl,
+          videoUrl: finalVideoUrl,
+          playbackId: finalPlaybackId,
+          assetId: selectedMuxVideo?.assetId || "",
+          thumbnailUrl: finalThumbnail,
+          streamType: "mux",
           questions,
-          duration: moduleDuration,
+          duration: finalDuration,
           description: moduleDescription,
         }),
       });
@@ -253,27 +164,51 @@ export default function DayDetailPage() {
       if (!response.ok) throw new Error("Failed to create module");
 
       const data = await response.json();
-      setModules([...modules, { id: data.moduleId, ...data.module, createdAt: new Date().toISOString() }]);
-      
+      setModules((prev) => [
+        ...prev,
+        {
+          id: data.moduleId,
+          ...data.module,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+
       // Reset
       setModuleTitle("");
       setModuleDescription("");
-      setVideoFile(null);
-      setSelectedFirebaseVideo(null);
-      setFirebaseVideoSearch("");
+      setSelectedMuxVideo(null);
       setQuestions([]);
       setModuleDuration("");
-      setUploadProgress(null);
-      setUploadStats(null);
       setShowModal(false);
     } catch (error) {
       console.error(error);
       alert("Error creating module");
     } finally {
       setModalLoading(false);
-      setUploadProgress(null);
-      setUploadStats(null);
     }
+  };
+
+  const handleOpenEditModal = (module: any) => {
+    setEditingModule(module);
+    setEditModuleTitle(module.title || "");
+    setEditModuleDescription(module.description || "");
+    setEditModuleDuration(module.duration || "");
+    setEditModuleQuestions(module.questions || []);
+    setEditModuleVideoUrl(module.videoUrl || "");
+    setEditModulePlaybackId(module.playbackId || "");
+    setEditSelectedMuxVideo(
+      module.playbackId
+        ? {
+            url: module.videoUrl || `https://stream.mux.com/${module.playbackId}.m3u8`,
+            playbackId: module.playbackId,
+            assetId: module.assetId || "",
+            thumbnailUrl: module.thumbnailUrl || `https://image.mux.com/${module.playbackId}/thumbnail.jpg`,
+            duration: module.duration,
+            name: module.title || "Current Video",
+          }
+        : null
+    );
+    setShowEditModuleModal(true);
   };
 
   const handleSaveModuleEdits = async (e: React.FormEvent) => {
@@ -282,29 +217,16 @@ export default function DayDetailPage() {
 
     setModalLoading(true);
     try {
-      let videoUrl = editModuleVideoUrl;
-
-      if (editVideoPickerMode === 'firebase' && editSelectedFirebaseVideo) {
-        // Use selected Firebase video directly
-        videoUrl = editSelectedFirebaseVideo.downloadUrl;
-      } else if (editVideoPickerMode === 'upload' && editModuleVideoFile) {
-        // Upload new file
-        setUploadProgress(0);
-        const cleanName = editModuleVideoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-        const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
-        videoUrl = await uploadFile(editModuleVideoFile, videoPath, (progress, transferred, total) => {
-          setUploadProgress(progress);
-          if (transferred !== undefined && total !== undefined) {
-            setUploadStats({ transferred, total });
-          }
-        });
-      }
+      const finalPlaybackId = editSelectedMuxVideo?.playbackId || editModulePlaybackId || "";
+      const finalVideoUrl = editSelectedMuxVideo?.url || editModuleVideoUrl || (finalPlaybackId ? `https://stream.mux.com/${finalPlaybackId}.m3u8` : "");
+      const finalThumbnail = editSelectedMuxVideo?.thumbnailUrl || (finalPlaybackId ? `https://image.mux.com/${finalPlaybackId}/thumbnail.jpg` : "");
+      const finalDuration = editModuleDuration || editSelectedMuxVideo?.duration || editingModule.duration || "10 mins";
 
       const response = await fetch("/api/modules/update", {
         method: "PUT",
-        headers: { 
-          "Content-Type": "application/json" ,
-          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || ""
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
         body: JSON.stringify({
           courseId,
@@ -312,41 +234,56 @@ export default function DayDetailPage() {
           title: editModuleTitle,
           day: dayId,
           questions: editModuleQuestions,
-          videoUrl,
-          duration: editModuleDuration,
+          videoUrl: finalVideoUrl,
+          playbackId: finalPlaybackId,
+          assetId: editSelectedMuxVideo?.assetId || editingModule.assetId || "",
+          thumbnailUrl: finalThumbnail,
+          streamType: "mux",
+          duration: finalDuration,
           description: editModuleDescription,
         }),
       });
 
       if (!response.ok) throw new Error("Failed to update module");
 
-      setModules(modules.map(m => m.id === editingModule.id ? { ...m, title: editModuleTitle, description: editModuleDescription, questions: editModuleQuestions, videoUrl, duration: editModuleDuration } : m));
+      setModules((prev) =>
+        prev.map((m) =>
+          m.id === editingModule.id
+            ? {
+                ...m,
+                title: editModuleTitle,
+                description: editModuleDescription,
+                questions: editModuleQuestions,
+                videoUrl: finalVideoUrl,
+                playbackId: finalPlaybackId,
+                thumbnailUrl: finalThumbnail,
+                duration: finalDuration,
+              }
+            : m
+        )
+      );
       setShowEditModuleModal(false);
-      setEditModuleVideoFile(null);
-      setEditSelectedFirebaseVideo(null);
-      setUploadProgress(null);
-      setUploadStats(null);
+      setEditingModule(null);
+      setEditSelectedMuxVideo(null);
     } catch (error) {
       console.error(error);
       alert("Error saving edits");
     } finally {
       setModalLoading(false);
-      setUploadProgress(null);
-      setUploadStats(null);
     }
   };
 
   const handleDeleteModule = async (moduleId: string) => {
     if (!confirm("Are you sure you want to delete this module?")) return;
-    
+
     try {
       const headers = { "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "" };
-      const response = await fetch(`/api/modules?courseId=${courseId}&moduleId=${moduleId}`, { 
+      const response = await fetch(`/api/modules?courseId=${courseId}&moduleId=${moduleId}`, {
         method: "DELETE",
-        headers
+        headers,
       });
       if (response.ok) {
-        setModules(modules.filter(m => m.id !== moduleId));
+        setModules((prev) => prev.filter((m) => m.id !== moduleId));
       }
     } catch (error) {
       console.error(error);
@@ -354,293 +291,587 @@ export default function DayDetailPage() {
   };
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-6 pb-12">
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <button onClick={() => router.push(`/dashboard/course/${courseId}`)} className="p-3 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition">
+        <button
+          onClick={() => router.push(`/dashboard/course/${courseId}`)}
+          className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition text-slate-700"
+        >
           <ChevronLeft size={20} />
         </button>
         <div>
-          <h1 className="text-2xl font-black text-slate-900">{dayData?.title || "Loading..."}</h1>
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest mt-1">Manage Modules for this Day</p>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#2A0066]">
+              Mux HLS Streaming
+            </span>
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 mt-1">{dayData?.title || "Day Modules"}</h1>
+          <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest mt-0.5">
+            Manage video lessons and tasks with Mux Video CDN
+          </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm">
+      {/* Main Card */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-bold text-slate-800">Modules ({modules.length})</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-slate-900">Modules ({modules.length})</h2>
+            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
+              Adaptive Bitrate (HLS)
+            </span>
+          </div>
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center bg-slate-50 p-1 rounded-2xl border border-slate-100">
-              <button onClick={() => setViewMode("list")} className={`p-2 rounded-xl transition-all ${viewMode === "list" ? "bg-white text-[#2A0066] shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-xl transition-all ${
+                  viewMode === "list" ? "bg-white text-[#2A0066] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
                 <List size={16} />
               </button>
-              <button onClick={() => setViewMode("grid")} className={`p-2 rounded-xl transition-all ${viewMode === "grid" ? "bg-white text-[#2A0066] shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-xl transition-all ${
+                  viewMode === "grid" ? "bg-white text-[#2A0066] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
                 <Grid size={16} />
               </button>
             </div>
-            <button onClick={openCreateModal} className="px-4 py-2.5 bg-[#2A0066] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#2A0066]/20 flex items-center gap-2">
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2.5 bg-[#2A0066] text-white rounded-2xl font-bold text-sm shadow-lg shadow-[#2A0066]/20 flex items-center gap-2 hover:bg-[#3d0099] transition active:scale-95"
+            >
               <Plus size={16} /> Add New Module
             </button>
           </div>
         </div>
 
         {loading ? (
-          <div className="py-8 text-center">
-            <Loader className="animate-spin mx-auto text-[#2A0066]" size={32} />
+          <div className="py-16 text-center">
+            <Loader className="animate-spin mx-auto text-[#2A0066]" size={36} />
+            <p className="text-xs font-bold text-slate-400 mt-3">Loading modules...</p>
           </div>
         ) : modules.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 font-semibold">No modules added to this day yet.</div>
+          <div className="py-16 text-center">
+            <div className="w-16 h-16 rounded-3xl bg-purple-50 text-[#2A0066] mx-auto flex items-center justify-center mb-4">
+              <Tv size={28} />
+            </div>
+            <h3 className="font-bold text-slate-800 text-base">No modules added yet</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+              Add your first lesson module with Mux adaptive video streaming, thumbnails, and questions.
+            </p>
+            <button
+              onClick={openCreateModal}
+              className="mt-4 px-4 py-2 bg-[#2A0066] text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5"
+            >
+              <Plus size={14} /> Add Module Now
+            </button>
+          </div>
         ) : (
           <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-            {modules.map((module, index) => (
-              viewMode === "list" ? (
-                <div 
-                  key={module.id} 
-                  onClick={() => {
-                    setEditingModule(module);
-                    setEditModuleTitle(module.title);
-                    setEditModuleDescription(module.description || "");
-                    setEditModuleQuestions(module.questions || []);
-                    setEditModuleVideoUrl(module.videoUrl || "");
-                    setEditModuleThumbnailUrl(module.thumbnailUrl || "");
-                    setEditModuleVideoFile(null);
-                    setEditModuleDuration(module.duration || "");
-                    setEditSelectedFirebaseVideo(null);
-                    setEditVideoPickerMode('firebase');
-                    setEditFirebaseVideoSearch('');
-                    if (!firebaseVideosLoaded) loadFirebaseVideos();
-                    setShowEditModuleModal(true);
-                  }}
-                  className="flex items-center justify-between p-3.5 sm:p-4 bg-slate-50/70 rounded-2xl border border-slate-100 hover:border-purple-200 transition group cursor-pointer"
+            {modules.map((module, index) => {
+              const posterUrl =
+                module.thumbnailUrl ||
+                (module.playbackId ? `https://image.mux.com/${module.playbackId}/thumbnail.jpg` : null);
+
+              return viewMode === "list" ? (
+                <div
+                  key={module.id}
+                  onClick={() => handleOpenEditModal(module)}
+                  className="flex items-center justify-between p-4 bg-slate-50/80 hover:bg-white rounded-2xl border border-slate-200/70 hover:border-[#2A0066]/30 transition group cursor-pointer shadow-sm hover:shadow"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-purple-50 flex items-center justify-center rounded-2xl font-black text-[#2A0066]">
-                      {String(index + 1).padStart(2, "0")}
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="relative w-16 h-12 rounded-xl bg-slate-900 overflow-hidden flex-shrink-0 flex items-center justify-center group-hover:ring-2 ring-[#2A0066]/30 transition">
+                      {posterUrl ? (
+                        <img src={posterUrl} alt={module.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <PlayCircle size={22} className="text-slate-500" />
+                      )}
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <PlayCircle size={18} className="text-white" />
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800">{module.title}</h3>
-                      <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mt-1">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#2A0066] bg-purple-50 px-2 py-0.5 rounded-md">
+                          Mod {String(index + 1).padStart(2, "0")}
+                        </span>
+                        {module.playbackId && (
+                          <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                            Mux HLS
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-slate-900 text-sm truncate mt-1">{module.title}</h3>
+                      <p className="text-slate-400 text-xs font-medium truncate mt-0.5">
                         {module.duration || "N/A"} • {module.questions?.length || 0} Questions
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button 
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                    {module.videoUrl && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewingModule(module);
+                        }}
+                        className="px-3 py-1.5 bg-white border border-slate-200 hover:border-[#2A0066] text-[#2A0066] rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm"
+                      >
+                        <PlayCircle size={14} /> Preview
+                      </button>
+                    )}
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setEditingModule(module);
-                        setEditModuleTitle(module.title);
-                        setEditModuleDescription(module.description || "");
-                        setEditModuleQuestions(module.questions || []);
-                        setEditModuleVideoUrl(module.videoUrl || "");
-                        setEditModuleThumbnailUrl(module.thumbnailUrl || "");
-                        setEditModuleVideoFile(null);
-                        setEditModuleDuration(module.duration || "");
-                        setEditSelectedFirebaseVideo(null);
-                        setEditVideoPickerMode('firebase');
-                        setEditFirebaseVideoSearch('');
-                        if (!firebaseVideosLoaded) loadFirebaseVideos();
-                        setShowEditModuleModal(true);
+                        handleOpenEditModal(module);
                       }}
-                      className="p-3 text-slate-300 hover:text-[#2A0066] hover:bg-slate-50 rounded-xl transition"
+                      className="p-2.5 text-slate-400 hover:text-[#2A0066] hover:bg-purple-50 rounded-xl transition"
                     >
-                      <Settings size={18} />
+                      <Settings size={16} />
                     </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDeleteModule(module.id); }}
-                      className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition"
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteModule(module.id);
+                      }}
+                      className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
               ) : (
-                <div 
-                  key={module.id} 
-                  onClick={() => {
-                    setEditingModule(module);
-                    setEditModuleTitle(module.title);
-                    setEditModuleDescription(module.description || "");
-                    setEditModuleQuestions(module.questions || []);
-                    setEditModuleVideoUrl(module.videoUrl || "");
-                    setEditModuleThumbnailUrl(module.thumbnailUrl || "");
-                    setEditModuleVideoFile(null);
-                    setEditModuleDuration(module.duration || "");
-                    setEditSelectedFirebaseVideo(null);
-                    setEditVideoPickerMode('firebase');
-                    setEditFirebaseVideoSearch('');
-                    if (!firebaseVideosLoaded) loadFirebaseVideos();
-                    setShowEditModuleModal(true);
-                  }} 
-                  className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden group hover:shadow-md hover:border-[#2A0066]/20 transition-all cursor-pointer flex flex-col"
+                <div
+                  key={module.id}
+                  onClick={() => handleOpenEditModal(module)}
+                  className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden group hover:shadow-lg hover:border-[#2A0066]/30 transition-all cursor-pointer flex flex-col"
                 >
-                  <div className="relative aspect-video bg-slate-50 border-b border-slate-100 flex items-center justify-center overflow-hidden">
-                    {module.videoUrl ? (
+                  <div className="relative aspect-video bg-slate-900 flex items-center justify-center overflow-hidden">
+                    {posterUrl ? (
                       <>
-                        <img src={module.thumbnailUrl || "https://images.unsplash.com/photo-1616469829581-73993eb86b02?w=800&q=80"} alt={module.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white scale-90 group-hover:scale-110 transition-transform">
-                            <PlayCircle size={24} className="fill-white/20" />
-                          </div>
+                        <img
+                          src={posterUrl}
+                          alt={module.title}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewingModule(module);
+                            }}
+                            className="w-12 h-12 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white scale-90 group-hover:scale-110 transition-transform shadow-lg"
+                          >
+                            <PlayCircle size={26} className="fill-white/30" />
+                          </button>
                         </div>
                       </>
                     ) : (
-                      <FileText size={48} className="text-slate-200" />
+                      <FileText size={42} className="text-slate-600" />
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); handleDeleteModule(module.id); }} className="absolute top-4 right-4 p-2.5 bg-white/80 backdrop-blur-sm text-slate-400 hover:text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-sm">
-                      <Trash2 size={16} />
+
+                    {module.playbackId && (
+                      <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/60 text-emerald-400 backdrop-blur-md">
+                        Mux Live Stream
+                      </span>
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteModule(module.id);
+                      }}
+                      className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm text-slate-500 hover:text-red-600 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow"
+                    >
+                      <Trash2 size={15} />
                     </button>
                   </div>
-                  <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex items-center justify-between mb-3">
-                       <span className="text-[10px] font-black text-[#2A0066] bg-[#2A0066]/10 px-2.5 py-1 rounded-lg uppercase tracking-widest">
-                         Mod {String(index + 1).padStart(2, '0')}
-                       </span>
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg">
-                         {module.duration || "N/A"}
-                       </span>
+
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black text-[#2A0066] bg-purple-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                        Mod {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        {module.duration || "N/A"}
+                      </span>
                     </div>
-                    <h4 className="font-bold text-slate-800 text-lg mb-2 line-clamp-1">{module.title}</h4>
-                    <p className="text-[11px] font-semibold text-slate-500 line-clamp-2 mb-4 flex-1 leading-relaxed">
-                      {module.description || "No description provided for this module."}
+                    <h4 className="font-bold text-slate-900 text-base mb-1 line-clamp-1">{module.title}</h4>
+                    <p className="text-xs font-normal text-slate-500 line-clamp-2 mb-4 flex-1">
+                      {module.description || "No description provided."}
                     </p>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                      <span>{module.questions?.length || 0} Questions</span>
+                      <span className="font-bold text-[#2A0066] group-hover:underline">Edit Module →</span>
+                    </div>
                   </div>
                 </div>
-              )
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Module Modal (Create) */}
+      {/* Video Preview Modal */}
       <AnimatePresence>
-        {showModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[70] flex items-center justify-center p-4" onClick={() => { if (!modalLoading && uploadProgress === null) setShowModal(false) }}>
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-white rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']" onClick={e => e.stopPropagation()}>
-               <div className="flex justify-between items-center mb-8">
-                 <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Create Module</h2>
-                 <button onClick={() => { if (!modalLoading && uploadProgress === null) setShowModal(false) }} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors absolute top-6 right-6">
-                   <X size={20} />
-                 </button>
-               </div>
-               <form onSubmit={handleSubmitModule} className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Module Title <span className="text-red-500">*</span></label>
-                    <input type="text" required value={moduleTitle} onChange={e => setModuleTitle(e.target.value)} className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Duration <span className="text-red-500">*</span></label>
-                    <input type="text" value={moduleDuration} onChange={e => setModuleDuration(e.target.value)} placeholder="e.g. 15 mins" className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Description</label>
-                    <textarea value={moduleDescription} onChange={e => setModuleDescription(e.target.value)} placeholder="Module description..." rows={3} className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
-                  </div>
+        {previewingModule && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[80] flex items-center justify-center p-4"
+            onClick={() => setPreviewingModule(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-slate-900 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-slate-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 flex items-center justify-between border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <h3 className="font-bold text-white text-sm">{previewingModule.title}</h3>
+                  {previewingModule.playbackId && (
+                    <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                      ID: {previewingModule.playbackId}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setPreviewingModule(null)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg transition"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-                  {/* Video Selection / Upload */}
-                  <FirebaseVideoPicker
-                    courseId={courseId}
-                    currentVideoUrl={selectedFirebaseVideo?.downloadUrl || ""}
-                    onVideoSelect={(v) => {
-                      if (v.source === "upload" && v.file) {
-                        setVideoFile(v.file);
-                        setThumbnailFile(v.thumbnailFile || null);
-                        setSelectedFirebaseVideo(null);
-                        setVideoPickerMode("upload");
-                      } else {
-                        setSelectedFirebaseVideo({
-                          name: v.name,
-                          fullPath: v.name,
-                          downloadUrl: v.url,
-                          size: v.size || 0,
-                        });
-                        setVideoFile(null);
-                        setThumbnailFile(null);
-                        setVideoPickerMode("firebase");
-                      }
-                    }}
-                    onClearVideo={() => {
-                      setSelectedFirebaseVideo(null);
-                      setVideoFile(null);
-                      setThumbnailFile(null);
-                    }}
-                    uploadProgress={uploadProgress}
-                    uploadStats={uploadStats}
-                  />
+              <div className="aspect-video w-full bg-black">
+                <MuxPlayer
+                  playbackId={previewingModule.playbackId}
+                  streamUrl={previewingModule.videoUrl}
+                  posterUrl={previewingModule.thumbnailUrl}
+                  title={previewingModule.title}
+                  autoPlay={true}
+                />
+              </div>
 
-                  <div className="pt-4 flex gap-3">
-                     <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs">Cancel</button>
-                     <button type="submit" disabled={modalLoading} className="flex-1 py-4 bg-[#2A0066] text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-[#2A0066]/20">
-                       {modalLoading ? <Loader className="animate-spin mx-auto" size={20} /> : "Create Module"}
-                     </button>
-                  </div>
-               </form>
+              <div className="p-4 bg-slate-900 flex items-center justify-between text-xs text-slate-400">
+                <span>Duration: {previewingModule.duration || "N/A"}</span>
+                <span className="text-emerald-400 font-medium">Streamed via Mux Video CDN</span>
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Edit Module Modal */}
+      {/* Module Modal (Create) */}
       <AnimatePresence>
-        {showEditModuleModal && editingModule && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[70] flex items-center justify-center p-4" onClick={() => { if (!modalLoading && uploadProgress === null) setShowEditModuleModal(false) }}>
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-white rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']" onClick={e => e.stopPropagation()}>
-               <div className="flex justify-between items-center mb-8">
-                 <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Edit Module</h2>
-                 <button onClick={() => { if (!modalLoading && uploadProgress === null) setShowEditModuleModal(false) }} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors absolute top-6 right-6">
-                   <X size={20} />
-                 </button>
-               </div>
-               <form onSubmit={handleSaveModuleEdits} className="space-y-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Module Title <span className="text-red-500">*</span></label>
-                    <input type="text" required value={editModuleTitle} onChange={e => setEditModuleTitle(e.target.value)} className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[70] flex items-center justify-center p-4"
+            onClick={() => {
+              if (!modalLoading) setShowModal(false);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              className="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-100 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Create New Module</h2>
+                  <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                    Upload video directly to Mux or select an existing asset from the Mux library.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!modalLoading) setShowModal(false);
+                  }}
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmitModule} className="space-y-6">
+                {/* Title & Duration */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                      Module Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Master English Tenses Part 1"
+                      value={moduleTitle}
+                      onChange={(e) => setModuleTitle(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:bg-white focus:border-[#2A0066] transition outline-none"
+                    />
                   </div>
-                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Duration <span className="text-red-500">*</span></label>
-                    <input type="text" value={editModuleDuration} onChange={e => setEditModuleDuration(e.target.value)} placeholder="e.g. 15 mins" className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
-                  </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Description</label>
-                    <textarea value={editModuleDescription} onChange={e => setEditModuleDescription(e.target.value)} placeholder="Module description..." rows={3} className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-800" />
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                      Duration
+                    </label>
+                    <input
+                      type="text"
+                      value={moduleDuration}
+                      onChange={(e) => setModuleDuration(e.target.value)}
+                      placeholder="e.g. 15 mins"
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:bg-white focus:border-[#2A0066] transition outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={moduleDescription}
+                    onChange={(e) => setModuleDescription(e.target.value)}
+                    placeholder="Brief description of this lesson and what students will learn..."
+                    rows={2}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-slate-800 focus:bg-white focus:border-[#2A0066] transition outline-none text-sm"
+                  />
+                </div>
+
+                {/* Mux Video Picker */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                    Lesson Video (Mux Video Stream) <span className="text-red-500">*</span>
+                  </label>
+                  <MuxVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={selectedMuxVideo?.url || ""}
+                    currentPlaybackId={selectedMuxVideo?.playbackId || ""}
+                    onVideoSelect={(v) => {
+                      setSelectedMuxVideo(v);
+                      if (!moduleDuration && v.duration) {
+                        setModuleDuration(v.duration);
+                      }
+                      if (!moduleTitle && v.name) {
+                        setModuleTitle(v.name.replace(/\.[^/.]+$/, ""));
+                      }
+                    }}
+                    onClearVideo={() => setSelectedMuxVideo(null)}
+                  />
+                </div>
+
+                {/* Questions / Tasks */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-slate-700">Quiz / Checkpoint Questions ({questions.length})</span>
+                    <span className="text-[11px] text-slate-400 font-medium">Optional</span>
                   </div>
 
-                  {/* Video Edit */}
-                  <FirebaseVideoPicker
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Question prompt..."
+                      value={currentQuestion}
+                      onChange={(e) => setCurrentQuestion(e.target.value)}
+                      className="px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none"
+                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Expected answer / model answer..."
+                        value={currentAnswer}
+                        onChange={(e) => setCurrentAnswer(e.target.value)}
+                        className="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+
+                  {questions.length > 0 && (
+                    <div className="space-y-1.5 mt-2">
+                      {questions.map((q, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-100 text-xs"
+                        >
+                          <div className="truncate pr-2">
+                            <span className="font-bold text-slate-700">Q{idx + 1}: </span>
+                            <span className="text-slate-600">{q.question}</span>
+                            <span className="text-slate-400 ml-2">→ {q.answer}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeQuestion(idx)}
+                            className="text-slate-400 hover:text-red-500 ml-2 flex-shrink-0"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold uppercase text-xs transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={modalLoading || !selectedMuxVideo}
+                    className="flex-1 py-3.5 bg-[#2A0066] hover:bg-[#3d0099] disabled:bg-slate-300 text-white rounded-2xl font-bold uppercase text-xs shadow-lg shadow-[#2A0066]/20 transition flex items-center justify-center gap-2"
+                  >
+                    {modalLoading ? <Loader className="animate-spin" size={18} /> : "Publish Module"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Module Modal (Edit) */}
+      <AnimatePresence>
+        {showEditModuleModal && editingModule && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[70] flex items-center justify-center p-4"
+            onClick={() => {
+              if (!modalLoading) setShowEditModuleModal(false);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              className="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-100 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Edit Module</h2>
+                  <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                    Modify title, questions, or change the Mux video asset.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!modalLoading) setShowEditModuleModal(false);
+                  }}
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveModuleEdits} className="space-y-6">
+                {/* Title & Duration */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                      Module Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editModuleTitle}
+                      onChange={(e) => setEditModuleTitle(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:bg-white focus:border-[#2A0066] transition outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                      Duration
+                    </label>
+                    <input
+                      type="text"
+                      value={editModuleDuration}
+                      onChange={(e) => setEditModuleDuration(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-800 focus:bg-white focus:border-[#2A0066] transition outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={editModuleDescription}
+                    onChange={(e) => setEditModuleDescription(e.target.value)}
+                    rows={2}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-slate-800 focus:bg-white focus:border-[#2A0066] transition outline-none text-sm"
+                  />
+                </div>
+
+                {/* Video Picker */}
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                    Mux Video Asset
+                  </label>
+                  <MuxVideoPicker
                     courseId={courseId}
-                    currentVideoUrl={editSelectedFirebaseVideo?.downloadUrl || editModuleVideoUrl}
+                    currentVideoUrl={editSelectedMuxVideo?.url || editModuleVideoUrl}
+                    currentPlaybackId={editSelectedMuxVideo?.playbackId || editModulePlaybackId}
                     onVideoSelect={(v) => {
-                      if (v.source === "upload" && v.file) {
-                        setEditModuleVideoFile(v.file);
-                        setEditSelectedFirebaseVideo(null);
-                        setEditVideoPickerMode("upload");
-                      } else {
-                        setEditSelectedFirebaseVideo({
-                          name: v.name,
-                          fullPath: v.name,
-                          downloadUrl: v.url,
-                          size: v.size || 0,
-                        });
-                        setEditModuleVideoFile(null);
-                        setEditVideoPickerMode("firebase");
+                      setEditSelectedMuxVideo(v);
+                      setEditModuleVideoUrl(v.url);
+                      setEditModulePlaybackId(v.playbackId);
+                      if (v.duration && !editModuleDuration) {
+                        setEditModuleDuration(v.duration);
                       }
                     }}
                     onClearVideo={() => {
-                      setEditSelectedFirebaseVideo(null);
+                      setEditSelectedMuxVideo(null);
                       setEditModuleVideoUrl("");
-                      setEditModuleVideoFile(null);
+                      setEditModulePlaybackId("");
                     }}
-                    uploadProgress={uploadProgress}
-                    uploadStats={uploadStats}
                   />
+                </div>
 
-                  <div className="pt-4 flex gap-3">
-                     <button type="button" onClick={() => setShowEditModuleModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase text-xs">Cancel</button>
-                     <button type="submit" disabled={modalLoading} className="flex-1 py-4 bg-[#2A0066] text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-[#2A0066]/20">
-                       {modalLoading ? <Loader className="animate-spin mx-auto" size={20} /> : "Save Changes"}
-                     </button>
-                  </div>
-               </form>
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModuleModal(false)}
+                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold uppercase text-xs transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={modalLoading}
+                    className="flex-1 py-3.5 bg-[#2A0066] hover:bg-[#3d0099] disabled:bg-slate-300 text-white rounded-2xl font-bold uppercase text-xs shadow-lg shadow-[#2A0066]/20 transition flex items-center justify-center gap-2"
+                  >
+                    {modalLoading ? <Loader className="animate-spin" size={18} /> : "Save Changes"}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}

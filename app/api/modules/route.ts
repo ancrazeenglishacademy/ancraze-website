@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import * as admin from 'firebase-admin';
+import { formatModuleForStreaming } from '@/lib/mux';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,9 @@ export async function POST(request: NextRequest) {
     let day = '';
     let description = '';
     let thumbnailUrl = '';
+    let playbackId = '';
+    let assetId = '';
+    let streamType = 'mux';
 
     try {
       console.log('🔄 Parsing request body...');
@@ -34,6 +38,15 @@ export async function POST(request: NextRequest) {
       day = body.day || '';
       description = body.description || '';
       thumbnailUrl = body.thumbnailUrl || '';
+      playbackId = body.playbackId || '';
+      assetId = body.assetId || '';
+      streamType = body.streamType || (playbackId ? 'mux' : 'legacy');
+
+      // Auto-populate Mux streaming URL and thumbnail if playbackId is provided
+      if (playbackId) {
+        if (!videoUrl) videoUrl = `https://stream.mux.com/${playbackId}.m3u8`;
+        if (!thumbnailUrl) thumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg`;
+      }
 
       console.log('✅ Request parsed successfully');
       console.log('  - courseId:', courseId);
@@ -70,6 +83,9 @@ export async function POST(request: NextRequest) {
       courseId,
       title: moduleTitle,
       videoUrl: videoUrl || 'no video url',
+      playbackId: playbackId || '',
+      assetId: assetId || '',
+      streamType: streamType || 'mux',
       questions: questions || [],
       duration: duration || '',
       day: body.day || '',
@@ -142,12 +158,12 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        module: {
+        module: formatModuleForStreaming({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
           updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        }
+        }, false)
       }, { status: 200 });
     }
 
@@ -160,12 +176,14 @@ export async function GET(request: NextRequest) {
 
     const snapshot = await query.get();
 
-    let modules = snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-      updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-    }));
+    let modules = snapshot.docs.map((doc: any) => 
+      formatModuleForStreaming({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      }, false)
+    );
 
     // Filter by dayId in-memory if provided to avoid requiring a composite index
     if (dayId) {

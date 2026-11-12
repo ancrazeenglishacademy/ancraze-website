@@ -22,7 +22,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import FirebaseVideoPicker from "@/app/componets/FirebaseVideoPicker";
+import MuxVideoPicker from "@/app/componets/MuxVideoPicker";
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -60,6 +60,15 @@ export default function CourseDetailPage() {
   const [editModuleDay, setEditModuleDay] = useState("");
   const [editModuleQuestions, setEditModuleQuestions] = useState<any[]>([]);
   const [editModuleVideoUrl, setEditModuleVideoUrl] = useState("");
+  const [editModulePlaybackId, setEditModulePlaybackId] = useState("");
+  const [editSelectedMuxVideo, setEditSelectedMuxVideo] = useState<{
+    url: string;
+    playbackId: string;
+    assetId?: string;
+    thumbnailUrl?: string;
+    duration?: string;
+    name: string;
+  } | null>(null);
   const [editModuleVideoFile, setEditModuleVideoFile] = useState<File | null>(null);
   const [editModuleDuration, setEditModuleDuration] = useState("");
   const [currentEditQuestion, setCurrentEditQuestion] = useState("");
@@ -69,6 +78,14 @@ export default function CourseDetailPage() {
   const [moduleTitle, setModuleTitle] = useState("");
   const [moduleDay, setModuleDay] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [selectedMuxVideo, setSelectedMuxVideo] = useState<{
+    url: string;
+    playbackId: string;
+    assetId?: string;
+    thumbnailUrl?: string;
+    duration?: string;
+    name: string;
+  } | null>(null);
   const [selectedFirebaseVideoUrl, setSelectedFirebaseVideoUrl] = useState("");
   const [videoPreview, setVideoPreview] = useState("");
   const [moduleDuration, setModuleDuration] = useState("");
@@ -273,37 +290,31 @@ export default function CourseDetailPage() {
     }
 
     setModalLoading(true);
-    setUploadProgress(0);
     try {
-      // First, handle video upload if exists
-      let videoUrl = selectedFirebaseVideoUrl;
-      if (videoFile) {
-        try {
-          const cleanName = videoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-          const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
-          videoUrl = await uploadFile(videoFile, videoPath, (progress) => {
-            setUploadProgress(progress);
-          });
-          console.log('✅ Video uploaded:', videoUrl);
-        } catch (videoError) {
-          console.error('⚠️ Video upload failed (continuing without video):', videoError);
-        }
-      }
+      const finalPlaybackId = selectedMuxVideo?.playbackId || "";
+      const finalVideoUrl = selectedMuxVideo?.url || (finalPlaybackId ? `https://stream.mux.com/${finalPlaybackId}.m3u8` : selectedFirebaseVideoUrl);
+      const finalThumbnail = selectedMuxVideo?.thumbnailUrl || (finalPlaybackId ? `https://image.mux.com/${finalPlaybackId}/thumbnail.jpg` : "");
+      const finalDuration = moduleDuration || selectedMuxVideo?.duration || "10 mins";
 
-      // Send module data as JSON (no files)
+      // Send module data as JSON
       const modulePayload = {
         courseId,
         moduleTitle,
         day: moduleDay,
-        videoUrl,
+        videoUrl: finalVideoUrl,
+        playbackId: finalPlaybackId,
+        assetId: selectedMuxVideo?.assetId || "",
+        thumbnailUrl: finalThumbnail,
+        streamType: finalPlaybackId ? "mux" : "legacy",
         questions,
-        duration: moduleDuration,
+        duration: finalDuration,
       };
 
       const response = await fetch("/api/modules", {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
         body: JSON.stringify(modulePayload),
       });
@@ -322,9 +333,11 @@ export default function CourseDetailPage() {
           id: data.moduleId,
           title: moduleTitle,
           day: moduleDay,
-          videoUrl: videoUrl,
+          videoUrl: finalVideoUrl,
+          playbackId: finalPlaybackId,
+          thumbnailUrl: finalThumbnail,
           questions: questions,
-          duration: moduleDuration,
+          duration: finalDuration,
           createdAt: new Date().toISOString(),
         }
       ]);
@@ -332,6 +345,7 @@ export default function CourseDetailPage() {
       // Reset form
       setModuleTitle("");
       setModuleDay("");
+      setSelectedMuxVideo(null);
       setVideoFile(null);
       setVideoPreview("");
       setSelectedFirebaseVideoUrl("");
@@ -341,13 +355,12 @@ export default function CourseDetailPage() {
       setCurrentAnswer("");
       setShowModal(false);
 
-      alert("Module created successfully!");
+      alert("Module created successfully with Mux stream!");
     } catch (error) {
       console.error("❌ Error creating module:", error);
       alert(`Error creating module: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setModalLoading(false);
-      setUploadProgress(null);
     }
   };
 
@@ -479,7 +492,20 @@ export default function CourseDetailPage() {
     setEditModuleDay(module.day || "");
     setEditModuleQuestions(module.questions || []);
     setEditModuleVideoUrl(module.videoUrl || "");
+    setEditModulePlaybackId(module.playbackId || "");
     setEditModuleDuration(module.duration || "");
+    setEditSelectedMuxVideo(
+      module.playbackId
+        ? {
+            url: module.videoUrl || `https://stream.mux.com/${module.playbackId}.m3u8`,
+            playbackId: module.playbackId,
+            assetId: module.assetId || "",
+            thumbnailUrl: module.thumbnailUrl || `https://image.mux.com/${module.playbackId}/thumbnail.jpg`,
+            duration: module.duration,
+            name: module.title || "Mux Video",
+          }
+        : null
+    );
     setShowEditModuleModal(true);
   };
 
@@ -502,28 +528,29 @@ export default function CourseDetailPage() {
 
     setModalLoading(true);
     try {
-      let videoUrl = editModuleVideoUrl;
-
-      // Upload new video if selected
-      if (editModuleVideoFile) {
-        const cleanName = editModuleVideoFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-        const videoPath = `modules/${courseId}/${Date.now()}_${cleanName}`;
-        videoUrl = await uploadFile(editModuleVideoFile, videoPath, (progress) => {
-          setUploadProgress(progress);
-        });
-      }
+      const finalPlaybackId = editSelectedMuxVideo?.playbackId || editingModule.playbackId || "";
+      const finalVideoUrl = editSelectedMuxVideo?.url || editModuleVideoUrl || (finalPlaybackId ? `https://stream.mux.com/${finalPlaybackId}.m3u8` : "");
+      const finalThumbnail = editSelectedMuxVideo?.thumbnailUrl || editingModule.thumbnailUrl || (finalPlaybackId ? `https://image.mux.com/${finalPlaybackId}/thumbnail.jpg` : "");
+      const finalDuration = editModuleDuration || editSelectedMuxVideo?.duration || editingModule.duration || "";
 
       const response = await fetch("/api/modules/update", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
         body: JSON.stringify({
           courseId,
           moduleId: editingModule.id,
           title: editModuleTitle,
           day: editModuleDay,
           questions: editModuleQuestions,
-          videoUrl,
-          duration: editModuleDuration,
+          videoUrl: finalVideoUrl,
+          playbackId: finalPlaybackId,
+          assetId: editSelectedMuxVideo?.assetId || editingModule.assetId || "",
+          thumbnailUrl: finalThumbnail,
+          streamType: "mux",
+          duration: finalDuration,
         }),
       });
 
@@ -536,12 +563,16 @@ export default function CourseDetailPage() {
         title: editModuleTitle,
         day: editModuleDay,
         questions: editModuleQuestions,
-        videoUrl,
-        duration: editModuleDuration,
+        videoUrl: finalVideoUrl,
+        playbackId: finalPlaybackId,
+        thumbnailUrl: finalThumbnail,
+        duration: finalDuration,
       };
 
       setModules(modules.map((m) => (m.id === editingModule.id ? updatedModule : m)));
       setShowEditModuleModal(false);
+      setEditingModule(null);
+      setEditSelectedMuxVideo(null);
       alert("Module updated successfully!");
     } catch (error) {
       console.error("Error updating module:", error);
@@ -1004,32 +1035,25 @@ export default function CourseDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Upload New Video (Optional)</label>
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-[#2A0066] transition">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleEditModuleVideoChange}
-                      disabled={modalLoading}
-                      className="hidden"
-                      id="edit-video-upload"
-                    />
-                    <label htmlFor="edit-video-upload" className="cursor-pointer block">
-                      <Upload size={24} className="mx-auto mb-2 text-slate-400" />
-                      <p className="text-sm font-bold text-slate-600">
-                        {editModuleVideoFile ? editModuleVideoFile.name : "Click to upload new video"}
-                      </p>
-                    </label>
-                  </div>
-                  {uploadProgress !== null && (
-                    <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden relative">
-                      <div className="bg-[#2A0066] h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                      <p className="text-[10px] font-black text-[#2A0066] mt-1.5 text-right">Uploading: {uploadProgress}%</p>
-                    </div>
-                  )}
-                  {editModuleVideoUrl && !editModuleVideoFile && (
-                    <p className="text-xs text-slate-500 mt-2">Current video: {editModuleVideoUrl.split('/').pop()}</p>
-                  )}
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Lesson Video (Mux Stream)</label>
+                  <MuxVideoPicker
+                    courseId={courseId}
+                    currentVideoUrl={editSelectedMuxVideo?.url || editModuleVideoUrl}
+                    currentPlaybackId={editSelectedMuxVideo?.playbackId || editModulePlaybackId}
+                    onVideoSelect={(v) => {
+                      setEditSelectedMuxVideo(v);
+                      setEditModuleVideoUrl(v.url);
+                      setEditModulePlaybackId(v.playbackId);
+                      if (v.duration && !editModuleDuration) {
+                        setEditModuleDuration(v.duration);
+                      }
+                    }}
+                    onClearVideo={() => {
+                      setEditSelectedMuxVideo(null);
+                      setEditModuleVideoUrl("");
+                      setEditModulePlaybackId("");
+                    }}
+                  />
                 </div>
 
                 <div>
@@ -1210,25 +1234,25 @@ export default function CourseDetailPage() {
                   />
                 </div>
 
-                {/* Video Selection / Upload */}
+                {/* Video Selection / Upload via Mux */}
                 <div className="mb-6">
-                  <FirebaseVideoPicker
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Lesson Video (Mux Stream)</label>
+                  <MuxVideoPicker
                     courseId={courseId}
-                    currentVideoUrl={selectedFirebaseVideoUrl}
+                    currentVideoUrl={selectedMuxVideo?.url || ""}
+                    currentPlaybackId={selectedMuxVideo?.playbackId || ""}
                     onVideoSelect={(v) => {
-                      if (v.source === "upload" && v.file) {
-                        setVideoFile(v.file);
-                        setSelectedFirebaseVideoUrl("");
-                      } else {
-                        setSelectedFirebaseVideoUrl(v.url);
-                        setVideoFile(null);
+                      setSelectedMuxVideo(v);
+                      if (v.duration && !moduleDuration) {
+                        setModuleDuration(v.duration);
+                      }
+                      if (v.name && !moduleTitle) {
+                        setModuleTitle(v.name.replace(/\.[^/.]+$/, ""));
                       }
                     }}
                     onClearVideo={() => {
-                      setSelectedFirebaseVideoUrl("");
-                      setVideoFile(null);
+                      setSelectedMuxVideo(null);
                     }}
-                    uploadProgress={uploadProgress}
                   />
                 </div>
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
+import { formatModuleForStreaming } from '@/lib/mux';
 
 export async function GET(request: NextRequest) {
     try {
@@ -77,12 +78,14 @@ export async function GET(request: NextRequest) {
                 .orderBy('createdAt', 'asc')
                 .get();
 
-            const modules = (modulesSnapshot as any).docs.map((doc: any) => ({
-                id: doc.id,
-                ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-            }));
+            const modules = (modulesSnapshot as any).docs.map((doc: any) => 
+                formatModuleForStreaming({
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                    updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                }, false)
+            );
 
             const course = {
                 id: courseId,
@@ -117,12 +120,14 @@ export async function GET(request: NextRequest) {
                     .orderBy('createdAt', 'asc')
                     .get();
 
-                const modules = (modulesSnapshot as any).docs.map((doc: any) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                    updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                }));
+                const modules = (modulesSnapshot as any).docs.map((doc: any) => 
+                    formatModuleForStreaming({
+                        id: doc.id,
+                        ...doc.data(),
+                        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                    }, false)
+                );
 
                 return {
                     id: cId,

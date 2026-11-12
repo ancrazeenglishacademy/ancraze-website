@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminStorage } from '@/lib/firebaseAdmin';
 export const dynamic = 'force-dynamic';
 import * as admin from 'firebase-admin';
+import { formatModuleForStreaming } from '@/lib/mux';
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; lastRequest: number }>();
@@ -269,21 +270,17 @@ export async function GET(request: NextRequest) {
       modules.forEach((module: any) => {
         const dayIndex = days.findIndex((d: any) => d.id === module.day);
         if (dayIndex !== -1) {
-          days[dayIndex].modules.push(module);
+          days[dayIndex].modules.push(formatModuleForStreaming(module, false));
         }
       });
 
-      // Apply locking logic after nesting to ensure we follow Day -> Module ordering
+      // Apply locking logic after nesting and normalize Mux video streaming for mobile & web
       let globalModuleCount = 0;
       days.forEach((day: any) => {
-        day.modules.forEach((module: any) => {
-          if (!hasPurchased && globalModuleCount >= 3) {
-            module.videoUrl = "";
-            module.isLocked = true;
-          } else {
-            module.isLocked = false;
-          }
+        day.modules = day.modules.map((module: any) => {
+          const isLocked = !hasPurchased && globalModuleCount >= 3;
           globalModuleCount++;
+          return formatModuleForStreaming(module, isLocked);
         });
       });
 
@@ -322,7 +319,7 @@ export async function GET(request: NextRequest) {
       modules.forEach((module: any) => {
         const dayIndex = days.findIndex((d: any) => d.id === module.day);
         if (dayIndex !== -1) {
-          days[dayIndex].modules.push(module);
+          days[dayIndex].modules.push(formatModuleForStreaming(module, false));
         }
       });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { formatModuleForStreaming } from "@/lib/mux";
 
 export const dynamic = "force-dynamic";
 
@@ -135,15 +136,18 @@ export async function GET(
       // Unlock all if enrolled, otherwise only first 3
       const isLocked = !isEnrolled && index >= 3;
       
-      return {
-        id: mDoc.id,
-        ...data,
-        isLocked, 
-        videoUrl: isLocked ? null : (data.videoUrl || null),
-        createdAt:
-          data.createdAt?.toDate?.()?.toISOString() ||
-          new Date().toISOString(),
-      };
+      const moduleFormatted = formatModuleForStreaming(
+        {
+          id: mDoc.id,
+          ...data,
+          createdAt:
+            data.createdAt?.toDate?.()?.toISOString() ||
+            new Date().toISOString(),
+        },
+        isLocked
+      );
+
+      return moduleFormatted;
     });
 
     return NextResponse.json({

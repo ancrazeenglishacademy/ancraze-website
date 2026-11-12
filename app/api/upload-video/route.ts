@@ -1,130 +1,116 @@
-import { NextRequest, NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
+import { NextRequest, NextResponse } from "next/server";
+import { createDirectUpload, getDirectUpload, getAsset } from "@/lib/mux";
 
-let adminStorage: any = null;
-
-const initializeFirebaseAdmin = () => {
-  if (adminStorage) return;
-
-  if (
-    process.env.FIREBASE_PRIVATE_KEY &&
-    process.env.FIREBASE_PRIVATE_KEY !== 'your_private_key_here'
-  ) {
-    try {
-      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-        privateKey = privateKey.slice(1, -1);
-      }
-      privateKey = privateKey.replace(/\\n/g, '\n');
-
-      const serviceAccount = {
-        type: process.env.FIREBASE_TYPE,
-        project_id: process.env.FIREBASE_PROJECT_ID,
-        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-        private_key: privateKey,
-        client_email: process.env.FIREBASE_CLIENT_EMAIL,
-        client_id: process.env.FIREBASE_CLIENT_ID,
-        auth_uri: process.env.FIREBASE_AUTH_URI,
-        token_uri: process.env.FIREBASE_TOKEN_URI,
-        auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-        client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-      };
-
-      if (!admin.apps.length) {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        });
-      }
-
-      adminStorage = admin.storage();
-    } catch (error) {
-      console.error('❌ Firebase Admin initialization error:', error);
-      throw new Error('Firebase Admin not initialized');
-    }
-  }
-};
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    initializeFirebaseAdmin();
-
-    if (!adminStorage) {
-      throw new Error('Firebase Storage not available');
-    }
-
-    console.log('📹 Video upload request received');
+    console.log("📹 /api/upload-video: Processing video upload to Mux");
 
     const formData = await request.formData();
-    const videoFile = formData.get('video') as File;
-    const thumbnailFile = formData.get('thumbnail') as File | null;
-    const courseId = formData.get('courseId') as string;
+    const videoFile = formData.get("video") as File | null;
+    const courseId = (formData.get("courseId") as string) || "general";
+    const moduleId = (formData.get("moduleId") as string) || "";
 
     if (!videoFile) {
       return NextResponse.json(
-        { error: 'No video file provided' },
+        { error: "No video file provided" },
         { status: 400 }
       );
     }
 
-    if (!courseId) {
-      return NextResponse.json(
-        { error: 'No courseId provided' },
-        { status: 400 }
-      );
+    console.log(`📹 Video file received: ${videoFile.name} (${videoFile.size} bytes)`);
+
+    // 1. Create a Direct Upload on Mux
+    const passthroughData = JSON.stringify({ courseId, moduleId, name: videoFile.name });
+    const upload = await createDirectUpload({
+      passthrough: passthroughData,
+    });
+
+    console.log(`📤 Mux Direct Upload created: ${upload.id}`);
+
+    // 2. Upload file buffer to Mux Direct Upload URL
+    const fileBuffer = await videoFile.arrayBuffer();
+    const putResponse = await fetch(upload.url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": videoFile.type || "video/mp4",
+      },
+      body: Buffer.from(fileBuffer),
+    });
+
+    if (!putResponse.ok) {
+      throw new Error(`Failed to stream video to Mux direct upload: HTTP ${putResponse.status}`);
     }
 
-    console.log('📹 Video details - Name:', videoFile.name, 'Size:', videoFile.size, 'Type:', videoFile.type);
+    console.log("✅ Video payload delivered to Mux. Waiting for asset creation...");
 
-    try {
-      const bucket = adminStorage.bucket();
-      
-      // Upload Video
-      const videoFileName = `modules/${courseId}/${Date.now()}_${videoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const vFile = bucket.file(videoFileName);
-      const vBuffer = await videoFile.arrayBuffer();
-      await vFile.save(Buffer.from(vBuffer), { metadata: { contentType: videoFile.type } });
-      await vFile.makePublic();
-      const videoUrl = `https://storage.googleapis.com/${bucket.name}/${videoFileName}`;
-
-      // Upload Thumbnail if provided
-      let thumbnailUrl = "";
-      if (thumbnailFile) {
-        const thumbFileName = `modules/${courseId}/thumb_${Date.now()}_${thumbnailFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        const tFile = bucket.file(thumbFileName);
-        const tBuffer = await thumbnailFile.arrayBuffer();
-        await tFile.save(Buffer.from(tBuffer), { metadata: { contentType: thumbnailFile.type } });
-        await tFile.makePublic();
-        thumbnailUrl = `https://storage.googleapis.com/${bucket.name}/${thumbFileName}`;
+    // 3. Poll for asset creation (up to 30 seconds)
+    let assetId = upload.asset_id;
+    let attempts = 0;
+    while (!assetId && attempts < 15) {
+      await new Promise((res) => setTimeout(res, 2000));
+      const status = await getDirectUpload(upload.id);
+      if (status.asset_id) {
+        assetId = status.asset_id;
+        break;
       }
-
-      console.log('✅ Uploads successful');
-
-      return NextResponse.json(
-        {
-          success: true,
-          message: 'Video and thumbnail uploaded successfully',
-          videoUrl,
-          thumbnailUrl,
-        },
-        { status: 200 }
-      );
-    } catch (storageError) {
-      console.error('❌ Storage upload error:', storageError);
-      return NextResponse.json(
-        {
-          error: 'Failed to upload video',
-          details: storageError instanceof Error ? storageError.message : 'Unknown error',
-        },
-        { status: 500 }
-      );
+      if (status.status === "errored") {
+        throw new Error("Mux reported upload status: errored");
+      }
+      attempts++;
     }
-  } catch (error) {
-    console.error('❌ Error in video upload:', error);
+
+    let playbackId = "";
+    let duration = "";
+    if (assetId) {
+      // 4. Retrieve asset details to get playbackId
+      let assetAttempts = 0;
+      while (!playbackId && assetAttempts < 10) {
+        try {
+          const asset = await getAsset(assetId);
+          if (asset.playback_ids && asset.playback_ids.length > 0) {
+            playbackId = asset.playback_ids[0].id;
+            if (asset.duration) {
+              const mins = Math.floor(asset.duration / 60);
+              const secs = Math.floor(asset.duration % 60);
+              duration = mins > 0 ? `${mins} mins` : `${secs} secs`;
+            }
+            break;
+          }
+        } catch (e) {
+          // asset may still be processing
+        }
+        await new Promise((res) => setTimeout(res, 2000));
+        assetAttempts++;
+      }
+    }
+
+    const streamUrl = playbackId ? `https://stream.mux.com/${playbackId}.m3u8` : "";
+    const thumbnailUrl = playbackId ? `https://image.mux.com/${playbackId}/thumbnail.jpg` : "";
+
     return NextResponse.json(
       {
-        error: 'Failed to upload video',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        success: true,
+        message: "Video uploaded to Mux successfully",
+        uploadId: upload.id,
+        assetId: assetId || null,
+        playbackId: playbackId || null,
+        videoUrl: streamUrl,
+        streamUrl: streamUrl,
+        thumbnailUrl: thumbnailUrl,
+        posterUrl: thumbnailUrl,
+        duration: duration || "10 mins",
+        streamType: "mux",
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("❌ Error in /api/upload-video:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to upload video to Mux",
+        details: error.message || "Unknown error",
       },
       { status: 500 }
     );
