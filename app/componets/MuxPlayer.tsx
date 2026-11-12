@@ -120,15 +120,19 @@ export default function MuxPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isAutoMuted, setIsAutoMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showControls, setShowControls] = useState(true);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastToggleTimeRef = useRef<number>(0);
+  const hlsRef = useRef<any>(null);
 
   // Setup HLS or Native playback
   useEffect(() => {
@@ -138,12 +142,25 @@ export default function MuxPlayer({
     let hlsInstance: any = null;
     let isDestroyed = false;
     setHasError(false);
+    setErrorMessage("");
 
     // Safari & iOS support HLS natively
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = effectiveStreamUrl;
       if (autoPlay) {
-        video.play().catch(() => {});
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            // Autoplay with sound blocked: fallback to muted autoplay
+            if (err?.name === "NotAllowedError") {
+              console.log("Muting video to satisfy browser autoplay policy...");
+              video.muted = true;
+              setIsMuted(true);
+              setIsAutoMuted(true);
+              video.play().catch(() => {});
+            }
+          });
+        }
       }
     } else {
       // Chromium (Chrome, Edge, Brave, Opera) & Firefox: use Hls.js
@@ -154,11 +171,17 @@ export default function MuxPlayer({
           if (Hls && Hls.isSupported()) {
             hlsInstance = new Hls({
               enableWorker: true,
-              lowLatencyMode: true,
-              backBufferLength: 60,
-              maxBufferLength: 30,
+              lowLatencyMode: false, // CRITICAL: Must be false for VOD / recorded videos
+              backBufferLength: 90,
+              maxBufferLength: 60,
+              maxMaxBufferLength: 600,
+              maxBufferSize: 60 * 1000 * 1000,
+              maxBufferHole: 0.5,
+              startLevel: -1, // Auto level selection based on bandwidth
+              autoStartLoad: true,
             });
 
+            hlsRef.current = hlsInstance;
             hlsInstance.attachMedia(video);
 
             hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
@@ -172,7 +195,19 @@ export default function MuxPlayer({
               setIsBuffering(false);
               setHasError(false);
               if (autoPlay) {
-                video.play().catch(() => {});
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch((err) => {
+                    // Autoplay with sound blocked: fallback to muted autoplay
+                    if (err?.name === "NotAllowedError") {
+                      console.log("Muting video to satisfy browser autoplay policy...");
+                      video.muted = true;
+                      setIsMuted(true);
+                      setIsAutoMuted(true);
+                      video.play().catch(() => {});
+                    }
+                  });
+                }
               }
             });
 
@@ -181,37 +216,28 @@ export default function MuxPlayer({
                 console.warn("HLS fatal error:", data.type, data.details);
                 switch (data.type) {
                   case Hls.ErrorTypes.NETWORK_ERROR:
+                    console.log("HLS network error, attempting to reload buffer...");
                     hlsInstance.startLoad();
                     break;
                   case Hls.ErrorTypes.MEDIA_ERROR:
+                    console.log("HLS media error, recovering media buffer...");
                     hlsInstance.recoverMediaError();
                     break;
                   default:
-                    hlsInstance.destroy();
-                    // Fallback to Mux MP4 stream
-                    if (effectivePlaybackId) {
-                      console.log("Switching to Mux MP4 fallback...");
-                      video.src = `https://stream.mux.com/${effectivePlaybackId}/medium.mp4`;
-                    } else {
-                      setHasError(true);
-                    }
+                    console.warn("HLS unrecoverable error:", data.details);
                     setIsBuffering(false);
+                    setHasError(true);
+                    setErrorMessage(data.details || "Playback error on stream");
                     break;
                 }
               }
             });
-          } else {
-            // Hls not supported: try Mux MP4 fallback
-            if (effectivePlaybackId) {
-              video.src = `https://stream.mux.com/${effectivePlaybackId}/medium.mp4`;
-            }
           }
         })
         .catch((err) => {
-          console.warn("Hls.js unavailable, trying MP4 fallback:", err);
-          if (!isDestroyed && video && effectivePlaybackId) {
-            video.src = `https://stream.mux.com/${effectivePlaybackId}/medium.mp4`;
-          }
+          console.warn("Hls.js loading failed:", err);
+          setHasError(true);
+          setErrorMessage("Failed to load Hls.js streaming library");
         });
     }
 
@@ -219,6 +245,7 @@ export default function MuxPlayer({
       isDestroyed = true;
       if (hlsInstance) {
         hlsInstance.destroy();
+        hlsRef.current = null;
       }
     };
   }, [effectiveStreamUrl, effectivePlaybackId, autoPlay]);
@@ -235,7 +262,19 @@ export default function MuxPlayer({
     }, 2800);
   };
 
-  const togglePlay = () => {
+  const togglePlay = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    // Debounce rapid toggle clicks (prevents overlay click from double-triggering underlying element)
+    const now = Date.now();
+    if (now - lastToggleTimeRef.current < 350) {
+      return;
+    }
+    lastToggleTimeRef.current = now;
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -252,6 +291,16 @@ export default function MuxPlayer({
           .catch((err) => {
             console.warn("Playback interrupted or blocked by browser:", err);
             setIsBuffering(false);
+            if (err?.name === "NotAllowedError") {
+              // Mute and continue if browser requires gesture
+              video.muted = true;
+              setIsMuted(true);
+              setIsAutoMuted(true);
+              video.play().then(() => {
+                setIsPlaying(true);
+                setHasError(false);
+              }).catch(() => {});
+            }
           });
       }
     } else {
@@ -324,13 +373,14 @@ export default function MuxPlayer({
     setIsBuffering(true);
     const video = videoRef.current;
     if (video) {
-      if (effectivePlaybackId) {
-        // Force fallback to Mux MP4 directly on retry
-        video.src = `https://stream.mux.com/${effectivePlaybackId}/medium.mp4`;
-        video.play().catch(() => {});
-      } else {
+      if (hlsRef.current && effectiveStreamUrl) {
+        hlsRef.current.loadSource(effectiveStreamUrl);
+        hlsRef.current.startLoad();
+      } else if (effectiveStreamUrl) {
+        video.src = effectiveStreamUrl;
         video.load();
       }
+      video.play().catch(() => {});
     }
   };
 
@@ -347,7 +397,6 @@ export default function MuxPlayer({
         poster={effectivePoster}
         preload="metadata"
         playsInline
-        onClick={togglePlay}
         onPlay={() => {
           setIsPlaying(true);
           setIsBuffering(false);
@@ -385,12 +434,6 @@ export default function MuxPlayer({
           const video = videoRef.current;
           console.warn("Video element error event:", video?.error);
           setIsBuffering(false);
-          // If HLS failed on this browser, immediately try Mux MP4 fallback before showing error UI
-          if (effectivePlaybackId && video && (!video.src || video.src.includes(".m3u8"))) {
-            console.log("Auto-switching to Mux MP4 fallback on error...");
-            video.src = `https://stream.mux.com/${effectivePlaybackId}/medium.mp4`;
-            return;
-          }
           setHasError(true);
         }}
         onEnded={() => {
@@ -405,8 +448,35 @@ export default function MuxPlayer({
             onTimeUpdate?.(video.currentTime, video.duration || 0);
           }
         }}
-        className="w-full h-full object-contain cursor-pointer bg-black"
+        className="w-full h-full object-contain bg-black"
       />
+
+      {/* Click-to-pause backdrop layer when video is playing */}
+      {isPlaying && (
+        <div
+          onClick={(e) => togglePlay(e)}
+          className="absolute inset-0 z-0 cursor-pointer"
+        />
+      )}
+
+      {/* Auto-Muted Notification Pill */}
+      {isAutoMuted && isMuted && isPlaying && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const video = videoRef.current;
+            if (video) {
+              video.muted = false;
+              setIsMuted(false);
+              setIsAutoMuted(false);
+            }
+          }}
+          className="absolute top-14 left-4 z-20 px-3 py-1 bg-black/80 hover:bg-black text-white border border-white/20 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-xl backdrop-blur-md transition cursor-pointer"
+        >
+          <VolumeX size={13} className="text-rose-400" /> Click to Unmute
+        </button>
+      )}
 
       {/* Buffering Spinner: ONLY shown when actively attempting to play */}
       {isBuffering && isPlaying && !hasError && (
@@ -423,7 +493,7 @@ export default function MuxPlayer({
           <AlertCircle size={36} className="text-rose-400 mb-2" />
           <p className="text-xs font-bold">Unable to load Mux stream</p>
           <p className="text-[10px] text-slate-400 mt-1 max-w-xs text-center">
-            The video may still be encoding on Mux, requires a Public Playback ID in Mux Dashboard, or your network is reconnecting.
+            {errorMessage || "The video may still be encoding on Mux, requires a Public Playback ID in Mux Dashboard, or your network is reconnecting."}
           </p>
           <button
             type="button"
@@ -435,17 +505,19 @@ export default function MuxPlayer({
         </div>
       )}
 
-      {/* Large Center Play Button when Paused */}
-      {!isPlaying && !hasError && (
-        <div
-          onClick={togglePlay}
-          className="absolute inset-0 flex items-center justify-center bg-black/25 hover:bg-black/10 cursor-pointer transition-all z-10 group/center"
-        >
-          <div className="h-16 w-16 sm:h-20 sm:w-20 bg-gradient-to-tr from-[#2A0066] to-[#7928CA] hover:from-[#3D0099] hover:to-[#9333EA] rounded-full flex items-center justify-center shadow-2xl shadow-[#2A0066]/70 border border-white/30 transform group-hover/center:scale-110 active:scale-95 transition duration-300">
-            <Play size={32} className="text-white fill-white ml-1.5 drop-shadow" />
-          </div>
+      {/* Large Center Play Button when Paused - Persistent in DOM to prevent click pass-through */}
+      <div
+        onClick={(e) => togglePlay(e)}
+        className={`absolute inset-0 flex items-center justify-center transition-all duration-300 z-10 ${
+          isPlaying || hasError
+            ? "opacity-0 pointer-events-none"
+            : "opacity-100 pointer-events-auto bg-black/35 hover:bg-black/20 cursor-pointer"
+        }`}
+      >
+        <div className="h-16 w-16 sm:h-20 sm:w-20 bg-gradient-to-tr from-[#2A0066] to-[#7928CA] hover:from-[#3D0099] hover:to-[#9333EA] rounded-full flex items-center justify-center shadow-2xl shadow-[#2A0066]/70 border border-white/30 transform hover:scale-110 active:scale-95 transition duration-300">
+          <Play size={32} className="text-white fill-white ml-1.5 drop-shadow" />
         </div>
-      )}
+      </div>
 
       {/* Top Bar with Title and Mux badge */}
       <div
