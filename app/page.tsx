@@ -269,7 +269,7 @@ function Hero() {
                 className="w-full sm:w-auto px-8 py-4 bg-[#2A0066] hover:bg-[#3D0099] text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all transform hover:scale-105 shadow-xl shadow-[#2A0066]/25 flex items-center justify-center gap-2.5 text-center group"
               >
                 <MessageSquare size={16} className="fill-white" />
-                <span>Enroll Now — WhatsApp Business</span>
+                <span>Enroll Now</span>
                 <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
               </a>
 
