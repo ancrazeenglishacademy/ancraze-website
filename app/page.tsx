@@ -257,7 +257,7 @@ function Hero() {
 
             {/* Subtitle */}
             <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              <strong className="text-slate-900 font-bold">Stop memorising. Start speaking.</strong> Develop real-life English-speaking skills through our innovative 20-Code Method, personal speaking trainers and structured daily practice.
+              <strong className="text-slate-900 font-bold">Stop memorising. Start speaking.</strong> Develop real-life English-speaking skills in Bangla through our innovative 20-Code Method, personal speaking trainers and structured daily practice. All lessons and concepts are taught clearly in Bangla for effortless learning.
             </p>
 
             {/* Action Buttons */}
@@ -365,9 +365,9 @@ function Hero() {
 
               {/* Floating Badge 2: Speech Bubble (Top Right) */}
               <div className="absolute top-6 right-6 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl border border-white/60 flex items-center gap-2">
-                <span className="text-sm">👋</span>
+                <span className="text-sm">🗣️</span>
                 <p className="text-[11px] font-black text-[#2A0066] leading-tight">
-                  Speak Confidently!
+                  Taught in Bangla
                 </p>
               </div>
 
@@ -413,7 +413,7 @@ function WhatIsAncraze() {
             A Different Approach to Learning English
           </h2>
           <p className="text-base sm:text-lg text-slate-600 font-medium leading-relaxed pt-2">
-            Ancraze is an innovative online spoken English academy designed to help learners move beyond theoretical knowledge and develop practical English-speaking skills.
+            Ancraze is an innovative online spoken English academy designed for Bengali speakers to move beyond theoretical knowledge and develop practical English-speaking skills through easy explanations in Bangla.
           </p>
         </div>
 
@@ -425,7 +425,7 @@ function WhatIsAncraze() {
               </div>
               <h3 className="text-xl font-bold text-slate-900">Beyond Theory</h3>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                We combine our innovative 20-Code Method, personal speaking trainers, structured daily practice and a 24/7 learning app to provide a complete English-learning experience.
+                All lessons are taught clearly in Bangla, combining our innovative 20-Code Method, personal speaking trainers, structured daily practice and a 24/7 learning app to provide a complete English-learning experience.
               </p>
             </div>
           </div>
@@ -468,7 +468,7 @@ function WhyChooseAncraze() {
       step: "01",
       title: "Innovative 20-Code Method",
       tagline: "Forget complicated grammar struggles.",
-      desc: "Start constructing sentences and speaking English using our innovative 20 Codes. Stop memorising endless grammar rules and start expressing yourself naturally.",
+      desc: "Start constructing sentences and speaking English using our innovative 20 Codes, explained simply in Bangla language. Stop memorising endless grammar rules and start expressing yourself naturally.",
       icon: <Sparkles size={24} />,
     },
     {
@@ -555,6 +555,10 @@ function WhyChooseAncraze() {
               <ul className="space-y-2.5 text-sm text-purple-100 pt-1">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>Taught & Explained in Bangla</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
                   <span>Innovative 20 Codes</span>
                 </li>
                 <li className="flex items-center gap-2">
@@ -619,6 +623,7 @@ const COURSES_DATA: CourseItem[] = [
     overview:
       "A structured 30-day programme designed to help you understand sentence formation and develop practical English-speaking skills through our innovative 20-Code Method and daily practice.",
     features: [
+      "Taught & explained in Bangla",
       "24/7 access to the Ancraze App",
       "Six months of app validity",
       "Pre-recorded lessons",
@@ -655,6 +660,7 @@ const COURSES_DATA: CourseItem[] = [
     overview:
       "An extended learning programme that gives you more time to practise, revise and strengthen your English-speaking skills with double the live sessions.",
     features: [
+      "Taught & explained in Bangla",
       "24/7 access to the Ancraze App",
       "Six months of app validity",
       "Pre-recorded lessons",
@@ -691,6 +697,7 @@ const COURSES_DATA: CourseItem[] = [
     overview:
       "A flexible learning option for learners who prefer independent study and want to access structured learning materials at their convenience.",
     features: [
+      "Taught & explained in Bangla",
       "24/7 access to the Ancraze App",
       "Six months of app validity",
       "Pre-recorded lessons",
@@ -1069,16 +1076,16 @@ function AboutUs() {
             </h2>
             <div className="space-y-4 text-slate-600 font-normal leading-relaxed text-sm sm:text-base">
               <p>
-                <strong className="text-slate-900 font-bold">Ancraze Online Spoken English Academy</strong> is dedicated to helping learners develop practical English-speaking skills through innovative teaching methods, technology and consistent speaking practice.
+                <strong className="text-slate-900 font-bold">Ancraze Online Spoken English Academy</strong> is dedicated to helping Bengali-speaking learners develop practical English-speaking skills through innovative teaching methods in Bangla, modern technology and consistent speaking practice.
               </p>
               <p>
                 We understand that many people study English for years but still hesitate when it comes to speaking. They may know grammar rules, understand vocabulary and write sentences, yet struggle to communicate confidently in real conversations.
               </p>
               <p>
-                We believe the solution lies in changing the way English is learnt.
+                We believe the solution lies in changing the way English is learnt — explaining every concept simply in your mother tongue, Bangla.
               </p>
               <p className="p-4 bg-purple-50/70 border-l-4 border-[#2A0066] rounded-r-2xl text-slate-800 font-medium">
-                At Ancraze, we combine structured lessons, our innovative 20-Code Method, personal speaking trainers, daily practice and technology to create a complete learning environment.
+                At Ancraze, all courses are conducted in Bangla, combining structured video lessons, our innovative 20-Code Method, dedicated personal speaking trainers, daily practice and technology to create an empowering learning environment.
               </p>
             </div>
             <div className="pt-2">
@@ -1321,42 +1328,46 @@ function FAQSection() {
   const faqs = [
     {
       q: "1. What is Ancraze?",
-      a: "Ancraze is an online spoken English academy that helps learners develop practical English-speaking skills through our 20-Code Method, personal trainers and structured daily practice.",
+      a: "Ancraze is an online spoken English academy that helps Bengali-speaking learners develop practical English-speaking skills through lessons taught in Bangla, our innovative 20-Code Method, dedicated personal trainers, and structured daily practice.",
     },
     {
-      q: "2. What are the 20 Codes?",
+      q: "2. Is the course taught in Bangla language?",
+      a: "Yes! All video lessons, grammar concepts, and explanations are taught in simple Bangla language so that you can understand sentence formation clearly and start speaking English naturally without confusion or fear.",
+    },
+    {
+      q: "3. What are the 20 Codes?",
       a: "The 20 Codes are our innovative learning methodology designed to help learners understand sentence formation and develop their speaking skills systematically without memorising complex grammar rules.",
     },
     {
-      q: "3. Which course should I choose?",
+      q: "4. Which course should I choose?",
       a: "You can choose the 30-day course, 60-day course, or Self-Study Course depending on your current level, target goals, and whether you want personal 1-on-1 speaking trainer sessions.",
     },
     {
-      q: "4. What is the difference between the 30-day and 60-day courses?",
+      q: "5. What is the difference between the 30-day and 60-day courses?",
       a: "Both courses provide the same core learning features and 1-on-1 personal trainer options. The 30-day course includes five live sessions, while the 60-day course includes ten live sessions and an extended period for additional revision and speaking confidence.",
     },
     {
-      q: "5. Is the course completely online?",
+      q: "6. Is the course completely online?",
       a: "Yes. Lessons and learning materials are accessed through the 24/7 Ancraze App, with individual speaking practice and live sessions conducted online according to your selected course.",
     },
     {
-      q: "6. Do I get a personal speaking trainer?",
+      q: "7. Do I get a personal speaking trainer?",
       a: "Yes! Personal trainer speaking practice is included in the 30-day and 60-day foundational courses, with flexible 10, 20 and 30-minute daily practice options.",
     },
     {
-      q: "7. How long can I access the app?",
+      q: "8. How long can I access the app?",
       a: "The courses currently include six full months of app validity, giving you plenty of time to revisit lessons, vocabulary, and exercises.",
     },
     {
-      q: "8. Is there a free trial?",
+      q: "9. Is there a free trial?",
       a: "Yes. You can experience the Ancraze App learning system with a three-day free trial before enrolling.",
     },
     {
-      q: "9. Will I receive a certificate?",
+      q: "10. Will I receive a certificate?",
       a: "Yes. The 30-day and 60-day foundational courses include an official course completion certificate, subject to applicable completion requirements.",
     },
     {
-      q: "10. How can I enrol?",
+      q: "11. How can I enrol?",
       a: "Click any 'ENROLL NOW' button to connect directly with our admissions team on WhatsApp Business, and we will get you onboarded immediately.",
     },
   ];

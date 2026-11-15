@@ -193,7 +193,7 @@ export default function ContactPage() {
             ) : null}
           </h1>
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
-            Get in touch with the Ancraze Admissions Office and discover our structured learning methodology to speak fluent English.
+            Get in touch with the Ancraze Admissions Office and discover our structured spoken English courses taught in Bangla.
           </p>
         </div>
       </header>
@@ -308,7 +308,7 @@ export default function ContactPage() {
                   </span>
                   <h3 className="text-3xl font-black text-white mt-1">Get in Touch</h3>
                   <p className="text-xs text-purple-200 mt-2 leading-relaxed">
-                    Have questions about admissions, trial sessions, or our 20-Code Method? Reach out through any of our channels:
+                    Have questions about admissions, trial sessions, or our 20-Code Method taught in Bangla? Reach out through any of our channels:
                   </p>
                 </div>
 
