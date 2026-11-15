@@ -518,17 +518,15 @@ function WhyChooseAncraze() {
         </div>
 
         {/* Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {pillars.map((item, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+          {pillars.map((item) => (
             <div
               key={item.title}
-              className={`p-8 sm:p-9 rounded-[28px] bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/8 transition-all flex flex-col justify-between ${
-                idx === 0 ? "lg:col-span-2 bg-gradient-to-br from-purple-50/70 to-white border-purple-200" : ""
-              }`}
+              className="p-8 sm:p-9 rounded-[28px] bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/8 transition-all flex flex-col justify-between h-full group"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-[#2A0066] text-white flex items-center justify-center shadow-lg shadow-[#2A0066]/20">
+                  <div className="w-12 h-12 rounded-2xl bg-[#2A0066] text-white flex items-center justify-center shadow-lg shadow-[#2A0066]/20 group-hover:scale-105 transition-transform">
                     {item.icon}
                   </div>
                   <span className="text-2xl font-black text-slate-300 font-mono">
@@ -536,8 +534,8 @@ function WhyChooseAncraze() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">{item.title}</h3>
-                  <p className="text-xs font-bold text-[#2A0066] uppercase tracking-wider mt-0.5">
+                  <h3 className="text-xl font-bold text-slate-900 leading-snug">{item.title}</h3>
+                  <p className="text-xs font-bold text-[#2A0066] uppercase tracking-wider mt-1">
                     {item.tagline}
                   </p>
                 </div>
@@ -549,27 +547,32 @@ function WhyChooseAncraze() {
           ))}
 
           {/* The Ancraze Difference Card */}
-          <div className="p-8 sm:p-9 rounded-[28px] bg-[#2A0066] text-white shadow-xl shadow-[#2A0066]/20 flex flex-col justify-between">
+          <div className="p-8 sm:p-9 rounded-[28px] bg-[#2A0066] text-white shadow-xl shadow-[#2A0066]/20 flex flex-col justify-between h-full">
             <div className="space-y-4">
               <span className="text-[10px] font-black uppercase tracking-widest text-purple-300">
                 Summary
               </span>
-              <h3 className="text-2xl font-black">The Ancraze Difference</h3>
-              <ul className="space-y-2 text-sm text-purple-100">
+              <h3 className="text-2xl font-black leading-tight">The Ancraze Difference</h3>
+              <ul className="space-y-2.5 text-sm text-purple-100 pt-1">
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" /> Innovative 20 Codes
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>Innovative 20 Codes</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" /> Personal Speaking Trainers
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>Personal Speaking Trainers</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" /> Daily Speaking Opportunities
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>Daily Speaking Opportunities</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" /> Flexible 24/7 App Learning
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>Flexible 24/7 App Learning</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" /> Structured Revision & Assessment
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>Structured Revision & Assessment</span>
                 </li>
               </ul>
             </div>
@@ -577,7 +580,7 @@ function WhyChooseAncraze() {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-6 w-full py-3.5 bg-white hover:bg-slate-100 text-[#2A0066] font-black rounded-2xl text-xs uppercase tracking-wider text-center transition shadow-lg"
+              className="mt-6 w-full py-3.5 bg-white hover:bg-slate-100 text-[#2A0066] font-black rounded-2xl text-xs uppercase tracking-wider text-center transition shadow-lg block cursor-pointer"
             >
               Enroll Now
             </a>
