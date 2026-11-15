@@ -249,11 +249,10 @@ function Hero() {
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
-              Don&apos;t Just Learn English.{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
                 Speak English
               </span>{" "}
-              with Our 20 Codes.
+              with our 20 Codes.
             </h1>
 
             {/* Subtitle */}
