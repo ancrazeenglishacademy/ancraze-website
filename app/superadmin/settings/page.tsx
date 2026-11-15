@@ -23,9 +23,10 @@ export default function SuperAdminSettingsPage() {
     academyName: "Ancraze English Academy",
     academyTagline: "Precision English Learning Platform",
     brandColor: "#2A0066",
-    contactEmail: "support@ancraze.com",
-    contactPhone: "+91 98765 43210",
-    address: "Bangalore, Karnataka, India",
+    contactEmail: "Ancrazeenglishacademy@gmail.com",
+    contactPhone: "+91 93824 52699",
+    address:
+      "Ancraze office Kolkata, Abedin Arcade, Tiljala Rd, 3D, Gobra, Kolkata, West Bengal 700046",
     studentIdPrefix: "ANC",
     currencySymbol: "₹",
     maxActiveDevicesPerStudent: 1,
