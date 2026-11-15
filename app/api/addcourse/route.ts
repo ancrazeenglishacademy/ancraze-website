@@ -63,6 +63,53 @@ export async function POST(request: NextRequest) {
     const teacherName = formData.get('teacherName') as string;
     const price = parseFloat(formData.get('price') as string);
     const coverImage = formData.get('coverImage') as File;
+    const showOnHomePageStr = formData.get('showOnHomePage');
+    const showOnHomePage = showOnHomePageStr === null ? true : (showOnHomePageStr === 'true' || showOnHomePageStr === 'on' || showOnHomePageStr === '1');
+
+    // Homepage Card & Modal Specific Fields
+    const badge = (formData.get('badge') as string) || '';
+    const tagline = (formData.get('tagline') as string) || '';
+    const duration = (formData.get('duration') as string) || '30 Days';
+    const validity = (formData.get('validity') as string) || '6 Months';
+    const liveSessions = (formData.get('liveSessions') as string) || '5 Live Sessions';
+    const whoShouldJoin = (formData.get('whoShouldJoin') as string) || '';
+
+    // Parse features: newline-separated or JSON
+    const featuresRaw = (formData.get('features') as string) || '';
+    let features: string[] = [];
+    if (featuresRaw.trim()) {
+      try {
+        const parsed = JSON.parse(featuresRaw);
+        if (Array.isArray(parsed)) features = parsed;
+      } catch {
+        features = featuresRaw
+          .split('\n')
+          .map((f) => f.trim())
+          .filter(Boolean);
+      }
+    }
+
+    // Parse experience highlights: JSON or newline-separated
+    const experienceRaw = (formData.get('experience') as string) || '';
+    let experience: Array<{ title: string; desc: string }> = [];
+    if (experienceRaw.trim()) {
+      try {
+        const parsedExp = JSON.parse(experienceRaw);
+        if (Array.isArray(parsedExp)) experience = parsedExp;
+      } catch {
+        experience = experienceRaw
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => {
+            const [t, ...rest] = line.split(':');
+            return {
+              title: t.trim(),
+              desc: rest.join(':').trim() || t.trim(),
+            };
+          });
+      }
+    }
 
     // Validate required fields
     if (!title || !description || !teacherName || !price || !coverImage) {
@@ -104,6 +151,15 @@ export async function POST(request: NextRequest) {
       teacherName,
       price: price,
       coverImage: imageUrl,
+      showOnHomePage: showOnHomePage,
+      badge: badge.trim(),
+      tagline: tagline.trim(),
+      duration: duration.trim(),
+      validity: validity.trim(),
+      liveSessions: liveSessions.trim(),
+      features,
+      whoShouldJoin: whoShouldJoin.trim(),
+      experience,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
     };

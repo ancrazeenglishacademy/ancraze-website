@@ -58,6 +58,8 @@ export async function POST(request: NextRequest) {
     const teacherName = formData.get('teacherName') as string;
     const price = parseFloat(formData.get('price') as string);
     const coverImage = formData.get('coverImage') as File;
+    const showOnHomePageStr = formData.get('showOnHomePage');
+    const showOnHomePage = showOnHomePageStr === null ? true : (showOnHomePageStr === 'true' || showOnHomePageStr === 'on' || showOnHomePageStr === '1');
 
     // Validate required fields
     if (!title || !description || !teacherName || !price || !coverImage) {
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
       teacherName,
       price: parseFloat(price.toString()),
       coverImage: imageUrl,
+      showOnHomePage: showOnHomePage,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
     };

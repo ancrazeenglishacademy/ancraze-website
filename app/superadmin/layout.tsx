@@ -19,6 +19,8 @@ import {
   ChevronRight,
   LogOut,
   Sparkles,
+  GraduationCap,
+  MessageSquareText,
 } from "lucide-react";
 
 export default function SuperAdminLayout({
@@ -224,15 +226,32 @@ function SidebarContent({
   handleLogout,
   fullName,
 }: any) {
-  const menuItems = [
-    { label: "Dashboard", href: "/superadmin", icon: <LayoutDashboard size={19} /> },
-    { label: "Courses", href: "/superadmin/courses", icon: <BookOpen size={19} /> },
-    { label: "Students", href: "/superadmin/students", icon: <UsersRound size={19} /> },
-    { label: "Finances", href: "/superadmin/finances", icon: <DollarSign size={19} /> },
-    { label: "Staff & Workloads", href: "/superadmin/staff", icon: <UserCheck size={19} /> },
-    { label: "Account Oversight", href: "/superadmin/oversight", icon: <ShieldAlert size={19} /> },
-    { label: "Reports & Analytics", href: "/superadmin/reports", icon: <BarChart3 size={19} /> },
-    { label: "System Settings", href: "/superadmin/settings", icon: <Settings size={19} /> },
+  const navigationSections = [
+    {
+      group: null,
+      items: [
+        { label: "Dashboard", href: "/superadmin", icon: <LayoutDashboard size={19} /> },
+        { label: "Students", href: "/superadmin/students", icon: <UsersRound size={19} /> },
+        { label: "Finances", href: "/superadmin/finances", icon: <DollarSign size={19} /> },
+        { label: "Staff & Workloads", href: "/superadmin/staff", icon: <UserCheck size={19} /> },
+      ],
+    },
+    {
+      group: "CONTENT",
+      items: [
+        { label: "Courses", href: "/superadmin/courses", icon: <BookOpen size={19} /> },
+        { label: "Faculties", href: "/superadmin/faculties", icon: <GraduationCap size={19} /> },
+        { label: "Enquiries", href: "/superadmin/enquiries", icon: <MessageSquareText size={19} /> },
+      ],
+    },
+    {
+      group: "ADMINISTRATION",
+      items: [
+        { label: "Account Oversight", href: "/superadmin/oversight", icon: <ShieldAlert size={19} /> },
+        { label: "Reports & Analytics", href: "/superadmin/reports", icon: <BarChart3 size={19} /> },
+        { label: "System Settings", href: "/superadmin/settings", icon: <Settings size={19} /> },
+      ],
+    },
   ];
 
   return (
@@ -269,16 +288,28 @@ function SidebarContent({
           </button>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="space-y-1.5">
-          {menuItems.map((item) => (
-            <SidebarItem
-              key={item.href}
-              icon={item.icon}
-              label={item.label}
-              active={isActive(item.href)}
-              onClick={() => router.push(item.href)}
-            />
+        {/* Navigation Sections */}
+        <nav className="space-y-4">
+          {navigationSections.map((section, sIdx) => (
+            <div key={sIdx} className="space-y-1.5">
+              {section.group && (
+                <div className="px-3.5 pt-2 pb-1 flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300/80">
+                    {section.group}
+                  </span>
+                  <span className="h-[1px] flex-1 ml-3 bg-white/10" />
+                </div>
+              )}
+              {section.items.map((item) => (
+                <SidebarItem
+                  key={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  active={isActive(item.href)}
+                  onClick={() => router.push(item.href)}
+                />
+              ))}
+            </div>
           ))}
         </nav>
       </div>

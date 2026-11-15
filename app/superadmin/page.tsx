@@ -16,6 +16,9 @@ import {
   GraduationCap,
   Layers,
   FileCheck2,
+  MessageSquareText,
+  MessageSquare,
+  Phone,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -37,6 +40,11 @@ export default function SuperAdminDashboard() {
     netProfit: 0,
     pendingBalances: 0,
   });
+
+  // Enquiries state
+  const [recentEnquiries, setRecentEnquiries] = useState<any[]>([]);
+  const [newEnquiriesCount, setNewEnquiriesCount] = useState(0);
+  const [totalEnquiriesCount, setTotalEnquiriesCount] = useState(0);
 
   useEffect(() => {
     const nameValue = Cookies.get("fullName");
@@ -88,6 +96,20 @@ export default function SuperAdminDashboard() {
         const rData = await reqRes.json();
         setPendingRequestsCount((rData.requests || []).length);
       }
+
+      // 5. Fetch Enquiries
+      try {
+        const enqRes = await fetch("/api/enquiry");
+        if (enqRes.ok) {
+          const eData = await enqRes.json();
+          const list: any[] = eData.enquiries || [];
+          setTotalEnquiriesCount(list.length);
+          setNewEnquiriesCount(list.filter((e) => e.status === "new").length);
+          setRecentEnquiries(list.slice(0, 5));
+        }
+      } catch (eErr) {
+        console.warn("Could not fetch enquiries on dashboard:", eErr);
+      }
     } catch (err) {
       console.error("Failed to load master statistics", err);
     } finally {
@@ -131,7 +153,7 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5">
         <MetricCard
           title="Total Students"
           value={loading ? "..." : totalStudents.toString()}
@@ -139,6 +161,13 @@ export default function SuperAdminDashboard() {
           icon={<Users size={22} />}
           highlight={true}
           onClick={() => router.push("/superadmin/students")}
+        />
+        <MetricCard
+          title="Admission Enquiries"
+          value={loading ? "..." : totalEnquiriesCount.toString()}
+          subtitle={newEnquiriesCount > 0 ? `${newEnquiriesCount} New Lead${newEnquiriesCount > 1 ? "s" : ""}` : "All Contacted"}
+          icon={<MessageSquareText size={22} />}
+          onClick={() => router.push("/superadmin/enquiries")}
         />
         <MetricCard
           title="Total Revenue"
@@ -266,6 +295,135 @@ export default function SuperAdminDashboard() {
           >
             Open Oversight Console <ArrowRight size={14} />
           </button>
+        </div>
+      </div>
+
+      {/* Recent Admission Enquiries */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-[#2A0066]/10 text-[#2A0066]">
+              <MessageSquareText size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">Recent Admission Enquiries</h2>
+                {newEnquiriesCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                    {newEnquiriesCount} New
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-400 font-medium">Real-time enquiries received from the website contact & intake forms</p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push("/superadmin/enquiries")}
+            className="text-xs font-bold text-[#2A0066] hover:underline flex items-center gap-1"
+          >
+            All Enquiries ({totalEnquiriesCount}) <ArrowRight size={14} />
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="p-10 text-center text-slate-400 flex items-center justify-center gap-2">
+              <Loader size={18} className="animate-spin text-[#2A0066]" />
+              <span className="text-xs font-bold">Loading enquiries...</span>
+            </div>
+          ) : recentEnquiries.length === 0 ? (
+            <div className="p-10 text-center text-slate-400 text-xs font-bold">
+              No admission enquiries recorded yet. Form submissions will appear here automatically.
+            </div>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-3.5">Applicant</th>
+                  <th className="px-6 py-3.5">Course Interested In</th>
+                  <th className="px-6 py-3.5">Message / Note</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5">Received Date</th>
+                  <th className="px-6 py-3.5 text-right">Direct Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {recentEnquiries.map((enq) => {
+                  const cleanPhone = (enq.phone || "").replace(/[^0-9]/g, "");
+                  const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                    `Hello ${enq.fullName}, thank you for your enquiry at Ancraze English Academy regarding ${enq.course}. We are pleased to help you with enrollment!`
+                  )}`;
+
+                  return (
+                    <tr key={enq.id} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-[#2A0066]/10 text-[#2A0066] font-black text-xs flex items-center justify-center shrink-0">
+                            {(enq.fullName || "A").charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-xs sm:text-sm">{enq.fullName}</p>
+                            <p className="text-[11px] text-slate-500 font-medium">{enq.phone}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-[#2A0066] border border-purple-100">
+                          {enq.course}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-600 max-w-xs truncate">
+                        {enq.message ? `"${enq.message}"` : <span className="text-slate-400 italic">No message</span>}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            enq.status === "new"
+                              ? "bg-amber-100 text-amber-800"
+                              : enq.status === "contacted"
+                              ? "bg-indigo-100 text-indigo-800"
+                              : enq.status === "enrolled"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          {enq.status || "new"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-400 font-medium whitespace-nowrap">
+                        {new Date(enq.createdAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <a
+                            href={whatsappLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl transition shadow-sm"
+                            title="Chat on WhatsApp"
+                          >
+                            <MessageSquare size={14} />
+                          </a>
+                          <a
+                            href={`tel:${enq.phone}`}
+                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
+                            title="Direct Call"
+                          >
+                            <Phone size={14} />
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

@@ -58,7 +58,22 @@ export async function PUT(request: NextRequest) {
     console.log('📝 Course UPDATE request received');
 
     const body = await request.json();
-    const { courseId, title, description, price, coverImage } = body;
+    const {
+      courseId,
+      title,
+      description,
+      price,
+      coverImage,
+      showOnHomePage,
+      badge,
+      tagline,
+      duration,
+      validity,
+      liveSessions,
+      features,
+      whoShouldJoin,
+      experience,
+    } = body;
 
     if (!courseId) {
       return NextResponse.json(
@@ -106,6 +121,23 @@ export async function PUT(request: NextRequest) {
     if (description) updateData.description = description;
     if (price) updateData.price = parseFloat(price);
     if (coverImageUrl) updateData.coverImage = coverImageUrl;
+    if (showOnHomePage !== undefined) updateData.showOnHomePage = Boolean(showOnHomePage);
+    if (badge !== undefined) updateData.badge = String(badge).trim();
+    if (tagline !== undefined) updateData.tagline = String(tagline).trim();
+    if (duration !== undefined) updateData.duration = String(duration).trim();
+    if (validity !== undefined) updateData.validity = String(validity).trim();
+    if (liveSessions !== undefined) updateData.liveSessions = String(liveSessions).trim();
+    if (whoShouldJoin !== undefined) updateData.whoShouldJoin = String(whoShouldJoin).trim();
+    if (features !== undefined) {
+      if (Array.isArray(features)) {
+        updateData.features = features;
+      } else if (typeof features === 'string') {
+        updateData.features = features.split('\n').map((f: string) => f.trim()).filter(Boolean);
+      }
+    }
+    if (experience !== undefined) {
+      updateData.experience = experience;
+    }
 
     // Update course in Firestore
     await adminDb.collection('courses').doc(courseId).update(updateData);

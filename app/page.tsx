@@ -35,10 +35,12 @@ import {
   Layers,
   HelpCircle,
   Menu,
+  GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import studentAvatar from "@/public/student-avatar.png";
 
 const PHONE_NUMBER = "+91 93824 52699";
 const PHONE_CLEAN = "919382452699";
@@ -55,6 +57,7 @@ export default function LandingPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<any | null>(null);
+  const [faculties, setFaculties] = useState<FacultyItem[]>([]);
 
   useEffect(() => {
     const role = Cookies.get("role");
@@ -67,9 +70,26 @@ export default function LandingPage() {
     }
   }, [user, loading, router]);
 
+  useEffect(() => {
+    const fetchFaculties = async () => {
+      try {
+        const res = await fetch("/api/faculties?active=true");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.faculties)) {
+            setFaculties(data.faculties);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch faculties:", err);
+      }
+    };
+    fetchFaculties();
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans overflow-x-hidden selection:bg-[#2A0066]/10 selection:text-[#2A0066]">
-      <Navbar />
+      <Navbar hasFaculties={faculties.length > 0} />
       <Hero />
       <WhatIsAncraze />
       <WhyChooseAncraze />
@@ -78,10 +98,11 @@ export default function LandingPage() {
       <LearningJourney />
       <AboutUs />
       <DownloadAppSection />
+      {faculties.length > 0 && <OurFaculties faculties={faculties} />}
       <FAQSection />
       <ContactSection />
       <FinalCTA />
-      <Footer />
+      <Footer hasFaculties={faculties.length > 0} />
 
       {/* Course Detail Modal */}
       <CourseDetailModal
@@ -95,13 +116,14 @@ export default function LandingPage() {
 // ==========================================
 // 1. NAVBAR
 // ==========================================
-function Navbar() {
+function Navbar({ hasFaculties = false }: { hasFaculties?: boolean }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
     { name: "Home", href: "#home" },
     { name: "About Us", href: "#about" },
     { name: "Our Courses", href: "#courses" },
+    ...(hasFaculties ? [{ name: "Faculties", href: "#faculties" }] : []),
     { name: "Why Ancraze", href: "#why-ancraze" },
     { name: "What We Provide", href: "#what-we-provide" },
     { name: "Contact Us", href: "#contact" },
@@ -311,34 +333,62 @@ function Hero() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="lg:col-span-5 relative flex items-center justify-center"
           >
-            <div className="relative w-full max-w-[460px] aspect-[4/5] rounded-[36px] bg-gradient-to-tr from-[#2A0066] to-[#601BBF] p-2 shadow-2xl shadow-[#2A0066]/30 overflow-hidden">
-              <Image
-                src="https://res.cloudinary.com/dn78gpmdp/image/upload/q_auto/f_auto/v1777718783/front-view-female-student-white-shirt-holding-pen-copybook_cqoayb.png"
-                alt="Ancraze Student Learning Spoken English"
-                fill
-                className="object-cover object-top rounded-[30px]"
-                priority
-              />
+            <div className="relative w-full max-w-[460px] h-[500px] sm:h-[530px] rounded-[36px] bg-gradient-to-b from-[#2A0066] via-[#380082] to-[#180036] p-6 shadow-2xl shadow-[#2A0066]/30 overflow-hidden flex flex-col justify-end border border-purple-400/20">
+              {/* Ambient Glow Orbs */}
+              <div className="absolute -top-12 -right-12 w-64 h-64 bg-fuchsia-500/25 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-1/3 -left-12 w-56 h-56 bg-purple-400/25 rounded-full blur-3xl pointer-events-none" />
 
-              {/* Floating Badge 1: 20 Codes */}
-              <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-white/40 flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#2A0066] flex items-center justify-center text-white font-black text-xs">
+              {/* Decorative Circular Spotlight */}
+              <div className="absolute top-10 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/10 pointer-events-none" />
+
+              {/* Brand Avatar Image */}
+              <div className="relative w-full h-[400px] sm:h-[430px] z-10 flex items-end justify-center">
+                <Image
+                  src={studentAvatar}
+                  alt="Ancraze Student Brand Avatar"
+                  fill
+                  unoptimized
+                  className="object-contain object-bottom drop-shadow-[0_20px_35px_rgba(0,0,0,0.55)] select-none pointer-events-none"
+                  priority
+                />
+              </div>
+
+              {/* Floating Badge 1: 20 Codes (Top Left) */}
+              <div className="absolute top-6 left-6 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl border border-white/60 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#2A0066] flex items-center justify-center text-white font-black text-xs shadow-md">
                   20
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">Method</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase leading-none">Method</p>
                   <p className="text-xs font-black text-slate-900 leading-tight">Innovative 20 Codes</p>
                 </div>
               </div>
 
-              {/* Floating Badge 2: 1-on-1 Mentor */}
-              <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-white/40 flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white">
+              {/* Floating Badge 2: Speech Bubble (Top Right) */}
+              <div className="absolute top-6 right-6 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-xl border border-white/60 flex items-center gap-2">
+                <span className="text-sm">👋</span>
+                <p className="text-[11px] font-black text-[#2A0066] leading-tight">
+                  Speak Confidently!
+                </p>
+              </div>
+
+              {/* Floating Badge 3: 1-on-1 Mentor (Bottom Left) */}
+              <div className="absolute bottom-5 left-5 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl shadow-xl border border-white/60 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-md">
                   <UserCheck size={16} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">Practice</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase leading-none">Practice</p>
                   <p className="text-xs font-black text-slate-900 leading-tight">Personal Trainer</p>
+                </div>
+              </div>
+
+              {/* Floating Badge 4: Rating (Bottom Right) */}
+              <div className="absolute bottom-5 right-5 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl shadow-xl border border-white/60 flex items-center gap-2">
+                <Star size={15} className="fill-amber-400 text-amber-400" />
+                <div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase leading-none">Learners</p>
+                  <p className="text-xs font-black text-slate-900 leading-tight">4.9/5 Rating</p>
                 </div>
               </div>
             </div>
@@ -659,6 +709,63 @@ const COURSES_DATA: CourseItem[] = [
 ];
 
 function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseItem) => void }) {
+  const [courses, setCourses] = useState<CourseItem[]>(COURSES_DATA);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchHomeCourses = async () => {
+      try {
+        const res = await fetch("/api/courses");
+        if (res.ok) {
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data.courses || []);
+          if (Array.isArray(list) && list.length > 0) {
+            // Only courses with showOnHomePage !== false
+            const homeCourses = list.filter((c: any) => c.showOnHomePage !== false);
+            if (homeCourses.length > 0) {
+              const mapped: CourseItem[] = homeCourses.map((c: any) => ({
+                id: c.id,
+                name: c.title || c.name || "Spoken English Course",
+                duration: c.duration || "Structured Program",
+                validity: c.validity || "6 Months",
+                liveSessions: c.liveSessions || (c.level ? `${c.level} Level` : "Interactive"),
+                tagline: c.tagline || (c.description ? (c.description.length > 70 ? c.description.slice(0, 70) + "..." : c.description) : "Master English Speaking with Ancraze"),
+                overview: c.description || c.overview || "Practical, immersive spoken English training with personal trainers and 20-Code Method.",
+                badge: c.badge || (c.price ? `₹${c.price}` : undefined),
+                features: Array.isArray(c.features) && c.features.length > 0
+                  ? c.features
+                  : typeof c.features === "string" && c.features.trim()
+                  ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
+                  : Array.isArray(c.lessons) && c.lessons.length > 0
+                  ? c.lessons.map((l: any) => (typeof l === "string" ? l : l.title || "Interactive lesson"))
+                  : [
+                      "24/7 access to the Ancraze App",
+                      "Six months of app validity",
+                      "Innovative 20-Code Method",
+                      "Personal trainer speaking practice",
+                      "Daily vocabulary & verb training",
+                      "Course completion certificate",
+                    ],
+                whoShouldJoin: c.whoShouldJoin || "Learners seeking to speak English confidently and fluently in real conversations.",
+                experience: Array.isArray(c.experience) && c.experience.length > 0
+                  ? c.experience
+                  : [
+                      { title: "Structured Lessons", desc: "Access lessons through the Ancraze App and master sentence formation." },
+                      { title: "Personal Trainer Practice", desc: "1-on-1 daily speaking practice to build fluency and overcome hesitation." },
+                      { title: "Course Completion Certificate", desc: "Recognized certificate after fulfilling program milestones." },
+                    ],
+              }));
+              setCourses(mapped);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading home courses:", err);
+      }
+    };
+    fetchHomeCourses();
+  }, []);
+
   return (
     <section id="courses" className="py-28 bg-white border-b border-slate-200/70 relative">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
@@ -676,7 +783,7 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
 
         {/* Courses Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {COURSES_DATA.map((course, idx) => (
+          {courses.map((course, idx) => (
             <div
               key={course.id}
               className={`rounded-[32px] p-8 sm:p-9 flex flex-col justify-between transition-all duration-300 relative ${
@@ -750,7 +857,7 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
                 <button
                   type="button"
                   onClick={() => onOpenCourseModal(course)}
-                  className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider transition"
+                  className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider transition cursor-pointer"
                 >
                   View Course Details
                 </button>
@@ -760,7 +867,7 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-3.5 bg-[#2A0066] hover:bg-[#3D0099] text-white rounded-xl font-black text-xs uppercase tracking-wider transition shadow-lg shadow-[#2A0066]/20 flex items-center justify-center gap-1.5"
+                  className="w-full py-3.5 bg-[#2A0066] hover:bg-[#3D0099] text-white rounded-xl font-black text-xs uppercase tracking-wider transition shadow-lg shadow-[#2A0066]/20 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <MessageSquare size={14} className="fill-white" />
                   <span>Enroll Now</span>
@@ -985,26 +1092,46 @@ function AboutUs() {
             </div>
           </div>
 
-          <div className="lg:col-span-6 grid grid-cols-2 gap-4 sm:gap-6">
-            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
-              <h4 className="text-3xl sm:text-4xl font-black text-[#2A0066]">20</h4>
-              <p className="text-xs font-bold text-slate-900 mt-2">Innovative Codes</p>
-              <p className="text-[11px] text-slate-500 mt-1">Structured sentence formation methodology.</p>
+          {/* Academy Highlights Grid */}
+          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="p-7 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/5 transition-all flex flex-col justify-between">
+              <span className="text-4xl font-black text-[#2A0066]">20</span>
+              <div className="mt-4">
+                <h4 className="text-sm font-bold text-slate-900">Innovative Codes</h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Structured sentence formation methodology without memorising rules.
+                </p>
+              </div>
             </div>
-            <div className="p-6 sm:p-8 rounded-3xl bg-[#2A0066] text-white shadow-xl shadow-[#2A0066]/20 flex flex-col justify-between">
-              <h4 className="text-3xl sm:text-4xl font-black text-white">1-on-1</h4>
-              <p className="text-xs font-bold text-purple-200 mt-2">Personal Trainers</p>
-              <p className="text-[11px] text-purple-200/70 mt-1">Daily individual speaking practice.</p>
+
+            <div className="p-7 sm:p-8 rounded-3xl bg-[#2A0066] text-white shadow-xl shadow-[#2A0066]/20 flex flex-col justify-between">
+              <span className="text-4xl font-black text-white">1-on-1</span>
+              <div className="mt-4">
+                <h4 className="text-sm font-bold text-purple-200">Personal Trainers</h4>
+                <p className="text-xs text-purple-200/70 mt-1 leading-relaxed">
+                  Daily individual speaking practice, corrections & feedback.
+                </p>
+              </div>
             </div>
-            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
-              <h4 className="text-3xl sm:text-4xl font-black text-emerald-600">24/7</h4>
-              <p className="text-xs font-bold text-slate-900 mt-2">Ancraze App</p>
-              <p className="text-[11px] text-slate-500 mt-1">Study anytime on iOS & Android.</p>
+
+            <div className="p-7 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/5 transition-all flex flex-col justify-between">
+              <span className="text-4xl font-black text-emerald-600">24/7</span>
+              <div className="mt-4">
+                <h4 className="text-sm font-bold text-slate-900">Ancraze App</h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Access lessons, exercises & practice materials anytime.
+                </p>
+              </div>
             </div>
-            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
-              <h4 className="text-3xl sm:text-4xl font-black text-[#2A0066]">300+</h4>
-              <p className="text-xs font-bold text-slate-900 mt-2">Essential Verbs</p>
-              <p className="text-[11px] text-slate-500 mt-1">Practical contextual usage.</p>
+
+            <div className="p-7 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/5 transition-all flex flex-col justify-between">
+              <span className="text-4xl font-black text-[#2A0066]">300+</span>
+              <div className="mt-4">
+                <h4 className="text-sm font-bold text-slate-900">Essential Verbs</h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Master critical everyday English verbs and their practical usage.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1074,7 +1201,117 @@ function DownloadAppSection() {
 }
 
 // ==========================================
-// 10. FAQ SECTION (PAGE 7)
+// 10. OUR FACULTIES & EXPERT MENTORS
+// ==========================================
+interface FacultyItem {
+  id: string;
+  name: string;
+  role: string;
+  bio?: string;
+  specialization?: string;
+  experience?: string;
+  imageUrl?: string;
+}
+
+function OurFaculties({ faculties }: { faculties: FacultyItem[] }) {
+  if (!faculties || faculties.length === 0) return null;
+
+  return (
+    <section id="faculties" className="py-28 bg-white border-b border-slate-200/70 relative">
+      <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
+        <div className="max-w-3xl mx-auto text-center space-y-4 mb-20">
+          <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 w-max mx-auto">
+            <GraduationCap size={14} />
+            <span>OUR FACULTIES & EXPERT MENTORS</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+            Learn From Dedicated Spoken English Mentors
+          </h2>
+          <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed pt-1">
+            Our certified speaking trainers and language coaches provide dedicated 1-on-1 guidance, live corrections, and constant motivation to help you speak with natural fluency.
+          </p>
+        </div>
+
+        {/* Faculties Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+          {faculties.map((faculty) => (
+            <div
+              key={faculty.id}
+              className="rounded-[32px] p-7 sm:p-8 bg-slate-50/70 border border-slate-200/80 hover:border-[#2A0066]/40 hover:shadow-xl hover:shadow-[#2A0066]/5 transition-all duration-300 flex flex-col justify-between group"
+            >
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-[#2A0066]/10 border-2 border-[#2A0066]/20 shrink-0 flex items-center justify-center shadow-md">
+                    {faculty.imageUrl ? (
+                      <Image
+                        src={faculty.imageUrl}
+                        alt={faculty.name}
+                        fill
+                        unoptimized
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <span className="text-2xl font-black text-[#2A0066]">
+                        {faculty.name.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-black text-slate-900 truncate group-hover:text-[#2A0066] transition-colors">
+                      {faculty.name}
+                    </h3>
+                    <p className="text-xs font-bold text-[#2A0066] mt-0.5 leading-snug">
+                      {faculty.role}
+                    </p>
+                    {faculty.experience && (
+                      <span className="inline-block mt-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-100/80 text-[#2A0066]">
+                        {faculty.experience}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {faculty.specialization && (
+                  <div className="p-3 rounded-2xl bg-white border border-slate-200/70">
+                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">
+                      Specialization
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 mt-0.5">
+                      {faculty.specialization}
+                    </p>
+                  </div>
+                )}
+
+                {faculty.bio && (
+                  <p className="text-xs text-slate-600 leading-relaxed font-normal line-clamp-4">
+                    &ldquo;{faculty.bio}&rdquo;
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-6 mt-6 border-t border-slate-200/70">
+                <a
+                  href={`https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent(
+                    `Hello Ancraze! I would like to learn with faculty mentor ${faculty.name}. Please guide me on enrollment.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 bg-white hover:bg-[#2A0066] text-[#2A0066] hover:text-white border border-[#2A0066]/20 hover:border-transparent rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 shadow-sm flex items-center justify-center gap-2 cursor-pointer group-hover:bg-[#2A0066] group-hover:text-white"
+                >
+                  <MessageSquare size={13} />
+                  <span>Connect with Mentor</span>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ==========================================
+// 11. FAQ SECTION (PAGE 7)
 // ==========================================
 function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -1503,7 +1740,7 @@ function FinalCTA() {
 // ==========================================
 // 13. COMMON FOOTER
 // ==========================================
-function Footer() {
+function Footer({ hasFaculties = false }: { hasFaculties?: boolean }) {
   return (
     <footer className="bg-[#1A0040] text-white pt-20 pb-12 border-t border-purple-950/60">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
@@ -1570,6 +1807,11 @@ function Footer() {
               <li>
                 <Link href="#courses" className="hover:text-white transition">Our Courses</Link>
               </li>
+              {hasFaculties && (
+                <li>
+                  <Link href="#faculties" className="hover:text-white transition">Faculties & Mentors</Link>
+                </li>
+              )}
               <li>
                 <Link href="#why-ancraze" className="hover:text-white transition">Why Ancraze</Link>
               </li>
@@ -1580,7 +1822,7 @@ function Footer() {
                 <Link href="#faq" className="hover:text-white transition">Frequently Asked Questions</Link>
               </li>
               <li>
-                <Link href="#contact" className="hover:text-white transition">Contact Us</Link>
+                <Link href="/contact" className="hover:text-white transition">Contact Us</Link>
               </li>
             </ul>
           </div>

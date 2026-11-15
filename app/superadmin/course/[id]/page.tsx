@@ -52,8 +52,16 @@ export default function CourseDetailPage() {
   const [editCourseTitle, setEditCourseTitle] = useState("");
   const [editCourseDescription, setEditCourseDescription] = useState("");
   const [editCoursePrice, setEditCoursePrice] = useState("");
+  const [editShowOnHomePage, setEditShowOnHomePage] = useState(true);
   const [editCoverImage, setEditCoverImage] = useState<string>("");
   const [editCoverImagePreview, setEditCoverImagePreview] = useState<string>("");
+  const [editBadge, setEditBadge] = useState("");
+  const [editTagline, setEditTagline] = useState("");
+  const [editDuration, setEditDuration] = useState("30 Days");
+  const [editValidity, setEditValidity] = useState("6 Months");
+  const [editLiveSessions, setEditLiveSessions] = useState("5 Live Sessions");
+  const [editFeatures, setEditFeatures] = useState("");
+  const [editWhoShouldJoin, setEditWhoShouldJoin] = useState("");
 
   // Module edit states
   const [editModuleTitle, setEditModuleTitle] = useState("");
@@ -387,7 +395,19 @@ export default function CourseDetailPage() {
     setEditCourseTitle(courseData?.title || "");
     setEditCourseDescription(courseData?.description || "");
     setEditCoursePrice(courseData?.price?.toString() || "");
+    setEditShowOnHomePage(courseData?.showOnHomePage !== false);
     setEditCoverImagePreview(courseData?.coverImage || "");
+    setEditBadge(courseData?.badge || "");
+    setEditTagline(courseData?.tagline || "");
+    setEditDuration(courseData?.duration || "30 Days");
+    setEditValidity(courseData?.validity || "6 Months");
+    setEditLiveSessions(courseData?.liveSessions || "5 Live Sessions");
+    setEditFeatures(
+      Array.isArray(courseData?.features)
+        ? courseData.features.join("\n")
+        : courseData?.features || ""
+    );
+    setEditWhoShouldJoin(courseData?.whoShouldJoin || "");
     setShowEditCourseModal(true);
   };
 
@@ -430,7 +450,15 @@ export default function CourseDetailPage() {
           title: editCourseTitle,
           description: editCourseDescription,
           price: editCoursePrice,
+          showOnHomePage: editShowOnHomePage,
           coverImage: editCoverImage,
+          badge: editBadge,
+          tagline: editTagline,
+          duration: editDuration,
+          validity: editValidity,
+          liveSessions: editLiveSessions,
+          features: editFeatures,
+          whoShouldJoin: editWhoShouldJoin,
         }),
       });
 
@@ -445,7 +473,15 @@ export default function CourseDetailPage() {
         title: editCourseTitle,
         description: editCourseDescription,
         price: parseFloat(editCoursePrice),
+        showOnHomePage: editShowOnHomePage,
         coverImage: editCoverImagePreview,
+        badge: editBadge,
+        tagline: editTagline,
+        duration: editDuration,
+        validity: editValidity,
+        liveSessions: editLiveSessions,
+        features: editFeatures.split("\n").map((f) => f.trim()).filter(Boolean),
+        whoShouldJoin: editWhoShouldJoin,
       });
 
       setShowEditCourseModal(false);
@@ -891,19 +927,106 @@ export default function CourseDetailPage() {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Top Badge Pill</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. POPULAR FOUNDATION, MOST COMPREHENSIVE"
+                      value={editBadge}
+                      onChange={(e) => setEditBadge(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none text-sm"
+                      disabled={modalLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Tagline / Subtitle</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Build Your Foundation. Start Speaking with Confidence."
+                      value={editTagline}
+                      onChange={(e) => setEditTagline(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none text-sm"
+                      disabled={modalLoading}
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Description / Overview</label>
                   <textarea
                     value={editCourseDescription}
                     onChange={(e) => setEditCourseDescription(e.target.value)}
-                    rows={4}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none resize-none"
+                    rows={3}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none resize-none text-sm"
+                    disabled={modalLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Duration</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 30 Days / Self-Paced"
+                      value={editDuration}
+                      onChange={(e) => setEditDuration(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm"
+                      disabled={modalLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">App Validity</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 6 Months"
+                      value={editValidity}
+                      onChange={(e) => setEditValidity(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm"
+                      disabled={modalLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase">Live Sessions</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 5 Live Sessions"
+                      value={editLiveSessions}
+                      onChange={(e) => setEditLiveSessions(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] outline-none text-sm"
+                      disabled={modalLoading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Course Features Checklist (One item per line)
+                  </label>
+                  <textarea
+                    value={editFeatures}
+                    onChange={(e) => setEditFeatures(e.target.value)}
+                    rows={5}
+                    placeholder="24/7 access to the Ancraze App&#10;Six months of app validity&#10;Pre-recorded lessons&#10;Innovative 20-Code Method"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none resize-none text-xs font-mono"
                     disabled={modalLoading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Price ($)</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Who Should Join</label>
+                  <textarea
+                    value={editWhoShouldJoin}
+                    onChange={(e) => setEditWhoShouldJoin(e.target.value)}
+                    rows={2}
+                    placeholder="Learners who want to establish a strong foundation..."
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none resize-none text-sm"
+                    disabled={modalLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Price (₹)</label>
                   <input
                     type="number"
                     value={editCoursePrice}
@@ -940,6 +1063,24 @@ export default function CourseDetailPage() {
                       />
                     </div>
                   )}
+                </div>
+
+                {/* Show on Home Page Checkbox */}
+                <div className="p-4 bg-purple-50/60 border border-purple-200/80 rounded-xl flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="edit-show-homepage"
+                    checked={editShowOnHomePage}
+                    onChange={(e) => setEditShowOnHomePage(e.target.checked)}
+                    disabled={modalLoading}
+                    className="w-5 h-5 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
+                  />
+                  <label htmlFor="edit-show-homepage" className="cursor-pointer">
+                    <p className="text-sm font-bold text-slate-900">Show on Home Page</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      When enabled, this course will appear in the &ldquo;Our Courses&rdquo; section on the website homepage.
+                    </p>
+                  </label>
                 </div>
 
                 <div className="flex gap-3 pt-4 border-t border-slate-100">

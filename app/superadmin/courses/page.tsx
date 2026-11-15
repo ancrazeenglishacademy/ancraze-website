@@ -15,6 +15,7 @@ interface Course {
   price: string;
   coverImage: string;
   moduleCount: number;
+  showOnHomePage?: boolean;
   createdAt: string;
 }
 
@@ -52,6 +53,7 @@ export default function SuperAdminCoursePage() {
         price: course.price,
         coverImage: course.coverImage,
         moduleCount: course.moduleCount || 0,
+        showOnHomePage: course.showOnHomePage !== false,
         createdAt: course.createdAt,
       }));
       setCourses(formattedCourses);
@@ -62,6 +64,30 @@ export default function SuperAdminCoursePage() {
       setCourses([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleShowOnHomePage = async (e: React.MouseEvent, courseId: string, currentStatus: boolean) => {
+    e.stopPropagation();
+    try {
+      const nextStatus = !currentStatus;
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, showOnHomePage: nextStatus } : c));
+      
+      const res = await fetch("/api/courses/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+        body: JSON.stringify({
+          courseId,
+          showOnHomePage: nextStatus,
+        }),
+      });
+      if (!res.ok) throw new Error("Update failed");
+    } catch (err) {
+      console.error("Failed to toggle home page status:", err);
+      fetchCourses();
     }
   };
 
@@ -123,6 +149,21 @@ export default function SuperAdminCoursePage() {
               <div>
                 {/* Card Thumbnail */}
                 <div className="h-44 bg-slate-100 relative overflow-hidden">
+                  {/* Home Page Visibility Badge */}
+                  <button
+                    type="button"
+                    onClick={(e) => toggleShowOnHomePage(e, course.id, course.showOnHomePage !== false)}
+                    title="Click to toggle homepage visibility"
+                    className={`absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-md transition-all flex items-center gap-1 cursor-pointer ${
+                      course.showOnHomePage !== false
+                        ? "bg-emerald-500/90 hover:bg-emerald-600 text-white border border-emerald-400/40"
+                        : "bg-slate-800/80 hover:bg-slate-900 text-slate-300 border border-slate-700"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${course.showOnHomePage !== false ? "bg-white animate-pulse" : "bg-slate-400"}`} />
+                    <span>{course.showOnHomePage !== false ? "Home: Visible" : "Home: Hidden"}</span>
+                  </button>
+
                   {course.coverImage ? (
                     <Image
                       src={course.coverImage}
