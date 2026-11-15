@@ -257,7 +257,7 @@ function Hero() {
 
             {/* Subtitle */}
             <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              <strong className="text-slate-900 font-bold">Stop memorising. Start speaking.</strong> Develop real-life English-speaking skills in Bangla through our innovative 20-Code Method, personal speaking trainers and structured daily practice. All lessons and concepts are taught clearly in Bangla for effortless learning.
+              <strong className="text-slate-900 font-bold">Stop memorising. Start speaking.</strong> Develop real-life English-speaking skills in Bangla through our 20 Codes Method, personal speaking trainers and structured daily practice. All lessons and concepts are taught clearly in Bangla for effortless learning.
             </p>
 
             {/* Action Buttons */}
@@ -359,7 +359,7 @@ function Hero() {
                 </div>
                 <div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase leading-none">Method</p>
-                  <p className="text-xs font-black text-slate-900 leading-tight">Innovative 20 Codes</p>
+                  <p className="text-xs font-black text-slate-900 leading-tight">20 Codes Method</p>
                 </div>
               </div>
 
@@ -425,7 +425,7 @@ function WhatIsAncraze() {
               </div>
               <h3 className="text-xl font-bold text-slate-900">Beyond Theory</h3>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                All lessons are taught clearly in Bangla, combining our innovative 20-Code Method, personal speaking trainers, structured daily practice and a 24/7 learning app to provide a complete English-learning experience.
+                All lessons are taught clearly in Bangla, combining our 20 Codes Method, personal speaking trainers, structured daily practice and a 24/7 learning app to provide a complete English-learning experience.
               </p>
             </div>
           </div>
@@ -466,9 +466,9 @@ function WhyChooseAncraze() {
   const pillars = [
     {
       step: "01",
-      title: "Innovative 20-Code Method",
+      title: "20 Codes Method",
       tagline: "Forget complicated grammar struggles.",
-      desc: "Start constructing sentences and speaking English using our innovative 20 Codes, explained simply in Bangla language. Stop memorising endless grammar rules and start expressing yourself naturally.",
+      desc: "Start constructing sentences and speaking English using our 20 Codes Method, explained simply in Bangla language. Stop memorising endless grammar rules and start expressing yourself naturally.",
       icon: <Sparkles size={24} />,
     },
     {
@@ -559,7 +559,7 @@ function WhyChooseAncraze() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-                  <span>Innovative 20 Codes</span>
+                  <span>20 Codes Method</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
@@ -621,13 +621,13 @@ const COURSES_DATA: CourseItem[] = [
     tagline: "Build Your Foundation. Start Speaking with Confidence.",
     badge: "Popular Foundation",
     overview:
-      "A structured 30-day programme designed to help you understand sentence formation and develop practical English-speaking skills through our innovative 20-Code Method and daily practice.",
+      "A structured 30-day programme designed to help you understand sentence formation and develop practical English-speaking skills through our 20 Codes Method and daily practice.",
     features: [
       "Taught & explained in Bangla",
       "24/7 access to the Ancraze App",
       "Six months of app validity",
       "Pre-recorded lessons",
-      "Innovative 20-Code Method",
+      "20 Codes Method",
       "Daily vocabulary and useful phrases",
       "Learn 300 important English verbs and their usage",
       "Daily writing practice",
@@ -664,7 +664,7 @@ const COURSES_DATA: CourseItem[] = [
       "24/7 access to the Ancraze App",
       "Six months of app validity",
       "Pre-recorded lessons",
-      "Innovative 20-Code Method",
+      "20 Codes Method",
       "Daily vocabulary and useful phrases",
       "Learn 300 important English verbs and their usage",
       "Daily writing practice",
@@ -677,7 +677,7 @@ const COURSES_DATA: CourseItem[] = [
     whoShouldJoin:
       "Learners who prefer a longer learning period with additional opportunities for revision, speaking practice and deeper confidence-building.",
     experience: [
-      { title: "Structured Lessons", desc: "Learn through pre-recorded lessons and our innovative 20-Code Method at your pace." },
+      { title: "Structured Lessons", desc: "Learn through pre-recorded lessons and our 20 Codes Method at your pace." },
       { title: "Vocabulary Development", desc: "Develop vocabulary through useful everyday phrases and 300 important English verbs." },
       { title: "Daily Writing & Translation", desc: "Strengthen sentence formation and grammar intuition through regular exercises." },
       { title: "Personal Speaking Practice", desc: "Practise individually with your personal trainer through your chosen 10, 20 or 30-min plan." },
@@ -701,7 +701,7 @@ const COURSES_DATA: CourseItem[] = [
       "24/7 access to the Ancraze App",
       "Six months of app validity",
       "Pre-recorded lessons",
-      "Innovative 20-Code Method",
+      "20 Codes Method",
       "Daily vocabulary and useful phrases",
       "Learn 300 important English verbs and their usage",
     ],
@@ -710,7 +710,7 @@ const COURSES_DATA: CourseItem[] = [
     experience: [
       { title: "24/7 Learning Access", desc: "Access your lessons through the Ancraze App whenever you want, day or night." },
       { title: "Pre-recorded Lessons", desc: "Learn through structured high-definition video lessons at your convenience." },
-      { title: "Innovative 20-Code Method", desc: "Understand sentence formation effortlessly through our structured 20-Code methodology." },
+      { title: "20 Codes Method", desc: "Understand sentence formation effortlessly through our structured 20 Codes Method." },
       { title: "Vocabulary Development", desc: "Learn useful everyday vocabulary, idioms, and colloquial English phrases." },
       { title: "Essential English Verbs", desc: "Master 300 important English verbs, their forms, and contextual daily usage." },
     ],
@@ -750,7 +750,7 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
                   : [
                       "24/7 access to the Ancraze App",
                       "Six months of app validity",
-                      "Innovative 20-Code Method",
+                      "20 Codes Method",
                       "Personal trainer speaking practice",
                       "Daily vocabulary & verb training",
                       "Course completion certificate",
@@ -1014,7 +1014,7 @@ function WhatWeProvide() {
 // ==========================================
 function LearningJourney() {
   const steps = [
-    { title: "Learn", desc: "Understand sentence formation through our innovative 20 Codes.", icon: <BookOpen size={20} /> },
+    { title: "Learn", desc: "Understand sentence formation through our 20 Codes Method.", icon: <BookOpen size={20} /> },
     { title: "Practise", desc: "Reinforce daily vocabulary, translation and writing exercises.", icon: <Clock size={20} /> },
     { title: "Speak", desc: "Engage in 1-on-1 daily speaking practice with your personal trainer.", icon: <MessageSquare size={20} /> },
     { title: "Improve", desc: "Receive personal feedback, corrections, and weekly live revision.", icon: <Award size={20} /> },
@@ -1085,7 +1085,7 @@ function AboutUs() {
                 We believe the solution lies in changing the way English is learnt — explaining every concept simply in your mother tongue, Bangla.
               </p>
               <p className="p-4 bg-purple-50/70 border-l-4 border-[#2A0066] rounded-r-2xl text-slate-800 font-medium">
-                At Ancraze, all courses are conducted in Bangla, combining structured video lessons, our innovative 20-Code Method, dedicated personal speaking trainers, daily practice and technology to create an empowering learning environment.
+                At Ancraze, all courses are conducted in Bangla, combining structured video lessons, our 20 Codes Method, dedicated personal speaking trainers, daily practice and technology to create an empowering learning environment.
               </p>
             </div>
             <div className="pt-2">
@@ -1328,7 +1328,7 @@ function FAQSection() {
   const faqs = [
     {
       q: "1. What is Ancraze?",
-      a: "Ancraze is an online spoken English academy that helps Bengali-speaking learners develop practical English-speaking skills through lessons taught in Bangla, our innovative 20-Code Method, dedicated personal trainers, and structured daily practice.",
+      a: "Ancraze is an online spoken English academy that helps Bengali-speaking learners develop practical English-speaking skills through lessons taught in Bangla, our 20 Codes Method, dedicated personal trainers, and structured daily practice.",
     },
     {
       q: "2. Is the course taught in Bangla language?",
@@ -1336,7 +1336,7 @@ function FAQSection() {
     },
     {
       q: "3. What are the 20 Codes?",
-      a: "The 20 Codes are our innovative learning methodology designed to help learners understand sentence formation and develop their speaking skills systematically without memorising complex grammar rules.",
+      a: "The 20 Codes Method is our structured learning methodology designed to help learners understand sentence formation and develop their speaking skills systematically without memorising complex grammar rules.",
     },
     {
       q: "4. Which course should I choose?",
