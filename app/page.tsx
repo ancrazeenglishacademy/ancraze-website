@@ -244,7 +244,7 @@ function Hero() {
             {/* Pill Tag */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2A0066]/10 border border-[#2A0066]/20 rounded-full text-[#2A0066] text-xs font-black tracking-wide mx-auto lg:mx-0 w-fit">
               <Sparkles size={14} className="text-[#2A0066]" />
-              <span>INNOVATIVE 20-CODE SPOKEN ENGLISH METHOD</span>
+              <span>Best Spoken English Course in Bangla Language</span>
             </div>
 
             {/* Main Headline */}
