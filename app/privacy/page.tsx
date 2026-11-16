@@ -5,6 +5,14 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Privacy Policy | Ancraze English Academy',
   description: 'Privacy Policy for Ancraze English Academy mobile application and website.',
+  alternates: {
+    canonical: '/privacy',
+  },
+  openGraph: {
+    title: 'Privacy Policy | Ancraze English Academy',
+    description: 'Privacy Policy for Ancraze English Academy mobile application and website.',
+    url: 'https://www.ancraze.com/privacy',
+  },
 };
 
 export default function PrivacyPolicy() {
