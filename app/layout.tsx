@@ -88,6 +88,9 @@ export const metadata: Metadata = {
       "Best Spoken English Course in Bangla Language with 20 Codes Method and personal speaking trainers.",
     images: ["/student-avatar.png"],
   },
+  verification: {
+    google: "googlea4aabef345f51e31",
+  },
   robots: {
     index: true,
     follow: true,

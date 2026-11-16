@@ -1,0 +1,461 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sparkles,
+  MessageSquare,
+  Clock,
+  Calendar,
+  CheckCircle2,
+  Users,
+  Video,
+  Award,
+  ChevronRight,
+  BookOpen,
+} from "lucide-react";
+import Navbar from "@/app/componets/Navbar";
+import Footer from "@/app/componets/Footer";
+
+const PHONE_CLEAN = "919382452699";
+const WHATSAPP_URL = `https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent(
+  "Hello Ancraze Team! I am interested in enrolling in your Spoken English Course. Please share course details and fee structure."
+)}`;
+
+interface CourseItem {
+  id: string;
+  name: string;
+  price?: number;
+  duration?: string;
+  validity?: string;
+  liveSessions?: string;
+  tagline?: string;
+  badge?: string;
+  overview?: string;
+  features?: string[];
+  whoShouldJoin?: string;
+  experience?: Array<{ title: string; desc: string }>;
+  imageUrl?: string;
+}
+
+const DEFAULT_COURSES: CourseItem[] = [
+  {
+    id: "30-day",
+    name: "30-Day Foundational Spoken English Course",
+    duration: "30 Days",
+    validity: "6 Months",
+    liveSessions: "5 Live Sessions",
+    tagline: "Build Your Foundation. Start Speaking with Confidence.",
+    badge: "Popular Foundation",
+    price: 2999,
+    overview:
+      "A structured 30-day programme designed to help you understand sentence formation and develop practical English-speaking skills through our 20 Codes Method and daily practice.",
+    features: [
+      "Taught & explained in Bangla",
+      "24/7 access to the Ancraze App",
+      "Six months of app validity",
+      "Pre-recorded lessons",
+      "20 Codes Method",
+      "Daily vocabulary and useful phrases",
+      "Learn 300 important English verbs and their usage",
+      "Daily writing practice",
+      "Daily translation practice",
+      "Personal trainer speaking practice (10/20/30-minute plans)",
+      "Weekly revision and test sessions",
+      "5 live sessions for revision and public-speaking practice",
+      "Course completion certificate",
+    ],
+    whoShouldJoin:
+      "Learners who want to establish a strong foundation in spoken English through a focused, structured 30-day learning programme.",
+    experience: [
+      { title: "Structured Lessons", desc: "Access pre-recorded lessons through the Ancraze App and understand the 20 Codes Method." },
+      { title: "Vocabulary Development", desc: "Learn useful vocabulary, everyday expressions and 300 important English verbs with usage." },
+      { title: "Daily Writing & Translation", desc: "Strengthen your understanding through regular writing and translation practice." },
+      { title: "Personal Speaking Practice", desc: "Practise with your personal trainer through your selected 10, 20 or 30-minute daily plan." },
+      { title: "Weekly Revision", desc: "Revisit your lessons through weekly revision and assessment sessions." },
+      { title: "Live Learning Sessions", desc: "Participate in five live sessions designed to revise lessons and build public-speaking confidence." },
+      { title: "Course Completion Certificate", desc: "Receive an official course completion certificate upon fulfilling course requirements." },
+    ],
+  },
+  {
+    id: "60-day",
+    name: "60-Day Foundational Spoken English Course",
+    duration: "60 Days",
+    validity: "6 Months",
+    liveSessions: "10 Live Sessions",
+    tagline: "Take Your Time. Practise More. Speak with Confidence.",
+    badge: "Most Comprehensive",
+    price: 4999,
+    overview:
+      "An extended learning programme that gives you more time to practise, revise and strengthen your English-speaking skills with double the live sessions.",
+    features: [
+      "Taught & explained in Bangla",
+      "24/7 access to the Ancraze App",
+      "Six months of app validity",
+      "Pre-recorded lessons",
+      "20 Codes Method",
+      "Daily vocabulary and useful phrases",
+      "Learn 300 important English verbs and their usage",
+      "Daily writing practice",
+      "Daily translation practice",
+      "Personal trainer speaking practice (10/20/30-minute plans)",
+      "Weekly revision and test sessions",
+      "10 live sessions for revision and public-speaking practice",
+      "Course completion certificate",
+    ],
+    whoShouldJoin:
+      "Learners who prefer an extended learning period with additional time to practise, revise, and solidify their spoken English fluency.",
+    experience: [
+      { title: "Extended Curriculum", desc: "Gain in-depth mastery with double the time to practice and solidify your natural sentence flow." },
+      { title: "Double Live Sessions", desc: "Ten interactive live sessions designed to boost confidence in real-world public speaking." },
+      { title: "Intensive 1-on-1 Practice", desc: "Daily dedicated trainer calls tailored to your learning pace and personal feedback." },
+      { title: "Comprehensive Review", desc: "Weekly revision checkpoints to ensure concepts are deeply retained forever." },
+    ],
+  },
+  {
+    id: "self-study",
+    name: "Self-Study Spoken English Course",
+    duration: "Self-Paced",
+    validity: "6 Months",
+    liveSessions: "App-Based",
+    tagline: "Learn Independently. Improve at Your Own Pace.",
+    badge: "Flexible Self-Paced",
+    price: 1499,
+    overview:
+      "A flexible learning option for learners who prefer independent study and want to access structured learning materials at their convenience.",
+    features: [
+      "Taught & explained in Bangla",
+      "24/7 access to the Ancraze App",
+      "Six months of app validity",
+      "Pre-recorded lessons",
+      "20 Codes Method",
+      "Daily vocabulary and useful phrases",
+      "Learn 300 important English verbs and their usage",
+    ],
+    whoShouldJoin:
+      "Learners who prefer independent learning and want the flexibility to study whenever and wherever their schedule permits.",
+    experience: [
+      { title: "24/7 Learning Access", desc: "Access your lessons through the Ancraze App whenever you want, day or night." },
+      { title: "Pre-recorded Lessons", desc: "Learn through structured high-definition video lessons at your convenience." },
+      { title: "20 Codes Method", desc: "Understand sentence formation effortlessly through our structured 20 Codes Method." },
+      { title: "Vocabulary Development", desc: "Learn useful everyday vocabulary, idioms, and colloquial English phrases." },
+      { title: "Essential English Verbs", desc: "Master 300 important English verbs, their forms, and contextual daily usage." },
+    ],
+  },
+];
+
+export default function CoursesPage() {
+  const [courses, setCourses] = useState<CourseItem[]>(DEFAULT_COURSES);
+  const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch("/api/courses");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.courses) && data.courses.length > 0) {
+            const mapped = data.courses.map((c: any, index: number) => {
+              const fallback = DEFAULT_COURSES[index % DEFAULT_COURSES.length];
+              return {
+                id: c.id,
+                name: c.title || c.name || fallback.name,
+                duration: c.duration || fallback.duration,
+                validity: c.validity || fallback.validity,
+                liveSessions: c.liveSessions || fallback.liveSessions,
+                tagline: c.tagline || fallback.tagline,
+                badge: c.badge || fallback.badge,
+                overview: c.description || c.overview || fallback.overview,
+                price: c.price || fallback.price,
+                features: typeof c.features === "string"
+                  ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
+                  : fallback.features,
+                whoShouldJoin: c.whoShouldJoin || fallback.whoShouldJoin,
+                experience: fallback.experience,
+                imageUrl: c.coverImageUrl || c.imageUrl,
+              };
+            });
+            setCourses(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn("Using default courses fallback:", err);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-[#2A0066]/10 selection:text-[#2A0066]">
+      <Navbar />
+
+      {/* Hero Header */}
+      <section className="pt-36 sm:pt-44 pb-16 bg-gradient-to-b from-purple-50/70 via-white to-slate-50 border-b border-slate-200/70 text-center">
+        <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#2A0066]/10 border border-[#2A0066]/20 rounded-full text-[#2A0066] text-xs font-black uppercase tracking-widest mb-6">
+            <BookOpen size={14} />
+            <span>SPOKEN ENGLISH COURSES IN BANGLA</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12] max-w-4xl mx-auto">
+            Choose the Perfect Plan for Your{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
+              Speaking Goals
+            </span>
+          </h1>
+
+          <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto mt-5">
+            Every course is taught in simple Bangla with our 20 Codes Method, 1-on-1 personal speaking trainers, and 24/7 app access.
+          </p>
+        </div>
+      </section>
+
+      {/* Course Cards Grid */}
+      <section className="py-20 bg-white border-b border-slate-200/70">
+        <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+            {courses.map((course, index) => {
+              const isPopular = index === 1; // Highlight the 60-day or middle course
+              return (
+                <div
+                  key={course.id}
+                  className={`rounded-[32px] p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
+                    isPopular
+                      ? "bg-white border-2 border-[#2A0066] shadow-2xl shadow-[#2A0066]/15 lg:-translate-y-2"
+                      : "bg-slate-50/80 border border-slate-200/90 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/5"
+                  }`}
+                >
+                  {/* Badge */}
+                  {course.badge && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#2A0066] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+                      {course.badge}
+                    </div>
+                  )}
+
+                  <div>
+                    {/* Header */}
+                    <div className="text-center pt-2 pb-6 border-b border-slate-200/80">
+                      <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+                        {course.name}
+                      </h2>
+                      {course.tagline && (
+                        <p className="text-xs text-[#2A0066] font-bold mt-2">
+                          {course.tagline}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Quick Specs Pill Box */}
+                    <div className="grid grid-cols-3 gap-2 my-6 p-3 bg-white rounded-2xl border border-slate-200/70 text-center shadow-xs">
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Duration</p>
+                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.duration || "30 Days"}</p>
+                      </div>
+                      <div className="border-x border-slate-200/80">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Validity</p>
+                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.validity || "6 Months"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Live</p>
+                        <p className="text-xs font-black text-[#2A0066] mt-0.5">{course.liveSessions || "Live Classes"}</p>
+                      </div>
+                    </div>
+
+                    {/* Features Checklist */}
+                    <div className="space-y-3 pt-2">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        INCLUDED IN THIS COURSE:
+                      </p>
+                      <ul className="space-y-2.5">
+                        {(course.features || []).slice(0, 6).map((feature, fIdx) => (
+                          <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700 leading-snug">
+                            <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {(course.features || []).length > 6 && (
+                        <p className="text-[11px] font-bold text-[#2A0066] pt-1">
+                          + {(course.features || []).length - 6} more included features
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bottom CTAs */}
+                  <div className="pt-8 space-y-3">
+                    <button
+                      onClick={() => setSelectedCourse(course)}
+                      className="w-full py-3 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold rounded-2xl text-xs uppercase tracking-wider transition text-center shadow-xs cursor-pointer"
+                    >
+                      View Full Syllabus & Details
+                    </button>
+
+                    <a
+                      href={`https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent(
+                        `Hello Ancraze Team! I want to enroll in the ${course.name}. Please guide me on enrollment steps.`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3.5 bg-[#2A0066] hover:bg-[#3D0099] text-white font-black rounded-2xl text-xs uppercase tracking-wider transition shadow-lg shadow-[#2A0066]/20 flex items-center justify-center gap-2 text-center"
+                    >
+                      <MessageSquare size={14} className="fill-white" />
+                      <span>Enroll Now on WhatsApp</span>
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Table Section */}
+      <section className="py-24 bg-slate-50 border-b border-slate-200/70">
+        <div className="max-w-[1100px] mx-auto px-5 sm:px-6">
+          <div className="text-center space-y-3 mb-14">
+            <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest">
+              COMPARISON
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Compare Our Learning Plans
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-[32px] border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead>
+                  <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-900 font-black">
+                    <th className="p-4 sm:p-5">Feature</th>
+                    <th className="p-4 sm:p-5 text-center">30-Day Course</th>
+                    <th className="p-4 sm:p-5 text-center bg-purple-50/70 text-[#2A0066]">60-Day Course</th>
+                    <th className="p-4 sm:p-5 text-center">Self-Study</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
+                  <tr>
+                    <td className="p-4 sm:p-5 font-bold text-slate-900">Teaching Language</td>
+                    <td className="p-4 sm:p-5 text-center text-emerald-600 font-bold">Bangla</td>
+                    <td className="p-4 sm:p-5 text-center text-emerald-600 font-bold bg-purple-50/30">Bangla</td>
+                    <td className="p-4 sm:p-5 text-center text-emerald-600 font-bold">Bangla</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 sm:p-5 font-bold text-slate-900">20 Codes Method</td>
+                    <td className="p-4 sm:p-5 text-center">✓ Complete</td>
+                    <td className="p-4 sm:p-5 text-center bg-purple-50/30">✓ Complete</td>
+                    <td className="p-4 sm:p-5 text-center">✓ Complete</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 sm:p-5 font-bold text-slate-900">1-on-1 Speaking Trainer</td>
+                    <td className="p-4 sm:p-5 text-center text-emerald-600 font-bold">✓ Daily Calls</td>
+                    <td className="p-4 sm:p-5 text-center text-emerald-600 font-bold bg-purple-50/30">✓ Daily Calls</td>
+                    <td className="p-4 sm:p-5 text-center text-slate-400">Self-Paced</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 sm:p-5 font-bold text-slate-900">Live Revision Sessions</td>
+                    <td className="p-4 sm:p-5 text-center">5 Live Sessions</td>
+                    <td className="p-4 sm:p-5 text-center font-bold text-[#2A0066] bg-purple-50/30">10 Live Sessions</td>
+                    <td className="p-4 sm:p-5 text-center text-slate-400">App-Based</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 sm:p-5 font-bold text-slate-900">Ancraze App Validity</td>
+                    <td className="p-4 sm:p-5 text-center">6 Months</td>
+                    <td className="p-4 sm:p-5 text-center bg-purple-50/30">6 Months</td>
+                    <td className="p-4 sm:p-5 text-center">6 Months</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 sm:p-5 font-bold text-slate-900">Official Certificate</td>
+                    <td className="p-4 sm:p-5 text-center text-emerald-600 font-bold">Included</td>
+                    <td className="p-4 sm:p-5 text-center text-emerald-600 font-bold bg-purple-50/30">Included</td>
+                    <td className="p-4 sm:p-5 text-center text-slate-400">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Course Detail Modal */}
+      <AnimatePresence>
+        {selectedCourse && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200"
+            >
+              <div className="p-6 sm:p-8 bg-gradient-to-r from-[#2A0066] to-[#450099] text-white">
+                <span className="text-[10px] font-black uppercase tracking-widest text-purple-200">
+                  {selectedCourse.badge || "SPOKEN ENGLISH PROGRAMME"}
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-black mt-1">{selectedCourse.name}</h3>
+                <p className="text-xs text-purple-100 mt-2">{selectedCourse.tagline}</p>
+              </div>
+
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-700 text-sm">
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
+                    Course Overview
+                  </h4>
+                  <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">
+                    {selectedCourse.overview}
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
+                    What You Will Receive
+                  </h4>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {(selectedCourse.features || []).map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
+                    Who Should Join
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                    {selectedCourse.whoShouldJoin}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">
+                <button
+                  onClick={() => setSelectedCourse(null)}
+                  className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition"
+                >
+                  Close
+                </button>
+                <a
+                  href={`https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent(
+                    `Hello Ancraze Team! I want to enroll in the ${selectedCourse.name}. Please guide me on next steps.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-2.5 bg-[#2A0066] hover:bg-[#3D0099] text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-[#2A0066]/20 flex items-center gap-1.5"
+                >
+                  <MessageSquare size={14} className="fill-white" />
+                  <span>Enroll on WhatsApp</span>
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <Footer />
+    </div>
+  );
+}

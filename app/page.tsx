@@ -120,20 +120,20 @@ function Navbar({ hasFaculties = false }: { hasFaculties?: boolean }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "About Us", href: "#about" },
-    { name: "Our Courses", href: "#courses" },
-    ...(hasFaculties ? [{ name: "Faculties", href: "#faculties" }] : []),
-    { name: "Why Ancraze", href: "#why-ancraze" },
-    { name: "What We Provide", href: "#what-we-provide" },
-    { name: "Contact Us", href: "#contact" },
+    { name: "Home", href: "/" },
+    { name: "About Us", href: "/about" },
+    { name: "Our Courses", href: "/courses" },
+    ...(hasFaculties ? [{ name: "Faculties", href: "/faculties" }] : []),
+    { name: "Why Ancraze", href: "/why-ancraze" },
+    { name: "What We Provide", href: "/what-we-provide" },
+    { name: "Contact Us", href: "/contact" },
   ];
 
   return (
     <nav className="fixed w-full top-4 sm:top-6 z-50 px-4 sm:px-6 pointer-events-none">
       <div className="max-w-[1320px] mx-auto px-5 py-3 sm:py-3.5 flex items-center justify-between bg-white/90 backdrop-blur-2xl border border-slate-200/80 rounded-[28px] shadow-[0_12px_40px_rgba(42,0,102,0.06)] pointer-events-auto">
         {/* Brand */}
-        <Link href="#home" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 bg-white border border-slate-200/90 rounded-xl flex items-center justify-center shadow-md shadow-[#2A0066]/5 group-hover:rotate-6 transition-transform duration-300 relative p-1">
             <Image src="/logo.png" alt="Ancraze Logo" width={36} height={36} className="object-contain" priority />
           </div>
@@ -1812,30 +1812,30 @@ function Footer({ hasFaculties = false }: { hasFaculties?: boolean }) {
             </h4>
             <ul className="space-y-2.5 text-xs font-bold text-purple-100/80">
               <li>
-                <Link href="#home" className="hover:text-white transition">Home</Link>
+                <Link href="/" className="hover:text-white transition">Home</Link>
               </li>
               <li>
-                <Link href="#about" className="hover:text-white transition">About Us</Link>
+                <Link href="/about" className="hover:text-white transition">About Us</Link>
               </li>
               <li>
-                <Link href="#courses" className="hover:text-white transition">Our Courses</Link>
+                <Link href="/courses" className="hover:text-white transition">Our Courses</Link>
               </li>
               {hasFaculties && (
                 <li>
-                  <Link href="#faculties" className="hover:text-white transition">Faculties & Mentors</Link>
+                  <Link href="/faculties" className="hover:text-white transition">Faculties & Mentors</Link>
                 </li>
               )}
               <li>
-                <Link href="#why-ancraze" className="hover:text-white transition">Why Ancraze</Link>
+                <Link href="/why-ancraze" className="hover:text-white transition">Why Ancraze</Link>
               </li>
               <li>
-                <Link href="#what-we-provide" className="hover:text-white transition">What We Provide</Link>
+                <Link href="/what-we-provide" className="hover:text-white transition">What We Provide</Link>
               </li>
               <li>
-                <Link href="#faq" className="hover:text-white transition">Frequently Asked Questions</Link>
+                <Link href="/#faq" className="hover:text-white transition">Frequently Asked Questions</Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-white transition">Contact Us</Link>
+                <Link href="/contact" className="hover:text-white transition">Contact Us & Admissions</Link>
               </li>
             </ul>
           </div>

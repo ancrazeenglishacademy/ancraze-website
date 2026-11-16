@@ -7,7 +7,18 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/contact", "/privacy", "/login", "/register"],
+        allow: [
+          "/",
+          "/about",
+          "/courses",
+          "/why-ancraze",
+          "/what-we-provide",
+          "/faculties",
+          "/contact",
+          "/privacy",
+          "/login",
+          "/register",
+        ],
         disallow: [
           "/superadmin/",
           "/dashboard/",
