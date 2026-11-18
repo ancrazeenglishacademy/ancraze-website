@@ -9,7 +9,7 @@ import {
   LayoutDashboard,
   BookOpen,
   UsersRound,
-  DollarSign,
+  IndianRupee,
   UserCheck,
   ShieldAlert,
   BarChart3,
@@ -232,7 +232,7 @@ function SidebarContent({
       items: [
         { label: "Dashboard", href: "/superadmin", icon: <LayoutDashboard size={19} /> },
         { label: "Students", href: "/superadmin/students", icon: <UsersRound size={19} /> },
-        { label: "Finances", href: "/superadmin/finances", icon: <DollarSign size={19} /> },
+        { label: "Finances", href: "/superadmin/finances", icon: <IndianRupee size={19} /> },
         { label: "Staff & Workloads", href: "/superadmin/staff", icon: <UserCheck size={19} /> },
       ],
     },
