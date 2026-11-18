@@ -7,7 +7,7 @@ import {
   Presentation,
   TrendingUp,
   Award,
-  DollarSign,
+  IndianRupee,
   ShieldAlert,
   ArrowRight,
   Clock,
@@ -173,7 +173,7 @@ export default function SuperAdminDashboard() {
           title="Total Revenue"
           value={loading ? "..." : `₹${financialSummary.totalRevenue.toLocaleString()}`}
           subtitle={`₹${financialSummary.netProfit.toLocaleString()} Net Profit`}
-          icon={<DollarSign size={22} />}
+          icon={<IndianRupee size={22} />}
           onClick={() => router.push("/superadmin/finances")}
         />
         <MetricCard

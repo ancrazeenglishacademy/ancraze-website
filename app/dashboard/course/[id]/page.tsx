@@ -603,7 +603,7 @@ export default function CourseDetailPage() {
                 <>
                   <span className="text-slate-300">•</span>
                   <p className="text-[#2A0066] text-xs font-bold">
-                    ${Number(courseData.price).toFixed(2)}
+                    ₹{Number(courseData.price).toLocaleString("en-IN")}
                   </p>
                 </>
               )}
@@ -686,7 +686,7 @@ export default function CourseDetailPage() {
             </h3>
             <div className="space-y-4">
               <DetailField label="Instructor" value={courseData?.teacherName || "N/A"} />
-              <DetailField label="Price" value={`$${courseData?.price || "0"}`} />
+              <DetailField label="Price" value={`₹${courseData?.price || "0"}`} />
               <DetailField label="Modules" value={`${modules.length} Modules`} />
               <DetailField label="Last Updated" value="Jan 21, 2026" />
             </div>
@@ -864,7 +864,7 @@ export default function CourseDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Price ($)</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Price (₹)</label>
                   <input
                     type="number"
                     value={editCoursePrice}

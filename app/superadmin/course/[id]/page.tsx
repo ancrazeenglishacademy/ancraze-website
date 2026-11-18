@@ -644,7 +644,7 @@ export default function CourseDetailPage() {
                 <>
                   <span className="text-slate-300">•</span>
                   <p className="text-[#2A0066] text-xs font-bold">
-                    ${Number(courseData.price).toFixed(2)}
+                    ₹{Number(courseData.price).toLocaleString("en-IN")}
                   </p>
                 </>
               )}
@@ -753,7 +753,7 @@ export default function CourseDetailPage() {
             </h3>
             <div className="space-y-4">
               <DetailField label="Instructor" value={courseData?.teacherName || "N/A"} />
-              <DetailField label="Price" value={`$${courseData?.price || "0"}`} />
+              <DetailField label="Price" value={`₹${courseData?.price || "0"}`} />
               <DetailField label="Modules" value={`${modules.length} Modules`} />
               <DetailField label="Last Updated" value="Jan 21, 2026" />
             </div>
@@ -1007,7 +1007,7 @@ export default function CourseDetailPage() {
                     value={editFeatures}
                     onChange={(e) => setEditFeatures(e.target.value)}
                     rows={5}
-                    placeholder="24/7 access to the Ancraze App&#10;Six months of app validity&#10;Pre-recorded lessons&#10;Innovative 20-Code Method"
+                    placeholder="24/7 access to the Ancraze App&#10;Six months of app validity&#10;Pre-recorded lessons&#10;20 Codes Method"
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none resize-none text-xs font-mono"
                     disabled={modalLoading}
                   />

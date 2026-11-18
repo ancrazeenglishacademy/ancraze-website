@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  DollarSign,
+  IndianRupee,
   UserX,
   AlertTriangle,
   Loader,
@@ -170,7 +170,7 @@ export default function SuperAdminOversightPage() {
                         : "bg-rose-50 text-rose-600"
                     }`}
                   >
-                    {req.type === "refund" ? <DollarSign size={20} /> : <UserX size={20} />}
+                    {req.type === "refund" ? <IndianRupee size={20} /> : <UserX size={20} />}
                   </div>
 
                   <div className="space-y-1">

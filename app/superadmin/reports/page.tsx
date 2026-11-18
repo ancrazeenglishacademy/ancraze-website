@@ -8,7 +8,7 @@ import {
   Users,
   GraduationCap,
   BookOpen,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   Loader,
   Calendar,
@@ -100,7 +100,7 @@ export default function SuperAdminReportsPage() {
           { id: "students", label: "Student Progress Report", icon: <Users size={16} /> },
           { id: "trainers", label: "Trainer Performance Report", icon: <GraduationCap size={16} /> },
           { id: "courses", label: "Curriculum Enrolment Report", icon: <BookOpen size={16} /> },
-          { id: "finances", label: "Financial Audit Report", icon: <DollarSign size={16} /> },
+          { id: "finances", label: "Financial Audit Report", icon: <IndianRupee size={16} /> },
         ].map((tab) => (
           <button
             key={tab.id}

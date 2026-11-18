@@ -7,7 +7,7 @@ import {
   Send,
   Loader,
   X,
-  DollarSign,
+  IndianRupee,
   AlertCircle,
   CheckCircle2,
   Clock,
@@ -150,7 +150,7 @@ export default function SupportRequestsPage() {
                       r.type === "refund" ? "bg-emerald-50 text-emerald-600" : "bg-purple-50 text-[#2A0066]"
                     }`}
                   >
-                    {r.type === "refund" ? <DollarSign size={18} /> : <AlertCircle size={18} />}
+                    {r.type === "refund" ? <IndianRupee size={18} /> : <AlertCircle size={18} />}
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 text-sm tracking-tight">

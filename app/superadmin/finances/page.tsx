@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   TrendingDown,
   Clock,
@@ -163,7 +163,7 @@ export default function SuperAdminFinancesPage() {
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Net Profit</span>
             <div className="p-2 bg-[#2A0066]/10 text-[#2A0066] rounded-xl">
-              <DollarSign size={18} />
+              <IndianRupee size={18} />
             </div>
           </div>
           <p className="text-2xl font-black text-[#2A0066]">₹{summary.netProfit.toLocaleString()}</p>
