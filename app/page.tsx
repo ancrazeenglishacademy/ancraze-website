@@ -258,7 +258,7 @@ function Hero() {
 
             {/* Subtitle */}
             <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              <strong className="text-slate-900 font-bold">Stop memorising. Start speaking.</strong> Develop real-life English-speaking skills in Bangla through our 20 Codes Method, personal speaking trainers and structured daily practice. All lessons and concepts are taught clearly in Bangla for effortless learning.
+              <strong className="text-slate-900 font-bold">Join ANCRAZE's online spoken English course in Bangla.</strong> Learn to speak English from the basics with our unique 20 Codes Method, personal speaking trainers and daily English speaking practice. Build confidence and improve your everyday English communication skills through guided online classes.
             </p>
 
             {/* Action Buttons */}
