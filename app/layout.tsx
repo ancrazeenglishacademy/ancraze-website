@@ -26,8 +26,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Ancraze English Academy | Best Spoken English Course in Bangla",
-    template: "%s | Ancraze English Academy",
+    default: "Spoken English Course in Bangla | ANCRAZE",
+    template: "%s | ANCRAZE",
   },
   description:
     "Master spoken English in Bangla with Ancraze. Learn sentence formation effortlessly through our 20 Codes Method, 1-on-1 personal speaking trainers, 24/7 app access, and daily practice.",
