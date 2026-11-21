@@ -248,13 +248,10 @@ function Hero() {
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
-                Speak English
-              </span>{" "}
-              with our 20 Codes.
-            </h1>
-
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
+  Speak English Through Bangla
+</span>{" "}
+with Our 20 Codes Method
             {/* Subtitle */}
             <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
               <strong className="text-slate-900 font-bold">Stop memorising. Start speaking.</strong> Develop real-life English-speaking skills in Bangla through our 20 Codes Method, personal speaking trainers and structured daily practice. All lessons and concepts are taught clearly in Bangla for effortless learning.
