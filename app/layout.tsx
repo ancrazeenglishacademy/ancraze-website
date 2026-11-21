@@ -140,7 +140,16 @@ export default function RootLayout({
           "https://apps.apple.com/in/app/ancraze/id6773675253",
         ],
       },
-      {
+          {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      "url": SITE_URL,
+      "name": "Ancraze English Academy",
+      "publisher": {
+        "@id": `${SITE_URL}/#organization`
+      },
+      "inLanguage": "bn-IN"
+    },{
         "@type": "Course",
         "@id": `${SITE_URL}/#course-30day`,
         name: "30-Day Foundational Spoken English Course in Bangla",
