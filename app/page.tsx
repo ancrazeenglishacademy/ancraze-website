@@ -250,7 +250,7 @@ function Hero() {
             {/* Main Headline */}
 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
-    Speak English Through Bangla
+    Speak English Through Bangla 
   </span>{" "}
   with Our 20 Codes Method
 </h1>
