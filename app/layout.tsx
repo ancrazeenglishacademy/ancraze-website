@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | ANCRAZE",
   },
   description:
-    "Master spoken English in Bangla with Ancraze. Learn sentence formation effortlessly through our 20 Codes Method, 1-on-1 personal speaking trainers, 24/7 app access, and daily practice.",
+    "Learn to speak English confidently with ANCRAZE, an online spoken English course taught in Bengali. Practise with personal speaking trainers, our 20 Codes Method and 24/7 app access.",
   applicationName: "Ancraze English Academy",
   keywords: [
     "spoken english course in bangla",
