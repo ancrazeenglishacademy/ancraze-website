@@ -66,8 +66,8 @@ export default function Navbar({ hasFaculties }: NavbarProps) {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-black text-slate-900 tracking-tight leading-none">
-              ANCRAZE 
-            </span>
+  Ancraze
+</span>
             <span className="text-[9px] font-bold text-[#2A0066] tracking-widest uppercase mt-0.5">
               Spoken English Academy
             </span>
