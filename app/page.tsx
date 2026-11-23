@@ -450,7 +450,7 @@ function WhatIsAncraze() {
               </div>
               <h3 className="text-xl font-bold text-slate-900">Daily English Speaking Practice</h3>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-               Don't just learn English – use it every day. Practise speaking, build sentences and improve your communication skills through regular activities and personal speaking sessions.
+               Don't just learn English – use it every day. Practise speaking, build sentences and improve your communication skills through regular activities and personal speaking sessions. 
               </p>
             </div>
           </div>
