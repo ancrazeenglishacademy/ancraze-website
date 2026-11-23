@@ -151,7 +151,7 @@ export default function Footer({ hasFaculties = false }: FooterProps) {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p className="text-[11px] text-purple-300/60 font-medium">
-            ©️ 2026 Ancraze English Academy. All Rights Reserved.
+            ©️ 2026 ANCRAZE English Academy. All Rights Reserved.
           </p>
           <div className="flex items-center gap-6 text-[11px] text-purple-300/60 font-medium">
             <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>
