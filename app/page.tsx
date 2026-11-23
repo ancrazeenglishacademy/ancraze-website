@@ -1077,7 +1077,7 @@ function AboutUs() {
             </h2>
             <div className="space-y-4 text-slate-600 font-normal leading-relaxed text-sm sm:text-base">
               <p>
-                <strong className="text-slate-900 font-bold">Ancraze Online Spoken English Academy</strong> dedicated to helping Bengali-speaking learners develop practical English communication skills. Our learning approach combines innovative teaching methods in Bangla, modern technology and structured speaking practice.
+                <strong className="text-slate-900 font-bold">Ancraze </strong> is an online spoken English academy dedicated to helping Bengali-speaking learners develop practical English communication skills. Our learning approach combines innovative teaching methods in Bangla, modern technology and structured speaking practice.
               </p>
               <p>
                 Many learners study English for years but still hesitate when speaking.  They may understand grammar, recognise vocabulary and construct sentences, yet struggle to communicate naturally in real-life conversations.
