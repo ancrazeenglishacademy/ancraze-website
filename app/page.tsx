@@ -513,7 +513,7 @@ function WhyChooseAncraze() {
             Because Speaking English Requires More Than Just Attending Classes.
           </h2>
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed pt-1">
-            Many people understand English but hesitate when they have to speak. At Ancraze, we focus on helping you bridge that gap.
+           Knowing English grammar and vocabulary is only the beginning. The real challenge is using English naturally in conversations. ANCRAZE helps Bengali-speaking learners overcome hesitation, improve fluency and develop practical communication skills through a structured, interactive learning experience.
           </p>
         </div>
 
@@ -784,10 +784,10 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
             OUR COURSES
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-            Choose the Learning Journey That Suits You!
+            Explore Our Online Spoken English Courses in Bangla
           </h2>
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed pt-1">
-            Whether you prefer a structured programme with personal speaking practice or independent learning at your own pace, Ancraze offers different learning options.
+            Choose the right spoken English course for your learning goals. Whether you want guided training with live speaking sessions or flexible self-paced lessons, ANCRAZE offers practical English learning programmes to help you build fluency and communication skills.
           </p>
         </div>
 
@@ -959,10 +959,10 @@ function WhatWeProvide() {
             WHAT WE PROVIDE
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-            Everything You Need to Become a Confident English Speaker
+            Online English Speaking Training with Personal Guidance and Daily Practice
           </h2>
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed pt-1">
-            A comprehensive, technology-driven ecosystem designed for real-world English communication.
+            ANCRAZE offers practical online English speaking training through structured lessons, daily speaking exercises, personal trainer guidance and app-based learning. Develop your fluency, improve communication skills and gain confidence in real-life conversations.
           </p>
         </div>
 
@@ -1073,20 +1073,20 @@ function AboutUs() {
               ABOUT ANCRAZE
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.15]">
-              We Don&apos;t Just Teach English. We Help You Speak It.
+              How ANCRAZE Helps Bengali-Speaking Learners Master Spoken English
             </h2>
             <div className="space-y-4 text-slate-600 font-normal leading-relaxed text-sm sm:text-base">
               <p>
-                <strong className="text-slate-900 font-bold">Ancraze Online Spoken English Academy</strong> is dedicated to helping Bengali-speaking learners develop practical English-speaking skills through innovative teaching methods in Bangla, modern technology and consistent speaking practice.
+                <strong className="text-slate-900 font-bold">Ancraze Online Spoken English Academy</strong> dedicated to helping Bengali-speaking learners develop practical English communication skills. Our learning approach combines innovative teaching methods in Bangla, modern technology and structured speaking practice.
               </p>
               <p>
-                We understand that many people study English for years but still hesitate when it comes to speaking. They may know grammar rules, understand vocabulary and write sentences, yet struggle to communicate confidently in real conversations.
+                Many learners study English for years but still hesitate when speaking. They may understand grammar, recognise vocabulary and construct sentences, yet struggle to communicate naturally in real-life conversations.
               </p>
               <p>
-                We believe the solution lies in changing the way English is learnt — explaining every concept simply in your mother tongue, Bangla.
+                At ANCRAZE, we focus on turning theoretical English knowledge into practical speaking ability. By explaining concepts in your mother tongue, Bangla, we make English learning easier to understand and apply.
               </p>
               <p className="p-4 bg-purple-50/70 border-l-4 border-[#2A0066] rounded-r-2xl text-slate-800 font-medium">
-                At Ancraze, all courses are conducted in Bangla, combining structured video lessons, our 20 Codes Method, dedicated personal speaking trainers, daily practice and technology to create an empowering learning environment.
+                Our approach combines the 20 Codes Method, personalised speaking guidance and practical English exercises to help Bengali-speaking learners turn their knowledge into confident communication.
               </p>
             </div>
             <div className="pt-2">
@@ -1162,10 +1162,10 @@ function DownloadAppSection() {
             DOWNLOAD THE ANCRAZE APP
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight">
-            Your English Classroom. Always With You.
+            Learn and Practise English Anytime with the ANCRAZE Learning App
           </h2>
           <p className="text-purple-100 text-base sm:text-lg font-normal leading-relaxed">
-            Access your lessons and learning materials whenever and wherever you want. Experience our learning system with a <strong className="text-white font-bold">3-day free trial</strong>.
+            Improve your English with the ANCRAZE learning app. Access lessons, learning materials and speaking practice activities anytime, anywhere. Explore our digital English learning experience with a <strong className="text-white font-bold">3-day free trial</strong>.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
