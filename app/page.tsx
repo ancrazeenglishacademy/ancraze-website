@@ -10,7 +10,7 @@ import {
   Sparkles,
   Globe,
   Download,
-  Phone,
+  Phone, 
   Star,
   UserCheck,
   Clock,
