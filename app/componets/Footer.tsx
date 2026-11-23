@@ -132,7 +132,7 @@ export default function Footer({ hasFaculties = false }: FooterProps) {
 
             <div className="pt-4 border-t border-white/10 space-y-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-purple-300">
-                Contact Admissions
+                Contact Admissions 
               </p>
               <p className="text-xs text-purple-200">WhatsApp & Call: {PHONE_NUMBER}</p>
               <p className="text-xs text-purple-200">
