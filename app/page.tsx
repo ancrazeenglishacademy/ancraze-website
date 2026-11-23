@@ -411,7 +411,7 @@ function WhatIsAncraze() {
             WHAT IS ANCRAZE?
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-            A Better Way to Learn Spoken English Through Bengali 
+            A Better Way to Learn Spoken English in Bangla
           </h2>
           <p className="text-base sm:text-lg text-slate-600 font-medium leading-relaxed pt-2">
             Ancraze is an innovative online spoken English academy designed for Bengali speakers to move beyond theoretical knowledge and develop practical English-speaking skills through easy explanations in Bangla.
