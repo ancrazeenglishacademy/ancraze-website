@@ -414,7 +414,7 @@ function WhatIsAncraze() {
             A Better Way to Learn Spoken English in Bangla 
           </h2>
           <p className="text-base sm:text-lg text-slate-600 font-medium leading-relaxed pt-2">
-            Ancraze is an innovative online spoken English academy designed for Bengali speakers to move beyond theoretical knowledge and develop practical English-speaking skills through easy explanations in Bangla.
+            ANCRAZE is an online spoken English academy designed for Bengali-speaking learners who want to speak English confidently. Learn through simple explanations in Bangla, our unique 20 Codes Method, personal speaking trainers and structured daily practice. 
           </p>
         </div>
 
@@ -424,9 +424,9 @@ function WhatIsAncraze() {
               <div className="w-12 h-12 rounded-2xl bg-[#2A0066] text-white flex items-center justify-center shadow-lg shadow-[#2A0066]/20">
                 <Sparkles size={24} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">Beyond Theory</h3>
+              <h3 className="text-xl font-bold text-slate-900">Learn English Beyond Theory</h3>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                All lessons are taught clearly in Bangla, combining our 20 Codes Method, personal speaking trainers, structured daily practice and a 24/7 learning app to provide a complete English-learning experience.
+                Learn spoken English through simple Bengali explanations, our 20 Codes Method, personal speaking trainers and structured daily practice. Get a complete learning experience with 24/7 app access.
               </p>
             </div>
           </div>
@@ -436,9 +436,9 @@ function WhatIsAncraze() {
               <div className="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center backdrop-blur-md">
                 <Award size={24} />
               </div>
-              <h3 className="text-xl font-bold">Confidence in Daily Life</h3>
+              <h3 className="text-xl font-bold">Speak English with Confidence</h3>
               <p className="text-sm text-purple-100 leading-relaxed font-normal">
-                Our focus is not merely to teach you English but to help you use it confidently in everyday conversations, interviews, meetings, and public forums.
+                Build the confidence to use English in everyday conversations, job interviews, meetings and real-life situations. Focus on practical communication, not just grammar and theory.
               </p>
             </div>
           </div>
@@ -448,9 +448,9 @@ function WhatIsAncraze() {
               <div className="w-12 h-12 rounded-2xl bg-[#2A0066] text-white flex items-center justify-center shadow-lg shadow-[#2A0066]/20">
                 <MessageSquare size={24} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">Practise, Speak & Live It</h3>
+              <h3 className="text-xl font-bold text-slate-900">Daily English Speaking Practice</h3>
               <p className="text-sm text-slate-600 leading-relaxed font-normal">
-                At Ancraze, you don&apos;t just learn English. You practise it, speak it, and live it every single day until it becomes second nature.
+               Don't just learn English – use it every day. Practise speaking, build sentences and improve your communication skills through regular activities and personal speaking sessions.
               </p>
             </div>
           </div>
