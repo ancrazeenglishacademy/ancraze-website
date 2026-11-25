@@ -40,114 +40,8 @@ interface CourseItem {
   imageUrl?: string;
 }
 
-const DEFAULT_COURSES: CourseItem[] = [
-  {
-    id: "30-day",
-    name: "30-Day Foundational Spoken English Course",
-    duration: "30 Days",
-    validity: "6 Months",
-    liveSessions: "5 Live Sessions",
-    tagline: "Build Your Foundation. Start Speaking with Confidence.",
-    badge: "Popular Foundation",
-    price: 2999,
-    overview:
-      "A structured 30-day programme designed to help you understand sentence formation and develop practical English-speaking skills through our 20 Codes Method and daily practice.",
-    features: [
-      "Taught & explained in Bangla",
-      "24/7 access to the Ancraze App",
-      "Six months of app validity",
-      "Pre-recorded lessons",
-      "20 Codes Method",
-      "Daily vocabulary and useful phrases",
-      "Learn 300 important English verbs and their usage",
-      "Daily writing practice",
-      "Daily translation practice",
-      "Personal trainer speaking practice (10/20/30-minute plans)",
-      "Weekly revision and test sessions",
-      "5 live sessions for revision and public-speaking practice",
-      "Course completion certificate",
-    ],
-    whoShouldJoin:
-      "Learners who want to establish a strong foundation in spoken English through a focused, structured 30-day learning programme.",
-    experience: [
-      { title: "Structured Lessons", desc: "Access pre-recorded lessons through the Ancraze App and understand the 20 Codes Method." },
-      { title: "Vocabulary Development", desc: "Learn useful vocabulary, everyday expressions and 300 important English verbs with usage." },
-      { title: "Daily Writing & Translation", desc: "Strengthen your understanding through regular writing and translation practice." },
-      { title: "Personal Speaking Practice", desc: "Practise with your personal trainer through your selected 10, 20 or 30-minute daily plan." },
-      { title: "Weekly Revision", desc: "Revisit your lessons through weekly revision and assessment sessions." },
-      { title: "Live Learning Sessions", desc: "Participate in five live sessions designed to revise lessons and build public-speaking confidence." },
-      { title: "Course Completion Certificate", desc: "Receive an official course completion certificate upon fulfilling course requirements." },
-    ],
-  },
-  {
-    id: "60-day",
-    name: "60-Day Foundational Spoken English Course",
-    duration: "60 Days",
-    validity: "6 Months",
-    liveSessions: "10 Live Sessions",
-    tagline: "Take Your Time. Practise More. Speak with Confidence.",
-    badge: "Most Comprehensive",
-    price: 4999,
-    overview:
-      "An extended learning programme that gives you more time to practise, revise and strengthen your English-speaking skills with double the live sessions.",
-    features: [
-      "Taught & explained in Bangla",
-      "24/7 access to the Ancraze App",
-      "Six months of app validity",
-      "Pre-recorded lessons",
-      "20 Codes Method",
-      "Daily vocabulary and useful phrases",
-      "Learn 300 important English verbs and their usage",
-      "Daily writing practice",
-      "Daily translation practice",
-      "Personal trainer speaking practice (10/20/30-minute plans)",
-      "Weekly revision and test sessions",
-      "10 live sessions for revision and public-speaking practice",
-      "Course completion certificate",
-    ],
-    whoShouldJoin:
-      "Learners who prefer an extended learning period with additional time to practise, revise, and solidify their spoken English fluency.",
-    experience: [
-      { title: "Extended Curriculum", desc: "Gain in-depth mastery with double the time to practice and solidify your natural sentence flow." },
-      { title: "Double Live Sessions", desc: "Ten interactive live sessions designed to boost confidence in real-world public speaking." },
-      { title: "Intensive 1-on-1 Practice", desc: "Daily dedicated trainer calls tailored to your learning pace and personal feedback." },
-      { title: "Comprehensive Review", desc: "Weekly revision checkpoints to ensure concepts are deeply retained forever." },
-    ],
-  },
-  {
-    id: "self-study",
-    name: "Self-Study Spoken English Course",
-    duration: "Self-Paced",
-    validity: "6 Months",
-    liveSessions: "App-Based",
-    tagline: "Learn Independently. Improve at Your Own Pace.",
-    badge: "Flexible Self-Paced",
-    price: 1499,
-    overview:
-      "A flexible learning option for learners who prefer independent study and want to access structured learning materials at their convenience.",
-    features: [
-      "Taught & explained in Bangla",
-      "24/7 access to the Ancraze App",
-      "Six months of app validity",
-      "Pre-recorded lessons",
-      "20 Codes Method",
-      "Daily vocabulary and useful phrases",
-      "Learn 300 important English verbs and their usage",
-    ],
-    whoShouldJoin:
-      "Learners who prefer independent learning and want the flexibility to study whenever and wherever their schedule permits.",
-    experience: [
-      { title: "24/7 Learning Access", desc: "Access your lessons through the Ancraze App whenever you want, day or night." },
-      { title: "Pre-recorded Lessons", desc: "Learn through structured high-definition video lessons at your convenience." },
-      { title: "20 Codes Method", desc: "Understand sentence formation effortlessly through our structured 20 Codes Method." },
-      { title: "Vocabulary Development", desc: "Learn useful everyday vocabulary, idioms, and colloquial English phrases." },
-      { title: "Essential English Verbs", desc: "Master 300 important English verbs, their forms, and contextual daily usage." },
-    ],
-  },
-];
-
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<CourseItem[]>(DEFAULT_COURSES);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null);
 
   useEffect(() => {
@@ -156,32 +50,31 @@ export default function CoursesPage() {
         const res = await fetch("/api/courses");
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data.courses) && data.courses.length > 0) {
-            const mapped = data.courses.map((c: any, index: number) => {
-              const fallback = DEFAULT_COURSES[index % DEFAULT_COURSES.length];
-              return {
-                id: c.id,
-                name: c.title || c.name || fallback.name,
-                duration: c.duration || fallback.duration,
-                validity: c.validity || fallback.validity,
-                liveSessions: c.liveSessions || fallback.liveSessions,
-                tagline: c.tagline || fallback.tagline,
-                badge: c.badge || fallback.badge,
-                overview: c.description || c.overview || fallback.overview,
-                price: c.price || fallback.price,
-                features: typeof c.features === "string"
-                  ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
-                  : fallback.features,
-                whoShouldJoin: c.whoShouldJoin || fallback.whoShouldJoin,
-                experience: fallback.experience,
-                imageUrl: c.coverImageUrl || c.imageUrl,
-              };
-            });
+          if (Array.isArray(data.courses)) {
+            const mapped: CourseItem[] = data.courses.map((c: any) => ({
+              id: c.id,
+              name: c.title || c.name || "Spoken English Course",
+              duration: c.duration || "",
+              validity: c.validity || "",
+              liveSessions: c.liveSessions || "",
+              tagline: c.tagline || "",
+              badge: c.badge || "",
+              overview: c.description || c.overview || "",
+              price: c.price,
+              features: Array.isArray(c.features)
+                ? c.features
+                : typeof c.features === "string" && c.features.trim()
+                ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
+                : [],
+              whoShouldJoin: c.whoShouldJoin || "",
+              experience: Array.isArray(c.experience) ? c.experience : [],
+              imageUrl: c.coverImage || c.coverImageUrl || c.imageUrl,
+            }));
             setCourses(mapped);
           }
         }
       } catch (err) {
-        console.warn("Using default courses fallback:", err);
+        console.warn("Error fetching courses:", err);
       }
     };
     fetchCourses();
@@ -251,15 +144,15 @@ export default function CoursesPage() {
                     <div className="grid grid-cols-3 gap-2 my-6 p-3 bg-white rounded-2xl border border-slate-200/70 text-center shadow-xs">
                       <div>
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Duration</p>
-                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.duration || "30 Days"}</p>
+                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.duration || "—"}</p>
                       </div>
                       <div className="border-x border-slate-200/80">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Validity</p>
-                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.validity || "6 Months"}</p>
+                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.validity || "—"}</p>
                       </div>
                       <div>
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Live</p>
-                        <p className="text-xs font-black text-[#2A0066] mt-0.5">{course.liveSessions || "Live Classes"}</p>
+                        <p className="text-xs font-black text-[#2A0066] mt-0.5">{course.liveSessions || "—"}</p>
                       </div>
                     </div>
 
@@ -421,14 +314,16 @@ export default function CoursesPage() {
                   </ul>
                 </div>
 
-                <div>
-                  <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
-                    Who Should Join
-                  </h4>
-                  <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                    {selectedCourse.whoShouldJoin}
-                  </p>
-                </div>
+                {selectedCourse.whoShouldJoin && (
+                  <div>
+                    <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
+                      Who Should Join
+                    </h4>
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                      {selectedCourse.whoShouldJoin}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="p-5 sm:p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">

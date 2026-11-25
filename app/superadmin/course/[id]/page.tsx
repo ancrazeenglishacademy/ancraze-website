@@ -64,9 +64,9 @@ export default function CourseDetailPage() {
   const [editCoverImagePreview, setEditCoverImagePreview] = useState<string>("");
   const [editBadge, setEditBadge] = useState("");
   const [editTagline, setEditTagline] = useState("");
-  const [editDuration, setEditDuration] = useState("30 Days");
-  const [editValidity, setEditValidity] = useState("6 Months");
-  const [editLiveSessions, setEditLiveSessions] = useState("5 Live Sessions");
+  const [editDuration, setEditDuration] = useState("");
+  const [editValidity, setEditValidity] = useState("");
+  const [editLiveSessions, setEditLiveSessions] = useState("");
   const [editFeatures, setEditFeatures] = useState("");
   const [editWhoShouldJoin, setEditWhoShouldJoin] = useState("");
 
@@ -530,9 +530,9 @@ export default function CourseDetailPage() {
     setEditCoverImagePreview(courseData?.coverImage || "");
     setEditBadge(courseData?.badge || "");
     setEditTagline(courseData?.tagline || "");
-    setEditDuration(courseData?.duration || "30 Days");
-    setEditValidity(courseData?.validity || "6 Months");
-    setEditLiveSessions(courseData?.liveSessions || "5 Live Sessions");
+    setEditDuration(courseData?.duration || "");
+    setEditValidity(courseData?.validity || "");
+    setEditLiveSessions(courseData?.liveSessions || "");
     setEditFeatures(
       Array.isArray(courseData?.features)
         ? courseData.features.join("\n")

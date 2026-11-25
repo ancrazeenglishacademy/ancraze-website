@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Spoken English Courses in Bangla | 30-Day & 60-Day Programmes",
+  title: "Spoken English Courses in Bangla | Ancraze Academy",
   description:
     "Explore our structured spoken English courses taught in Bangla. Featuring the 20 Codes Method, 1-on-1 personal speaking trainer sessions, 24/7 app access, and live interactive classes.",
   alternates: {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Our Spoken English Courses in Bangla | Ancraze English Academy",
     description:
-      "Transform your English speaking skills with our 30-Day Foundational Course, 60-Day Comprehensive Course, or Self-Paced Learning. Taught in Bangla.",
+      "Explore our structured spoken English courses taught in Bangla. Featuring the 20 Codes Method, 1-on-1 personal speaking trainer sessions, 24/7 app access, and live interactive classes.",
     url: "https://www.ancraze.com/courses",
     siteName: "Ancraze English Academy",
     images: [

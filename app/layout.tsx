@@ -140,7 +140,7 @@ export default function RootLayout({
           "https://apps.apple.com/in/app/ancraze/id6773675253",
         ],
       },
-          {
+    {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       "url": SITE_URL,
@@ -149,42 +149,7 @@ export default function RootLayout({
         "@id": `${SITE_URL}/#organization`
       },
       "inLanguage": "bn-IN"
-    },{
-        "@type": "Course",
-        "@id": `${SITE_URL}/#course-30day`,
-        name: "30-Day Foundational Spoken English Course in Bangla",
-        description:
-          "A structured 30-day programme designed to help you understand sentence formation and develop practical English-speaking skills through our 20 Codes Method taught in Bangla.",
-        provider: {
-          "@type": "EducationalOrganization",
-          name: "Ancraze English Academy",
-          url: SITE_URL,
-        },
-        inLanguage: ["bn", "en"],
-        hasCourseInstance: {
-          "@type": "CourseInstance",
-          courseMode: "Online",
-          courseWorkload: "PT30D",
-        },
-      },
-      {
-        "@type": "Course",
-        "@id": `${SITE_URL}/#course-60day`,
-        name: "60-Day Foundational Spoken English Course in Bangla",
-        description:
-          "An extended learning programme that gives you more time to practise, revise and strengthen your English-speaking skills with double the live sessions, taught in Bangla.",
-        provider: {
-          "@type": "EducationalOrganization",
-          name: "Ancraze English Academy",
-          url: SITE_URL,
-        },
-        inLanguage: ["bn", "en"],
-        hasCourseInstance: {
-          "@type": "CourseInstance",
-          courseMode: "Online",
-          courseWorkload: "PT60D",
-        },
-      },
+    },
       {
         "@type": "FAQPage",
         "@id": `${SITE_URL}/#faq`,
@@ -215,18 +180,10 @@ export default function RootLayout({
           },
           {
             "@type": "Question",
-            name: "Which course should I choose?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "You can choose the 30-day course, 60-day course, or Self-Study Course depending on your current level, target goals, and whether you want personal 1-on-1 speaking trainer sessions.",
-            },
-          },
-          {
-            "@type": "Question",
             name: "Do I get a personal speaking trainer?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Yes! Personal trainer speaking practice is included in the 30-day and 60-day foundational courses, with flexible 10, 20 and 30-minute daily practice options.",
+              text: "Yes! Personal trainer speaking practice is available in our trainer-guided spoken English courses with dedicated 1-on-1 speaking practice options.",
             },
           },
         ],

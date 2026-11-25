@@ -4,7 +4,7 @@ import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 interface StudentLoginRequest {
     email: string;
     loginId: string;
-    deviceId: string;
+    deviceId?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
         const body: StudentLoginRequest = await request.json();
         const { email, loginId, deviceId } = body;
 
-        if (!email || !loginId || !deviceId) {
+        if (!email || !loginId) {
             return NextResponse.json(
-                { error: 'Email, Login ID, and Device ID are required' },
+                { error: 'Email and Login ID are required' },
                 { status: 400 }
             );
         }
@@ -53,18 +53,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Security Check: Single Device Login
-        if (userData.deviceId && userData.deviceId !== deviceId) {
-            return NextResponse.json(
-                { error: 'Your already login in another device' },
-                { status: 403 }
-            );
+        // Multi-device session support: store deviceId and lastLoginAt as non-blocking session metadata
+        const loginMetadataUpdate: Record<string, any> = {
+            lastLoginAt: new Date(),
+        };
+        if (deviceId) {
+            loginMetadataUpdate.deviceId = deviceId;
         }
-
-        // If no deviceId stored yet, store it
-        if (!userData.deviceId) {
-            await userDoc.ref.update({ deviceId });
-        }
+        await userDoc.ref.update(loginMetadataUpdate);
 
         const uid = userData.uid;
         const enrolledCourses = userData.enrolledCourses || [];

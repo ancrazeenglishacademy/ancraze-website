@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
     // Homepage Card & Modal Specific Fields
     const badge = (formData.get('badge') as string) || '';
     const tagline = (formData.get('tagline') as string) || '';
-    const duration = (formData.get('duration') as string) || '30 Days';
-    const validity = (formData.get('validity') as string) || '6 Months';
-    const liveSessions = (formData.get('liveSessions') as string) || '5 Live Sessions';
+    const duration = (formData.get('duration') as string) || '';
+    const validity = (formData.get('validity') as string) || '';
+    const liveSessions = (formData.get('liveSessions') as string) || '';
     const whoShouldJoin = (formData.get('whoShouldJoin') as string) || '';
 
     // Parse features: newline-separated or JSON

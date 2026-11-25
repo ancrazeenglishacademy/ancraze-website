@@ -14,14 +14,14 @@ export async function GET(request: NextRequest) {
         const deviceId = searchParams.get('deviceId');
         const courseId = searchParams.get('courseId'); // Optional: for specific course access
 
-        if (!email || !loginId || !deviceId) {
+        if (!email || !loginId) {
             return NextResponse.json(
-                { error: 'Email, Login ID, and Device ID are required' },
+                { error: 'Email and Login ID are required' },
                 { status: 400 }
             );
         }
 
-        // 1. Verify student credentials and deviceId in Firestore
+        // 1. Verify student credentials in Firestore
         const userSnapshot = await (adminDb as any)
             .collection('users')
             .where('email', '==', email)
@@ -44,14 +44,6 @@ export async function GET(request: NextRequest) {
             userData.role === 'trainer' ||
             userData.isTrainerPreviewAccount === true ||
             userData.trainerPreviewAccount === true;
-
-        // Security Check: Device Verification
-        if (userData.deviceId && userData.deviceId !== deviceId) {
-            return NextResponse.json(
-                { error: 'Access denied: Your already login in another device' },
-                { status: 403 }
-            );
-        }
 
         const enrolledCourseIds = userData.enrolledCourses || [];
 

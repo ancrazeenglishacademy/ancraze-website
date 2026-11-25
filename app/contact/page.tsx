@@ -50,7 +50,7 @@ export default function ContactPage() {
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    course: "30-Day Foundational Course",
+    course: "",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -441,7 +441,7 @@ export default function ContactPage() {
                         setFormData({
                           fullName: "",
                           phone: "",
-                          course: "30-Day Foundational Course",
+                          course: "",
                           message: "",
                         });
                       }}
@@ -484,24 +484,13 @@ export default function ContactPage() {
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                         Interested Course
                       </label>
-                      <select
+                      <input
+                        type="text"
                         value={formData.course}
                         onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                        placeholder="Enter course name (optional)"
                         className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-[#2A0066] focus:bg-white transition"
-                      >
-                        <option value="30-Day Foundational Course">
-                          30-Day Foundational Spoken English Course
-                        </option>
-                        <option value="60-Day Foundational Course">
-                          60-Day Foundational Spoken English Course
-                        </option>
-                        <option value="Self-Study Course">
-                          Self-Study Spoken English Course
-                        </option>
-                        <option value="General Enquiry">
-                          General Admission / Faculty Enquiry
-                        </option>
-                      </select>
+                      />
                     </div>
 
                     <div>

@@ -31,23 +31,15 @@ export default function AddCoursePage() {
   const [formData, setFormData] = useState({
     title: '',
     tagline: '',
-    badge: 'POPULAR FOUNDATION',
+    badge: '',
     description: '',
-    duration: '30 Days',
-    validity: '6 Months',
-    liveSessions: '5 Live Sessions',
-    features: `24/7 access to the Ancraze App
-Six months of app validity
-Pre-recorded lessons
-Innovative 20-Code Method
-Daily vocabulary and useful phrases
-Learn 300 important English verbs and their usage
-Personal trainer speaking practice (10/20/30-minute plans)
-Weekly revision and test sessions
-Course completion certificate`,
-    whoShouldJoin: 'Learners who want to establish a strong foundation in spoken English through a focused, structured learning programme.',
-    teacherName: 'Ancraze Master Faculty',
-    price: '1999',
+    duration: '',
+    validity: '',
+    liveSessions: '',
+    features: '',
+    whoShouldJoin: '',
+    teacherName: '',
+    price: '',
     refundDays: '0',
     isTrainerGuided: false,
     showOnHomePage: true,
@@ -580,17 +572,17 @@ Course completion certificate`,
                     <div className="p-3 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between text-center gap-2">
                       <div className="flex-1">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Duration</p>
-                        <p className="text-xs font-black text-slate-900">{formData.duration || '30 Days'}</p>
+                        <p className="text-xs font-black text-slate-900">{formData.duration || '—'}</p>
                       </div>
                       <div className="w-px h-6 bg-slate-200" />
                       <div className="flex-1">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Validity</p>
-                        <p className="text-xs font-black text-slate-900">{formData.validity || '6 Months'}</p>
+                        <p className="text-xs font-black text-slate-900">{formData.validity || '—'}</p>
                       </div>
                       <div className="w-px h-6 bg-slate-200" />
                       <div className="flex-1">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Live Sessions</p>
-                        <p className="text-xs font-black text-[#2A0066]">{formData.liveSessions || '5 Live Sessions'}</p>
+                        <p className="text-xs font-black text-[#2A0066]">{formData.liveSessions || '—'}</p>
                       </div>
                     </div>
 

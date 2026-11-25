@@ -163,16 +163,16 @@ export async function GET(request: NextRequest) {
     let currentUserId = "";
     let userEnrolledCourses: string[] = [];
 
-    // Security Check: If email is provided, verify credentials and device
+    // Security Check: If email is provided, verify credentials
     if (email) {
-      if (!loginId || !deviceId) {
+      if (!loginId) {
         return NextResponse.json(
-          { error: 'Login ID and Device ID are required when email is provided' },
+          { error: 'Login ID is required when email is provided' },
           { status: 400 }
         );
       }
 
-      // Verify student credentials and deviceId in Firestore
+      // Verify student credentials in Firestore
       const userSnapshot = await (adminDb as any)
         .collection('users')
         .where('email', '==', email)
@@ -190,14 +190,6 @@ export async function GET(request: NextRequest) {
       const userData = userSnapshot.docs[0].data();
       currentUserId = userSnapshot.docs[0].id;
       userEnrolledCourses = userData.enrolledCourses || [];
-
-      // Device Verification
-      if (userData.deviceId && userData.deviceId !== deviceId) {
-        return NextResponse.json(
-          { error: 'Access denied: Your already login in another device' },
-          { status: 403 }
-        );
-      }
     }
 
     let hasPurchased = false;

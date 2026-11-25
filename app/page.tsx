@@ -601,126 +601,19 @@ function WhyChooseAncraze() {
 interface CourseItem {
   id: string;
   name: string;
-  duration: string;
-  validity: string;
-  liveSessions: string;
-  tagline: string;
-  overview: string;
+  duration?: string;
+  validity?: string;
+  liveSessions?: string;
+  tagline?: string;
+  overview?: string;
   badge?: string;
-  features: string[];
-  whoShouldJoin: string;
-  experience: { title: string; desc: string }[];
+  features?: string[];
+  whoShouldJoin?: string;
+  experience?: { title: string; desc: string }[];
 }
 
-const COURSES_DATA: CourseItem[] = [
-  {
-    id: "30-day",
-    name: "30-Day Foundational Spoken English Course",
-    duration: "30 Days",
-    validity: "6 Months",
-    liveSessions: "5 Live Sessions",
-    tagline: "Build Your Foundation. Start Speaking with Confidence.",
-    badge: "Popular Foundation",
-    overview:
-      "A structured 30-day programme designed to help you understand sentence formation and develop practical English-speaking skills through our 20 Codes Method and daily practice.",
-    features: [
-      "Taught & explained in Bangla",
-      "24/7 access to the Ancraze App",
-      "Six months of app validity",
-      "Pre-recorded lessons",
-      "20 Codes Method",
-      "Daily vocabulary and useful phrases",
-      "Learn 300 important English verbs and their usage",
-      "Daily writing practice",
-      "Daily translation practice",
-      "Personal trainer speaking practice (10/20/30-minute plans)",
-      "Weekly revision and test sessions",
-      "5 live sessions for revision and public-speaking practice",
-      "Course completion certificate",
-    ],
-    whoShouldJoin:
-      "Learners who want to establish a strong foundation in spoken English through a focused, structured 30-day learning programme.",
-    experience: [
-      { title: "Structured Lessons", desc: "Access pre-recorded lessons through the Ancraze App and understand the 20-Code Method." },
-      { title: "Vocabulary Development", desc: "Learn useful vocabulary, everyday expressions and 300 important English verbs with usage." },
-      { title: "Daily Writing & Translation", desc: "Strengthen your understanding through regular writing and translation practice." },
-      { title: "Personal Speaking Practice", desc: "Practise with your personal trainer through your selected 10, 20 or 30-minute daily plan." },
-      { title: "Weekly Revision", desc: "Revisit your lessons through weekly revision and assessment sessions." },
-      { title: "Live Learning Sessions", desc: "Participate in five live sessions designed to revise lessons and build public-speaking confidence." },
-      { title: "Course Completion Certificate", desc: "Receive an official course completion certificate upon fulfilling course requirements." },
-    ],
-  },
-  {
-    id: "60-day",
-    name: "60-Day Foundational Spoken English Course",
-    duration: "60 Days",
-    validity: "6 Months",
-    liveSessions: "10 Live Sessions",
-    tagline: "Take Your Time. Practise More. Speak with Confidence.",
-    badge: "Most Comprehensive",
-    overview:
-      "An extended learning programme that gives you more time to practise, revise and strengthen your English-speaking skills with double the live sessions.",
-    features: [
-      "Taught & explained in Bangla",
-      "24/7 access to the Ancraze App",
-      "Six months of app validity",
-      "Pre-recorded lessons",
-      "20 Codes Method",
-      "Daily vocabulary and useful phrases",
-      "Learn 300 important English verbs and their usage",
-      "Daily writing practice",
-      "Daily translation practice",
-      "Personal trainer speaking practice (10/20/30-minute plans)",
-      "Weekly revision and test sessions",
-      "10 live sessions for revision and public-speaking practice",
-      "Course completion certificate",
-    ],
-    whoShouldJoin:
-      "Learners who prefer a longer learning period with additional opportunities for revision, speaking practice and deeper confidence-building.",
-    experience: [
-      { title: "Structured Lessons", desc: "Learn through pre-recorded lessons and our 20 Codes Method at your pace." },
-      { title: "Vocabulary Development", desc: "Develop vocabulary through useful everyday phrases and 300 important English verbs." },
-      { title: "Daily Writing & Translation", desc: "Strengthen sentence formation and grammar intuition through regular exercises." },
-      { title: "Personal Speaking Practice", desc: "Practise individually with your personal trainer through your chosen 10, 20 or 30-min plan." },
-      { title: "Weekly Revision", desc: "Regular tests and revision sessions help you continuously reinforce your learning." },
-      { title: "Extended Live Sessions", desc: "Participate in ten live interactive sessions to revise lessons and master public speaking." },
-      { title: "Course Completion Certificate", desc: "Receive an official course completion certificate upon fulfilling course requirements." },
-    ],
-  },
-  {
-    id: "self-study",
-    name: "Self-Study Spoken English Course",
-    duration: "Self-Paced",
-    validity: "6 Months",
-    liveSessions: "App-Based",
-    tagline: "Learn Independently. Improve at Your Own Pace.",
-    badge: "Flexible Self-Paced",
-    overview:
-      "A flexible learning option for learners who prefer independent study and want to access structured learning materials at their convenience.",
-    features: [
-      "Taught & explained in Bangla",
-      "24/7 access to the Ancraze App",
-      "Six months of app validity",
-      "Pre-recorded lessons",
-      "20 Codes Method",
-      "Daily vocabulary and useful phrases",
-      "Learn 300 important English verbs and their usage",
-    ],
-    whoShouldJoin:
-      "Learners who prefer independent learning and want the flexibility to study whenever and wherever their schedule permits.",
-    experience: [
-      { title: "24/7 Learning Access", desc: "Access your lessons through the Ancraze App whenever you want, day or night." },
-      { title: "Pre-recorded Lessons", desc: "Learn through structured high-definition video lessons at your convenience." },
-      { title: "20 Codes Method", desc: "Understand sentence formation effortlessly through our structured 20 Codes Method." },
-      { title: "Vocabulary Development", desc: "Learn useful everyday vocabulary, idioms, and colloquial English phrases." },
-      { title: "Essential English Verbs", desc: "Master 300 important English verbs, their forms, and contextual daily usage." },
-    ],
-  },
-];
-
 function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseItem) => void }) {
-  const [courses, setCourses] = useState<CourseItem[]>(COURSES_DATA);
-  const [loading, setLoading] = useState(false);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
 
   useEffect(() => {
     const fetchHomeCourses = async () => {
@@ -729,44 +622,29 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
         if (res.ok) {
           const data = await res.json();
           const list = Array.isArray(data) ? data : (data.courses || []);
-          if (Array.isArray(list) && list.length > 0) {
+          if (Array.isArray(list)) {
             // Only courses with showOnHomePage !== false
             const homeCourses = list.filter((c: any) => c.showOnHomePage !== false);
-            if (homeCourses.length > 0) {
-              const mapped: CourseItem[] = homeCourses.map((c: any) => ({
-                id: c.id,
-                name: c.title || c.name || "Spoken English Course",
-                duration: c.duration || "Structured Program",
-                validity: c.validity || "6 Months",
-                liveSessions: c.liveSessions || (c.level ? `${c.level} Level` : "Interactive"),
-                tagline: c.tagline || (c.description ? (c.description.length > 70 ? c.description.slice(0, 70) + "..." : c.description) : "Master English Speaking with Ancraze"),
-                overview: c.description || c.overview || "Practical, immersive spoken English training with personal trainers and 20-Code Method.",
-                badge: c.badge || (c.price ? `₹${c.price}` : undefined),
-                features: Array.isArray(c.features) && c.features.length > 0
-                  ? c.features
-                  : typeof c.features === "string" && c.features.trim()
-                  ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
-                  : Array.isArray(c.lessons) && c.lessons.length > 0
-                  ? c.lessons.map((l: any) => (typeof l === "string" ? l : l.title || "Interactive lesson"))
-                  : [
-                      "24/7 access to the Ancraze App",
-                      "Six months of app validity",
-                      "20 Codes Method",
-                      "Personal trainer speaking practice",
-                      "Daily vocabulary & verb training",
-                      "Course completion certificate",
-                    ],
-                whoShouldJoin: c.whoShouldJoin || "Learners seeking to speak English confidently and fluently in real conversations.",
-                experience: Array.isArray(c.experience) && c.experience.length > 0
-                  ? c.experience
-                  : [
-                      { title: "Structured Lessons", desc: "Access lessons through the Ancraze App and master sentence formation." },
-                      { title: "Personal Trainer Practice", desc: "1-on-1 daily speaking practice to build fluency and overcome hesitation." },
-                      { title: "Course Completion Certificate", desc: "Recognized certificate after fulfilling program milestones." },
-                    ],
-              }));
-              setCourses(mapped);
-            }
+            const mapped: CourseItem[] = homeCourses.map((c: any) => ({
+              id: c.id,
+              name: c.title || c.name || "Spoken English Course",
+              duration: c.duration || "",
+              validity: c.validity || "",
+              liveSessions: c.liveSessions || "",
+              tagline: c.tagline || "",
+              overview: c.description || c.overview || "",
+              badge: c.badge || undefined,
+              features: Array.isArray(c.features)
+                ? c.features
+                : typeof c.features === "string" && c.features.trim()
+                ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
+                : Array.isArray(c.lessons) && c.lessons.length > 0
+                ? c.lessons.map((l: any) => (typeof l === "string" ? l : l.title || "Interactive lesson"))
+                : [],
+              whoShouldJoin: c.whoShouldJoin || "",
+              experience: Array.isArray(c.experience) ? c.experience : [],
+            }));
+            setCourses(mapped);
           }
         }
       } catch (err) {
@@ -827,39 +705,41 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
                 <div className="p-3 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between text-center gap-2">
                   <div className="flex-1">
                     <p className="text-[9px] font-bold text-slate-400 uppercase">Duration</p>
-                    <p className="text-xs font-black text-slate-900">{course.duration}</p>
+                    <p className="text-xs font-black text-slate-900">{course.duration || "—"}</p>
                   </div>
                   <div className="w-px h-6 bg-slate-200" />
                   <div className="flex-1">
                     <p className="text-[9px] font-bold text-slate-400 uppercase">Validity</p>
-                    <p className="text-xs font-black text-slate-900">{course.validity}</p>
+                    <p className="text-xs font-black text-slate-900">{course.validity || "—"}</p>
                   </div>
                   <div className="w-px h-6 bg-slate-200" />
                   <div className="flex-1">
                     <p className="text-[9px] font-bold text-slate-400 uppercase">Live Sessions</p>
-                    <p className="text-xs font-black text-[#2A0066]">{course.liveSessions}</p>
+                    <p className="text-xs font-black text-[#2A0066]">{course.liveSessions || "—"}</p>
                   </div>
                 </div>
 
                 {/* Features List Preview */}
-                <div className="space-y-2.5 pt-2">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                    Course Features:
-                  </p>
-                  <ul className="space-y-2">
-                    {course.features.slice(0, 6).map((feat) => (
-                      <li key={feat} className="flex items-start gap-2 text-xs text-slate-700">
-                        <CheckCircle2 size={14} className="text-[#2A0066] shrink-0 mt-0.5" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                    {course.features.length > 6 && (
-                      <li className="text-[11px] font-bold text-[#2A0066] pl-5">
-                        + {course.features.length - 6} more included features
-                      </li>
-                    )}
-                  </ul>
-                </div>
+                {(course.features && course.features.length > 0) && (
+                  <div className="space-y-2.5 pt-2">
+                    <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                      Course Features:
+                    </p>
+                    <ul className="space-y-2">
+                      {course.features.slice(0, 6).map((feat) => (
+                        <li key={feat} className="flex items-start gap-2 text-xs text-slate-700">
+                          <CheckCircle2 size={14} className="text-[#2A0066] shrink-0 mt-0.5" />
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                      {course.features.length > 6 && (
+                        <li className="text-[11px] font-bold text-[#2A0066] pl-5">
+                          + {course.features.length - 6} more included features
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -1340,35 +1220,19 @@ function FAQSection() {
       a: "The 20 Codes Method is our structured learning methodology designed to help learners understand sentence formation and develop their speaking skills systematically without memorising complex grammar rules.",
     },
     {
-      q: "4. Which course should I choose?",
-      a: "You can choose the 30-day course, 60-day course, or Self-Study Course depending on your current level, target goals, and whether you want personal 1-on-1 speaking trainer sessions.",
-    },
-    {
-      q: "5. What is the difference between the 30-day and 60-day courses?",
-      a: "Both courses provide the same core learning features and 1-on-1 personal trainer options. The 30-day course includes five live sessions, while the 60-day course includes ten live sessions and an extended period for additional revision and speaking confidence.",
-    },
-    {
-      q: "6. Is the course completely online?",
+      q: "4. Is the course completely online?",
       a: "Yes. Lessons and learning materials are accessed through the 24/7 Ancraze App, with individual speaking practice and live sessions conducted online according to your selected course.",
     },
     {
-      q: "7. Do I get a personal speaking trainer?",
-      a: "Yes! Personal trainer speaking practice is included in the 30-day and 60-day foundational courses, with flexible 10, 20 and 30-minute daily practice options.",
+      q: "5. Do I get a personal speaking trainer?",
+      a: "Yes! Personal trainer speaking practice is available in our trainer-guided courses with dedicated 1-on-1 daily speaking practice options.",
     },
     {
-      q: "8. How long can I access the app?",
-      a: "The courses currently include six full months of app validity, giving you plenty of time to revisit lessons, vocabulary, and exercises.",
+      q: "6. Will I receive a certificate?",
+      a: "Yes. Our courses include an official course completion certificate, subject to applicable completion requirements.",
     },
     {
-      q: "9. Is there a free trial?",
-      a: "Yes. You can experience the Ancraze App learning system with a three-day free trial before enrolling.",
-    },
-    {
-      q: "10. Will I receive a certificate?",
-      a: "Yes. The 30-day and 60-day foundational courses include an official course completion certificate, subject to applicable completion requirements.",
-    },
-    {
-      q: "11. How can I enrol?",
+      q: "7. How can I enrol?",
       a: "Click any 'ENROLL NOW' button to connect directly with our admissions team on WhatsApp Business, and we will get you onboarded immediately.",
     },
   ];
@@ -1436,7 +1300,7 @@ function ContactSection() {
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    course: "30-Day Foundational Course",
+    course: "",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1666,21 +1530,13 @@ function ContactSection() {
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
                       Course Interested In
                     </label>
-                    <select
+                    <input
+                      type="text"
                       value={formData.course}
                       onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                      placeholder="Enter course name (optional)"
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:bg-white focus:border-[#2A0066] transition outline-none"
-                    >
-                      <option value="30-Day Foundational Spoken English Course">
-                        30-Day Foundational Spoken English Course
-                      </option>
-                      <option value="60-Day Foundational Spoken English Course">
-                        60-Day Foundational Spoken English Course
-                      </option>
-                      <option value="Self-Study Spoken English Course">
-                        Self-Study Spoken English Course
-                      </option>
-                    </select>
+                    />
                   </div>
 
                   <div>
@@ -1957,52 +1813,56 @@ function CourseDetailModal({
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-around text-center">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Duration</p>
-                <p className="text-sm font-black text-slate-900">{course.duration}</p>
+                <p className="text-sm font-black text-slate-900">{course.duration || "—"}</p>
               </div>
               <div className="w-px h-8 bg-slate-200" />
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase">App Validity</p>
-                <p className="text-sm font-black text-slate-900">{course.validity}</p>
+                <p className="text-sm font-black text-slate-900">{course.validity || "—"}</p>
               </div>
               <div className="w-px h-8 bg-slate-200" />
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Live Sessions</p>
-                <p className="text-sm font-black text-[#2A0066]">{course.liveSessions}</p>
+                <p className="text-sm font-black text-[#2A0066]">{course.liveSessions || "—"}</p>
               </div>
             </div>
 
             {/* What You Will Experience */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                What You Will Experience
-              </h4>
+            {course.experience && course.experience.length > 0 && (
               <div className="space-y-3">
-                {course.experience.map((exp, idx) => (
-                  <div
-                    key={exp.title}
-                    className="p-3.5 rounded-xl bg-purple-50/40 border border-purple-100/70 flex items-start gap-3"
-                  >
-                    <span className="w-6 h-6 rounded-lg bg-[#2A0066] text-white flex items-center justify-center text-[10px] font-black shrink-0 font-mono mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <div>
-                      <p className="text-xs font-bold text-slate-900">{exp.title}</p>
-                      <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">{exp.desc}</p>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  What You Will Experience
+                </h4>
+                <div className="space-y-3">
+                  {course.experience.map((exp, idx) => (
+                    <div
+                      key={exp.title}
+                      className="p-3.5 rounded-xl bg-purple-50/40 border border-purple-100/70 flex items-start gap-3"
+                    >
+                      <span className="w-6 h-6 rounded-lg bg-[#2A0066] text-white flex items-center justify-center text-[10px] font-black shrink-0 font-mono mt-0.5">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{exp.title}</p>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">{exp.desc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Who Should Join */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
-                Who Should Join?
-              </h4>
-              <p className="text-xs text-slate-700 leading-relaxed font-medium">
-                {course.whoShouldJoin}
-              </p>
-            </div>
+            {course.whoShouldJoin && (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                  Who Should Join?
+                </h4>
+                <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                  {course.whoShouldJoin}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Modal Footer */}

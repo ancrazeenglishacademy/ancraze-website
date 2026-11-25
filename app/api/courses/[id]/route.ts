@@ -74,10 +74,10 @@ export async function GET(
     } 
     // Case 2: Fetching via email/loginId (Legacy/Login check)
     else if (email) {
-      if (!loginId || !deviceId) {
+      if (!loginId) {
         return NextResponse.json(
           {
-            error: "Login ID and Device ID are required when email is provided",
+            error: "Login ID is required when email is provided",
           },
           { status: 400 }
         );
@@ -100,14 +100,6 @@ export async function GET(
       const userData = userSnapshot.docs[0].data();
       matchedUserData = userData;
       studentDocId = userSnapshot.docs[0].id;
-
-      // Device Verification
-      if (userData.deviceId && userData.deviceId !== deviceId) {
-        return NextResponse.json(
-          { error: "Access denied: Logged in on another device" },
-          { status: 403 }
-        );
-      }
 
       // Check if user is blocked
       if (userData.isBlocked === true) {
