@@ -48,6 +48,8 @@ Course completion certificate`,
     whoShouldJoin: 'Learners who want to establish a strong foundation in spoken English through a focused, structured learning programme.',
     teacherName: 'Ancraze Master Faculty',
     price: '1999',
+    refundDays: '0',
+    isTrainerGuided: false,
     showOnHomePage: true,
     coverImage: null as File | null,
   });
@@ -132,6 +134,8 @@ Course completion certificate`,
       formDataToSend.append('whoShouldJoin', formData.whoShouldJoin);
       formDataToSend.append('teacherName', formData.teacherName);
       formDataToSend.append('price', formData.price);
+      formDataToSend.append('refundDays', formData.refundDays || '0');
+      formDataToSend.append('isTrainerGuided', formData.isTrainerGuided ? 'true' : 'false');
       formDataToSend.append('showOnHomePage', formData.showOnHomePage ? 'true' : 'false');
       if (formData.coverImage) {
         formDataToSend.append('coverImage', formData.coverImage);
@@ -409,6 +413,43 @@ Course completion certificate`,
                           className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-[#2A0066] focus:bg-white transition"
                         />
                       </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          Course Refund Days
+                        </label>
+                        <input
+                          type="number"
+                          name="refundDays"
+                          min="0"
+                          step="1"
+                          placeholder="e.g. 7 (0 for non-refundable)"
+                          value={formData.refundDays}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:border-[#2A0066] focus:bg-white transition"
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1">Number of days eligible for refund (0 = no refund)</p>
+                      </div>
+                    </div>
+
+                    {/* Trainer Guided Course */}
+                    <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="isTrainerGuided"
+                        name="isTrainerGuided"
+                        checked={formData.isTrainerGuided}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, isTrainerGuided: e.target.checked }))
+                        }
+                        className="w-5 h-5 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
+                      />
+                      <label htmlFor="isTrainerGuided" className="cursor-pointer select-none">
+                        <p className="text-xs font-bold text-slate-900">Trainer Guided Course</p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">
+                          Check this if the course includes personal trainer guidance and speaking practice sessions.
+                        </p>
+                      </label>
                     </div>
 
                     <div>

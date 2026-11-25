@@ -52,6 +52,8 @@ export default function CourseDetailPage() {
   const [editCourseTitle, setEditCourseTitle] = useState("");
   const [editCourseDescription, setEditCourseDescription] = useState("");
   const [editCoursePrice, setEditCoursePrice] = useState("");
+  const [editIsTrainerGuided, setEditIsTrainerGuided] = useState(false);
+  const [editRefundDays, setEditRefundDays] = useState("0");
   const [editCoverImage, setEditCoverImage] = useState<string>("");
   const [editCoverImagePreview, setEditCoverImagePreview] = useState<string>("");
 
@@ -383,6 +385,12 @@ export default function CourseDetailPage() {
     setEditCourseTitle(courseData?.title || "");
     setEditCourseDescription(courseData?.description || "");
     setEditCoursePrice(courseData?.price?.toString() || "");
+    setEditIsTrainerGuided(Boolean(courseData?.isTrainerGuided));
+    setEditRefundDays(
+      courseData?.refundDays !== undefined && courseData?.refundDays !== null
+        ? String(courseData.refundDays)
+        : "0"
+    );
     setEditCoverImagePreview(courseData?.coverImage || "");
     setShowEditCourseModal(true);
   };
@@ -412,6 +420,11 @@ export default function CourseDetailPage() {
       alert("Price must be a valid positive number");
       return;
     }
+    const parsedRefundDays = editRefundDays === "" ? 0 : parseInt(editRefundDays, 10);
+    if (isNaN(parsedRefundDays) || parsedRefundDays < 0) {
+      alert("Course refund days must be 0 or a positive number");
+      return;
+    }
 
     setModalLoading(true);
     try {
@@ -426,6 +439,8 @@ export default function CourseDetailPage() {
           title: editCourseTitle,
           description: editCourseDescription,
           price: editCoursePrice,
+          isTrainerGuided: editIsTrainerGuided,
+          refundDays: parsedRefundDays,
           coverImage: editCoverImage,
         }),
       });
@@ -441,6 +456,8 @@ export default function CourseDetailPage() {
         title: editCourseTitle,
         description: editCourseDescription,
         price: parseFloat(editCoursePrice),
+        isTrainerGuided: editIsTrainerGuided,
+        refundDays: parsedRefundDays,
         coverImage: editCoverImagePreview,
       });
 
@@ -687,6 +704,8 @@ export default function CourseDetailPage() {
             <div className="space-y-4">
               <DetailField label="Instructor" value={courseData?.teacherName || "N/A"} />
               <DetailField label="Price" value={`₹${courseData?.price || "0"}`} />
+              <DetailField label="Trainer Guided" value={courseData?.isTrainerGuided ? "Yes" : "No"} />
+              <DetailField label="Refund Days" value={`${courseData?.refundDays ?? 0} Days`} />
               <DetailField label="Modules" value={`${modules.length} Modules`} />
               <DetailField label="Last Updated" value="Jan 21, 2026" />
             </div>
@@ -863,17 +882,50 @@ export default function CourseDetailPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Price (₹)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Price (₹)</label>
+                    <input
+                      type="number"
+                      value={editCoursePrice}
+                      onChange={(e) => setEditCoursePrice(e.target.value)}
+                      step="0.01"
+                      min="0"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none"
+                      disabled={modalLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Course Refund Days</label>
+                    <input
+                      type="number"
+                      value={editRefundDays}
+                      onChange={(e) => setEditRefundDays(e.target.value)}
+                      step="1"
+                      min="0"
+                      placeholder="e.g. 7 (0 for non-refundable)"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none"
+                      disabled={modalLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* Trainer Guided Course Checkbox */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
                   <input
-                    type="number"
-                    value={editCoursePrice}
-                    onChange={(e) => setEditCoursePrice(e.target.value)}
-                    step="0.01"
-                    min="0"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none"
+                    type="checkbox"
+                    id="edit-trainer-guided"
+                    checked={editIsTrainerGuided}
+                    onChange={(e) => setEditIsTrainerGuided(e.target.checked)}
                     disabled={modalLoading}
+                    className="w-5 h-5 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
                   />
+                  <label htmlFor="edit-trainer-guided" className="cursor-pointer">
+                    <p className="text-sm font-bold text-slate-900">Trainer Guided Course</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Enable if this course includes personal trainer guidance and speaking practice sessions.
+                    </p>
+                  </label>
                 </div>
 
                 <div>

@@ -16,6 +16,8 @@ export default function AddCoursePage() {
         description: '',
         teacherName: '',
         price: '',
+        refundDays: '0',
+        isTrainerGuided: false,
         coverImage: null as File | null,
     });
 
@@ -94,6 +96,8 @@ export default function AddCoursePage() {
             formDataToSend.append('description', formData.description);
             formDataToSend.append('teacherName', formData.teacherName);
             formDataToSend.append('price', formData.price);
+            formDataToSend.append('refundDays', formData.refundDays || '0');
+            formDataToSend.append('isTrainerGuided', formData.isTrainerGuided ? 'true' : 'false');
             if (formData.coverImage) {
                 formDataToSend.append('coverImage', formData.coverImage);
             }
@@ -239,6 +243,49 @@ export default function AddCoursePage() {
                                                     placeholder="999.00"
                                                 />
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Refund Days & Trainer Guided Course */}
+                                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
+                                        <div>
+                                            <label htmlFor="refundDays" className="block text-sm font-black text-gray-700 mb-2 uppercase tracking-wide">
+                                                Course Refund Days
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="refundDays"
+                                                name="refundDays"
+                                                value={formData.refundDays}
+                                                onChange={handleInputChange}
+                                                min="0"
+                                                step="1"
+                                                className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2A0066] focus:border-transparent outline-none transition text-black font-semibold"
+                                                placeholder="e.g. 7 (0 for non-refundable)"
+                                            />
+                                            <p className="text-xs text-gray-400 mt-1">Number of days eligible for refund (0 = no refund)</p>
+                                        </div>
+
+                                        <div className="p-4 bg-purple-50/70 border border-purple-200/80 rounded-xl flex items-start gap-3 md:mt-7">
+                                            <input
+                                                type="checkbox"
+                                                id="isTrainerGuided"
+                                                name="isTrainerGuided"
+                                                checked={formData.isTrainerGuided}
+                                                onChange={(e) =>
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        isTrainerGuided: e.target.checked
+                                                    }))
+                                                }
+                                                className="w-5 h-5 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
+                                            />
+                                            <label htmlFor="isTrainerGuided" className="cursor-pointer select-none">
+                                                <p className="text-sm font-bold text-gray-900">Trainer Guided Course</p>
+                                                <p className="text-xs text-gray-600 mt-0.5">
+                                                    Enable if this course includes personal trainer guidance and speaking practice sessions.
+                                                </p>
+                                            </label>
                                         </div>
                                     </div>
 

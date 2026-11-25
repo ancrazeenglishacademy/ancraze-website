@@ -73,6 +73,8 @@ export async function PUT(request: NextRequest) {
       features,
       whoShouldJoin,
       experience,
+      isTrainerGuided,
+      refundDays,
     } = body;
 
     if (!courseId) {
@@ -137,6 +139,13 @@ export async function PUT(request: NextRequest) {
     }
     if (experience !== undefined) {
       updateData.experience = experience;
+    }
+    if (isTrainerGuided !== undefined) {
+      updateData.isTrainerGuided = Boolean(isTrainerGuided);
+    }
+    if (refundDays !== undefined && refundDays !== null && refundDays !== '') {
+      const parsedRefund = parseInt(String(refundDays), 10);
+      updateData.refundDays = isNaN(parsedRefund) || parsedRefund < 0 ? 0 : parsedRefund;
     }
 
     // Update course in Firestore

@@ -60,6 +60,11 @@ export async function POST(request: NextRequest) {
     const coverImage = formData.get('coverImage') as File;
     const showOnHomePageStr = formData.get('showOnHomePage');
     const showOnHomePage = showOnHomePageStr === null ? true : (showOnHomePageStr === 'true' || showOnHomePageStr === 'on' || showOnHomePageStr === '1');
+    const isTrainerGuidedStr = formData.get('isTrainerGuided');
+    const isTrainerGuided = isTrainerGuidedStr === 'true' || isTrainerGuidedStr === 'on' || isTrainerGuidedStr === '1';
+    const refundDaysRaw = formData.get('refundDays') as string;
+    const parsedRefundDays = refundDaysRaw !== null && refundDaysRaw !== '' ? parseInt(refundDaysRaw, 10) : 0;
+    const refundDays = isNaN(parsedRefundDays) || parsedRefundDays < 0 ? 0 : parsedRefundDays;
 
     // Validate required fields
     if (!title || !description || !teacherName || !price || !coverImage) {
@@ -102,6 +107,8 @@ export async function POST(request: NextRequest) {
       price: parseFloat(price.toString()),
       coverImage: imageUrl,
       showOnHomePage: showOnHomePage,
+      isTrainerGuided: isTrainerGuided,
+      refundDays: refundDays,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
     };
