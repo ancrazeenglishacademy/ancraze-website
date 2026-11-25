@@ -618,11 +618,7 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
   useEffect(() => {
     const fetchHomeCourses = async () => {
       try {
-        const res = await fetch("/api/courses", {
-          headers: {
-            "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
-          },
-        });
+        const res = await fetch("/api/courses?showOnHomePage=true");
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
           console.error("Failed to fetch home courses:", errData.message || errData.error || res.statusText);
@@ -1833,6 +1829,23 @@ function CourseDetailModal({
                 <p className="text-sm font-black text-[#2A0066]">{course.liveSessions || "—"}</p>
               </div>
             </div>
+
+            {/* Course Features */}
+            {course.features && course.features.length > 0 && (
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2.5">
+                  Course Features & What You Will Receive
+                </h4>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-700">
+                  {course.features.map((feat, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* What You Will Experience */}
             {course.experience && course.experience.length > 0 && (

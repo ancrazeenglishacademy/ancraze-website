@@ -128,6 +128,33 @@ export default function CoursesPage() {
       {/* Course Cards Grid */}
       <section className="py-20 bg-white border-b border-slate-200/70">
         <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  className="rounded-[32px] p-7 sm:p-8 bg-slate-50 border border-slate-200/80 animate-pulse space-y-6 h-[480px]"
+                >
+                  <div className="h-6 bg-slate-200 rounded-xl w-3/4 mx-auto" />
+                  <div className="h-4 bg-slate-200 rounded-lg w-1/2 mx-auto" />
+                  <div className="h-16 bg-slate-200 rounded-2xl w-full" />
+                  <div className="space-y-3">
+                    <div className="h-3.5 bg-slate-200 rounded w-full" />
+                    <div className="h-3.5 bg-slate-200 rounded w-5/6" />
+                    <div className="h-3.5 bg-slate-200 rounded w-4/6" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="text-center py-16 bg-slate-50 rounded-[32px] border border-dashed border-slate-200">
+              <BookOpen size={40} className="text-slate-300 mx-auto mb-3" />
+              <h3 className="text-lg font-black text-slate-800">No Courses Available Right Now</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Courses enabled for homepage display in the Super Admin dashboard will appear here.
+              </p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
             {courses.map((course, index) => {
               const isPopular = index === 1; // Highlight the 60-day or middle course
@@ -142,20 +169,25 @@ export default function CoursesPage() {
                 >
                   {/* Badge */}
                   {course.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#2A0066] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#2A0066] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md whitespace-nowrap">
                       {course.badge}
                     </div>
                   )}
 
                   <div>
                     {/* Header */}
-                    <div className="text-center pt-2 pb-6 border-b border-slate-200/80">
+                    <div className="text-center pt-2 pb-5 border-b border-slate-200/80">
                       <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
                         {course.name}
                       </h2>
                       {course.tagline && (
-                        <p className="text-xs text-[#2A0066] font-bold mt-2">
+                        <p className="text-xs text-[#2A0066] font-bold mt-2 leading-snug">
                           {course.tagline}
+                        </p>
+                      )}
+                      {course.overview && (
+                        <p className="text-xs text-slate-600 leading-relaxed font-normal mt-3">
+                          {course.overview}
                         </p>
                       )}
                     </div>
@@ -177,24 +209,26 @@ export default function CoursesPage() {
                     </div>
 
                     {/* Features Checklist */}
-                    <div className="space-y-3 pt-2">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        INCLUDED IN THIS COURSE:
-                      </p>
-                      <ul className="space-y-2.5">
-                        {(course.features || []).slice(0, 6).map((feature, fIdx) => (
-                          <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700 leading-snug">
-                            <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {(course.features || []).length > 6 && (
-                        <p className="text-[11px] font-bold text-[#2A0066] pt-1">
-                          + {(course.features || []).length - 6} more included features
+                    {(course.features && course.features.length > 0) && (
+                      <div className="space-y-3 pt-2">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          INCLUDED IN THIS COURSE:
                         </p>
-                      )}
-                    </div>
+                        <ul className="space-y-2.5">
+                          {course.features.slice(0, 6).map((feature, fIdx) => (
+                            <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700 leading-snug">
+                              <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {course.features.length > 6 && (
+                          <p className="text-[11px] font-bold text-[#2A0066] pt-1">
+                            + {course.features.length - 6} more included features
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Bottom CTAs */}
@@ -222,6 +256,7 @@ export default function CoursesPage() {
               );
             })}
           </div>
+          )}
         </div>
       </section>
 
@@ -311,35 +346,81 @@ export default function CoursesPage() {
               </div>
 
               <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-700 text-sm">
-                <div>
-                  <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
-                    Course Overview
-                  </h4>
-                  <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">
-                    {selectedCourse.overview}
-                  </p>
+                {selectedCourse.overview && (
+                  <div>
+                    <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
+                      Course Overview
+                    </h4>
+                    <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">
+                      {selectedCourse.overview}
+                    </p>
+                  </div>
+                )}
+
+                {/* Key Metrics Bar */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-around text-center">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Duration</p>
+                    <p className="text-sm font-black text-slate-900">{selectedCourse.duration || "—"}</p>
+                  </div>
+                  <div className="w-px h-8 bg-slate-200" />
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">App Validity</p>
+                    <p className="text-sm font-black text-slate-900">{selectedCourse.validity || "—"}</p>
+                  </div>
+                  <div className="w-px h-8 bg-slate-200" />
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Live Sessions</p>
+                    <p className="text-sm font-black text-[#2A0066]">{selectedCourse.liveSessions || "—"}</p>
+                  </div>
                 </div>
 
-                <div>
-                  <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
-                    What You Will Receive
-                  </h4>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {(selectedCourse.features || []).map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {(selectedCourse.features && selectedCourse.features.length > 0) && (
+                  <div>
+                    <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2.5">
+                      Course Features & What You Will Receive
+                    </h4>
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      {selectedCourse.features.map((feat, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <CheckCircle2 size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {(selectedCourse.experience && selectedCourse.experience.length > 0) && (
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider">
+                      What You Will Experience
+                    </h4>
+                    <div className="space-y-2.5">
+                      {selectedCourse.experience.map((exp, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-xl bg-purple-50/40 border border-purple-100/70 flex items-start gap-3"
+                        >
+                          <span className="w-6 h-6 rounded-lg bg-[#2A0066] text-white flex items-center justify-center text-[10px] font-black shrink-0 font-mono mt-0.5">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{exp.title}</p>
+                            <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">{exp.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {selectedCourse.whoShouldJoin && (
                   <div>
                     <h4 className="font-bold text-slate-900 uppercase text-xs tracking-wider mb-2">
                       Who Should Join
                     </h4>
-                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
                       {selectedCourse.whoShouldJoin}
                     </p>
                   </div>
