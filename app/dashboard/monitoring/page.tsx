@@ -24,6 +24,7 @@ interface StudentMonitor {
   enrolledCoursesDetails?: any[];
   trainerName?: string;
   accountStatus?: string;
+  isTrainerPreviewAccount?: boolean;
 }
 
 export default function StudentMonitoringPage() {
@@ -54,7 +55,7 @@ export default function StudentMonitoringPage() {
   };
 
   const handleResetDevice = async (studentId: string, studentName: string) => {
-    if (!confirm(`Reset registered device session for ${studentName}? This allows them to log in from a new device.`)) return;
+    if (!confirm(`Clear the recorded last-login device for ${studentName}? (Students can log in from multiple devices regardless.)`)) return;
 
     try {
       setResettingId(studentId);
@@ -72,7 +73,7 @@ export default function StudentMonitoringPage() {
 
       if (!res.ok) throw new Error("Failed to reset device");
       await fetchMonitoringData();
-      alert("Device binding cleared successfully.");
+      alert("Recorded device cleared successfully.");
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -84,7 +85,10 @@ export default function StudentMonitoringPage() {
     (s) =>
       s.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.loginId?.toLowerCase().includes(searchQuery.toLowerCase())
+      s.loginId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.enrolledCoursesDetails || []).some((c: any) =>
+        c?.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
   );
 
   return (
@@ -93,7 +97,7 @@ export default function StudentMonitoringPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Student Activity & Device Monitoring</h1>
-          <p className="text-xs text-slate-500 font-medium">Verify login sessions, device bindings, course access activity, and reset device hardware locks</p>
+          <p className="text-xs text-slate-500 font-medium">Track last login activity and device, trainer preview accounts, and every course each student is enrolled in. Students may log in from multiple devices.</p>
         </div>
         <button
           onClick={() => fetchMonitoringData()}
@@ -136,8 +140,8 @@ export default function StudentMonitoringPage() {
                 <tr>
                   <th className="px-6 py-4">Student</th>
                   <th className="px-6 py-4">Student ID</th>
-                  <th className="px-6 py-4">Active Course</th>
-                  <th className="px-6 py-4">Bound Device</th>
+                  <th className="px-6 py-4">Enrolled Courses</th>
+                  <th className="px-6 py-4">Last Login Device</th>
                   <th className="px-6 py-4">Last Active</th>
                   <th className="px-6 py-4 text-right">Device Control</th>
                 </tr>
@@ -154,8 +158,28 @@ export default function StudentMonitoringPage() {
                         {s.loginId || "---"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-700">
-                      {s.enrolledCoursesDetails?.[0]?.title || "Active Module"}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1 max-w-[280px]">
+                        {s.enrolledCoursesDetails && s.enrolledCoursesDetails.length > 0 ? (
+                          s.enrolledCoursesDetails.map((c: any) => (
+                            <span
+                              key={c.id}
+                              className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100"
+                              title={c.isTrainerGuided ? "Trainer Guided" : "Daily Drip (1 video/day)"}
+                            >
+                              {c.title}
+                              {c.isTrainerGuided ? " • Guided" : ""}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">No courses</span>
+                        )}
+                        {s.isTrainerPreviewAccount && (
+                          <span className="px-2 py-0.5 bg-purple-100 text-[#2A0066] rounded-md text-[10px] font-black uppercase border border-purple-200">
+                            Preview
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       {s.deviceId ? (
@@ -164,7 +188,7 @@ export default function StudentMonitoringPage() {
                           <span className="font-mono text-[11px] truncate max-w-[140px]">{s.deviceId}</span>
                         </div>
                       ) : (
-                        <span className="text-slate-400 text-xs font-medium italic">No Device Bound</span>
+                        <span className="text-slate-400 text-xs font-medium italic">No device recorded</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-500 font-medium">
@@ -188,7 +212,7 @@ export default function StudentMonitoringPage() {
                         ) : (
                           <RotateCcw size={12} />
                         )}
-                        Reset Device
+                        Clear Device
                       </button>
                     </td>
                   </tr>

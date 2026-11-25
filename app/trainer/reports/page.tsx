@@ -24,8 +24,8 @@ interface LaggingStudent {
   isBlocked?: boolean;
   accountStatus?: string;
   daysInactive?: number;
-  missedTasksCount?: number;
-  averageScore?: number;
+  completedTasks?: number;
+  courseSummaries?: { title: string; done: number; unlocked: number; total: number }[];
 }
 
 export default function TrainerLaggingReportsPage() {
@@ -65,18 +65,37 @@ export default function TrainerLaggingReportsPage() {
       const data = await res.json();
       const myStudents: any[] = data.students || [];
 
-      // Identify at-risk / lagging students
-      const flagged: LaggingStudent[] = myStudents.map((s, idx) => ({
-        id: s.id,
-        fullName: s.fullName,
-        email: s.email,
-        loginId: s.loginId,
-        isBlocked: s.isBlocked,
-        accountStatus: s.accountStatus,
-        daysInactive: s.isBlocked ? 14 : 4 + (idx * 2) % 10,
-        missedTasksCount: 2 + (idx % 3),
-        averageScore: 58 + (idx * 5) % 25,
-      }));
+      // Identify at-risk students from real data: frozen or inactive for 3+ days
+      const now = Date.now();
+      const flagged: LaggingStudent[] = myStudents
+        .map((s) => {
+          const ref = s.lastLoginAt || s.createdAt;
+          const daysInactive = ref
+            ? Math.max(0, Math.floor((now - new Date(ref).getTime()) / 86400000))
+            : 0;
+          const courseSummaries = (s.enrolledCoursesDetails || []).map((c: any) => {
+            const prog = s.courseProgress?.[c.id] || {};
+            const done = Number(prog.completedTasksCount || 0);
+            return {
+              title: c.title,
+              done,
+              unlocked: Math.max(1, Number(prog.unlockedDaysCount || 1)),
+              total: Number(c.daysCount || 0),
+            };
+          });
+          return {
+            id: s.id,
+            fullName: s.fullName,
+            email: s.email,
+            loginId: s.loginId,
+            isBlocked: s.isBlocked,
+            accountStatus: s.accountStatus,
+            daysInactive,
+            completedTasks: courseSummaries.reduce((a: number, c: any) => a + c.done, 0),
+            courseSummaries,
+          } as LaggingStudent;
+        })
+        .filter((s) => s.isBlocked || s.accountStatus === "frozen" || (s.daysInactive || 0) >= 3);
 
       setStudents(flagged);
     } catch (err) {
@@ -103,7 +122,7 @@ export default function TrainerLaggingReportsPage() {
           studentName: selectedStudent.fullName,
           studentLoginId: selectedStudent.loginId || "---",
           type: "exception",
-          reason: `Trainer Performance Alert: ${reportReason} (Inactive ${selectedStudent.daysInactive} days, Missed Tasks: ${selectedStudent.missedTasksCount})`,
+          reason: `Trainer Performance Alert: ${reportReason} (Inactive ${selectedStudent.daysInactive} days, Day tasks completed: ${selectedStudent.completedTasks || 0})`,
           requestedByAdminName: "Assigned Trainer",
         }),
       });
@@ -128,7 +147,7 @@ export default function TrainerLaggingReportsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">At-Risk Learners & Difficulty Reports</h1>
-        <p className="text-xs text-slate-500 font-medium">Detect students who are falling behind schedule, missing spoken task deadlines, and escalate academic difficulties to administration</p>
+        <p className="text-xs text-slate-500 font-medium">Students who are frozen or have been inactive for 3+ days, with per-course day-task progress, so you can escalate to administration</p>
       </div>
 
       {/* Lagging Students List */}
@@ -169,15 +188,28 @@ export default function TrainerLaggingReportsPage() {
                     <Clock size={13} /> {s.daysInactive} Days Inactive
                   </span>
                   <span className="px-3 py-1 bg-rose-50 text-rose-700 rounded-xl text-xs font-bold border border-rose-100">
-                    {s.missedTasksCount} Overdue Submissions
+                    {s.completedTasks || 0} Day Tasks Completed
                   </span>
                 </div>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div className="space-y-0.5">
-                  <p className="font-bold text-slate-700">Recent Task Assessment Average: <span className="text-[#2A0066] font-black">{s.averageScore}%</span></p>
-                  <p className="text-[11px] text-slate-400">Student is currently falling behind the expected cohort pace.</p>
+                <div className="space-y-1">
+                  {(s.courseSummaries || []).length > 0 ? (
+                    s.courseSummaries!.map((c) => (
+                      <p key={c.title} className="font-bold text-slate-700">
+                        {c.title}:{" "}
+                        <span className="text-[#2A0066] font-black">
+                          {c.done} done • {c.unlocked}{c.total ? `/${c.total}` : ""} days unlocked
+                        </span>
+                      </p>
+                    ))
+                  ) : (
+                    <p className="font-bold text-slate-500">Not enrolled in any course.</p>
+                  )}
+                  <p className="text-[11px] text-slate-400">
+                    {s.isBlocked ? "Account is frozen." : "Student has been inactive and may need a follow-up."}
+                  </p>
                 </div>
 
                 <button

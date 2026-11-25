@@ -122,9 +122,9 @@ export default function AdminDashboardPage() {
           onClick={() => router.push("/dashboard/allocations")}
         />
         <MetricCard
-          title="Active Devices"
-          value={loading ? "..." : `${activeDeviceSessions} Active`}
-          subtitle="Bound Hardware Locks"
+          title="Student Activity"
+          value={loading ? "..." : `${activeDeviceSessions} Logged In`}
+          subtitle="Students With Device Sessions"
           icon={<Smartphone size={22} />}
           onClick={() => router.push("/dashboard/monitoring")}
         />
@@ -216,6 +216,7 @@ export default function AdminDashboardPage() {
                 <tr>
                   <th className="px-6 py-3.5">Student</th>
                   <th className="px-6 py-3.5">Student ID</th>
+                  <th className="px-6 py-3.5">Courses</th>
                   <th className="px-6 py-3.5">Assigned Trainer</th>
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Admission Date</th>
@@ -236,6 +237,22 @@ export default function AdminDashboardPage() {
                       <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
                         {s.loginId || "---"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1 max-w-[220px]">
+                        {(s.enrolledCoursesDetails || []).length > 0 ? (
+                          s.enrolledCoursesDetails.map((c: any) => (
+                            <span
+                              key={c.id}
+                              className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100"
+                            >
+                              {c.title}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">None</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-slate-600">
                       {s.trainerName || (

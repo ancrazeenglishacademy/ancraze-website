@@ -84,7 +84,7 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
   const menuItems = [
     { title: "Trainer Console", icon: <LayoutDashboard size={19} />, href: "/trainer" },
     { title: "Assigned Students", icon: <Users size={19} />, href: "/trainer/students" },
-    { title: "Task Evaluation & Audio", icon: <CheckSquare size={19} />, href: "/trainer/tasks" },
+    { title: "Day Task Completion", icon: <CheckSquare size={19} />, href: "/trainer/tasks" },
     { title: "Progress Tracking", icon: <TrendingUp size={19} />, href: "/trainer/progress" },
     { title: "Student Support Desk", icon: <MessageCircleQuestion size={19} />, href: "/trainer/support" },
     { title: "Lagging Student Reports", icon: <AlertTriangle size={19} />, href: "/trainer/reports" },

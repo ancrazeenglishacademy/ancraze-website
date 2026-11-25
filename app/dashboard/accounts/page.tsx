@@ -23,6 +23,7 @@ interface StudentAccount {
   loginId?: string;
   isBlocked?: boolean;
   accountStatus?: "active" | "frozen" | "closure_requested" | "closed";
+  enrolledCoursesDetails?: any[];
   createdAt: string;
 }
 
@@ -184,6 +185,7 @@ export default function AccountManagementPage() {
                 <tr>
                   <th className="px-6 py-4">Student</th>
                   <th className="px-6 py-4">Login ID</th>
+                  <th className="px-6 py-4">Courses</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Created Date</th>
                   <th className="px-6 py-4 text-right">Actions</th>
@@ -202,6 +204,22 @@ export default function AccountManagementPage() {
                         <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
                           {s.loginId || "---"}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1 max-w-[240px]">
+                          {s.enrolledCoursesDetails && s.enrolledCoursesDetails.length > 0 ? (
+                            s.enrolledCoursesDetails.map((c: any) => (
+                              <span
+                                key={c.id}
+                                className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100"
+                              >
+                                {c.title}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">None</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span

@@ -117,7 +117,7 @@ export default function TrainerStudents() {
             <div className="grid grid-cols-12 gap-4 px-8 py-4 bg-slate-50/50 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                <div className="col-span-5">Student</div>
                <div className="col-span-3">Student ID</div>
-               <div className="col-span-2">Enrolled Course</div>
+               <div className="col-span-2">Enrolled Courses</div>
                <div className="col-span-2">Joined Date</div>
             </div>
 
@@ -156,11 +156,33 @@ export default function TrainerStudents() {
                       </code>
                     </div>
 
-                    {/* Course Count */}
+                    {/* Enrolled Courses (all) */}
                     <div className="col-span-2">
-                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-[#2A0066] rounded-xl text-[10px] font-black uppercase tracking-wider border border-purple-100">
-                          {student.enrolledCoursesDetails?.[0]?.title || "Active Course"}
-                       </span>
+                      <div className="flex flex-wrap gap-1">
+                        {(student.enrolledCoursesDetails || []).length > 0 ? (
+                          student.enrolledCoursesDetails.map((c: any) => {
+                            const prog = student.courseProgress?.[c.id];
+                            const done = Number(prog?.completedTasksCount || 0);
+                            return (
+                              <span
+                                key={c.id}
+                                title={`${done} day task(s) completed`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-[#2A0066] rounded-xl text-[10px] font-black uppercase tracking-wider border border-purple-100"
+                              >
+                                {c.title}
+                                <span className="text-emerald-600 normal-case">• {done} done</span>
+                              </span>
+                            );
+                          })
+                        ) : (
+                          <span className="text-xs text-slate-300 italic font-bold">No course</span>
+                        )}
+                        {student.isTrainerPreviewAccount && (
+                          <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-black uppercase border border-amber-200">
+                            Preview
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Joined Date */}

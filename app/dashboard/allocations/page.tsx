@@ -288,7 +288,7 @@ export default function TrainerAllocationPage() {
                   </th>
                   <th className="px-5 py-4">Student</th>
                   <th className="px-5 py-4">Student ID</th>
-                  <th className="px-5 py-4">Enrolled Course</th>
+                  <th className="px-5 py-4">Enrolled Courses</th>
                   <th className="px-5 py-4">Current Trainer</th>
                   <th className="px-5 py-4 text-right">Quick Reassign</th>
                 </tr>
@@ -321,8 +321,21 @@ export default function TrainerAllocationPage() {
                           {s.loginId || "---"}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-xs font-medium text-slate-600">
-                        {s.enrolledCoursesDetails?.[0]?.title || "General"}
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-1 max-w-[260px]">
+                          {s.enrolledCoursesDetails && s.enrolledCoursesDetails.length > 0 ? (
+                            s.enrolledCoursesDetails.map((c: any) => (
+                              <span
+                                key={c.id}
+                                className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-bold border border-blue-100"
+                              >
+                                {c.title}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">None</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         {s.trainerId ? (

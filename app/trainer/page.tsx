@@ -25,7 +25,7 @@ export default function TrainerDashboard() {
 
   // States
   const [assignedStudents, setAssignedStudents] = useState<any[]>([]);
-  const [pendingTasksCount, setPendingTasksCount] = useState(0);
+  const [completedTasksCount, setCompletedTasksCount] = useState(0);
   const [laggingStudentsCount, setLaggingStudentsCount] = useState(0);
   const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
 
@@ -64,20 +64,25 @@ export default function TrainerDashboard() {
         const sData = await sRes.json();
         myStudents = sData.students || [];
         setAssignedStudents(myStudents);
-        // Flag lagging students if frozen or no login in > 7 days
-        const lagging = myStudents.filter(
-          (s) => s.isBlocked || s.accountStatus === "frozen"
-        );
+        // Flag lagging students: frozen, or no login in 3+ days
+        const now = Date.now();
+        const lagging = myStudents.filter((s) => {
+          if (s.isBlocked || s.accountStatus === "frozen") return true;
+          const ref = s.lastLoginAt || s.createdAt;
+          const days = ref ? Math.floor((now - new Date(ref).getTime()) / 86400000) : 0;
+          return days >= 3;
+        });
         setLaggingStudentsCount(lagging.length);
       }
 
-      // 2. Fetch Tasks
+      // 2. Fetch day-task completions
       const tRes = await fetch(`/api/tasks?trainerId=${trainerUid}`, { headers });
       if (tRes.ok) {
         const tData = await tRes.json();
-        const tasks: any[] = tData.tasks || [];
-        const pending = tasks.filter((t) => t.status === "pending" || t.status === "submitted");
-        setPendingTasksCount(pending.length);
+        const tasks: any[] = (tData.tasks || []).filter(
+          (t: any) => t.status === "completed" || t.status === "approved"
+        );
+        setCompletedTasksCount(tasks.length);
         setRecentSubmissions(tasks.slice(0, 5));
       }
     } catch (err) {
@@ -100,7 +105,7 @@ export default function TrainerDashboard() {
               Welcome, {fullName || "Instructor"}
             </h1>
             <p className="text-slate-300 text-sm max-w-xl">
-              Guide your allocated students through English modules, evaluate exercises, listen to speaking recordings, and provide direct corrective feedback.
+              Guide your allocated students through their enrolled courses and mark each day&apos;s task as completed to unlock the next 3 days of videos.
             </p>
           </div>
 
@@ -109,7 +114,7 @@ export default function TrainerDashboard() {
               onClick={() => router.push("/trainer/tasks")}
               className="px-4 py-2.5 bg-white text-[#2A0066] rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-100 transition shadow-md flex items-center gap-2"
             >
-              <CheckSquare size={16} /> Evaluate Tasks ({pendingTasksCount})
+              <CheckSquare size={16} /> Mark Day Tasks ({completedTasksCount} done)
             </button>
             <button
               onClick={() => router.push("/trainer/students")}
@@ -132,25 +137,25 @@ export default function TrainerDashboard() {
           onClick={() => router.push("/trainer/students")}
         />
         <MetricCard
-          title="Tasks to Evaluate"
-          value={loading ? "..." : pendingTasksCount.toString()}
-          subtitle="Assignments & Recordings"
+          title="Day Tasks Completed"
+          value={loading ? "..." : completedTasksCount.toString()}
+          subtitle="Marked By You"
           icon={<Mic size={22} />}
-          alert={pendingTasksCount > 0}
           onClick={() => router.push("/trainer/tasks")}
         />
         <MetricCard
-          title="Completion SLA"
-          value="94%"
-          subtitle="Feedback Turnaround"
+          title="Course Progress"
+          value="View"
+          subtitle="Per-Course Milestones"
           icon={<TrendingUp size={22} />}
           onClick={() => router.push("/trainer/progress")}
         />
         <MetricCard
           title="At-Risk Learners"
           value={loading ? "..." : laggingStudentsCount.toString()}
-          subtitle="Falling Behind / Inactive"
+          subtitle="Inactive 3+ Days / Frozen"
           icon={<AlertTriangle size={22} />}
+          alert={laggingStudentsCount > 0}
           onClick={() => router.push("/trainer/reports")}
         />
       </div>
@@ -165,10 +170,10 @@ export default function TrainerDashboard() {
             <CheckSquare size={22} />
           </div>
           <h3 className="font-bold text-slate-900 text-base group-hover:text-[#2A0066] transition">
-            Evaluate Tasks & Speaking Recordings
+            Mark Day Tasks Completed
           </h3>
           <p className="text-xs text-slate-400 font-medium">
-            Listen to student voice notes, grade assignments, approve submissions, or return with correction feedback.
+            Pick a student, their course, and the day — then mark the task completed to unlock the next 3 days&apos; videos.
           </p>
         </div>
 
@@ -207,8 +212,8 @@ export default function TrainerDashboard() {
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">Recent Task Submissions</h2>
-            <p className="text-xs text-slate-400 font-medium">Submissions awaiting review or recently graded</p>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">Recently Completed Day Tasks</h2>
+            <p className="text-xs text-slate-400 font-medium">Latest day tasks you marked as completed</p>
           </div>
           <button
             onClick={() => router.push("/trainer/tasks")}
@@ -226,17 +231,17 @@ export default function TrainerDashboard() {
             </div>
           ) : recentSubmissions.length === 0 ? (
             <div className="p-12 text-center text-slate-400 text-xs font-bold">
-              No recent task submissions found.
+              No completed day tasks yet.
             </div>
           ) : (
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-3.5">Task Title</th>
+                  <th className="px-6 py-3.5">Day Task</th>
                   <th className="px-6 py-3.5">Student</th>
-                  <th className="px-6 py-3.5">Type</th>
+                  <th className="px-6 py-3.5">Day</th>
                   <th className="px-6 py-3.5">Status</th>
-                  <th className="px-6 py-3.5">Submission Date</th>
+                  <th className="px-6 py-3.5">Completed On</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -254,7 +259,7 @@ export default function TrainerDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700">
-                        {t.taskType || "Assignment"}
+                        {t.dayNumber ? `Day ${t.dayNumber}` : "—"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -271,7 +276,7 @@ export default function TrainerDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-400 font-medium">
-                      {new Date(t.createdAt).toLocaleDateString()}
+                      {new Date(t.evaluatedAt || t.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}

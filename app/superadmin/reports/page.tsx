@@ -51,7 +51,7 @@ export default function SuperAdminReportsPage() {
             name: t.fullName,
             email: t.email,
             studentCount: assigned.length,
-            completionRate: "88%",
+            completionRate: `${students.filter((s) => s.trainerId === t.id).reduce((sum, s) => sum + Object.values<any>(s.courseProgress || {}).reduce((a: number, p: any) => a + Number(p?.completedTasksCount || 0), 0), 0)} day tasks`,
             status: "Active",
           };
         });
@@ -148,7 +148,7 @@ export default function SuperAdminReportsPage() {
                   <tr>
                     <th className="px-4 py-3">Student Name</th>
                     <th className="px-4 py-3">Login ID</th>
-                    <th className="px-4 py-3">Enrolled Courses</th>
+                    <th className="px-4 py-3">Enrolled Courses & Progress</th>
                     <th className="px-4 py-3">Trainer</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Enrolment Date</th>
@@ -159,7 +159,16 @@ export default function SuperAdminReportsPage() {
                     <tr key={s.id} className="hover:bg-slate-50/50">
                       <td className="px-4 py-3 font-bold text-slate-900">{s.fullName}</td>
                       <td className="px-4 py-3 font-mono text-xs">{s.loginId || "---"}</td>
-                      <td className="px-4 py-3 text-xs">{s.enrolledCourses?.length || 0} Course(s)</td>
+                      <td className="px-4 py-3 text-xs">
+                        {(s.enrolledCoursesDetails || []).length > 0
+                          ? s.enrolledCoursesDetails
+                              .map((c: any) => {
+                                const done = Number(s.courseProgress?.[c.id]?.completedTasksCount || 0);
+                                return `${c.title} (${done} day task${done === 1 ? "" : "s"} done)`;
+                              })
+                              .join(", ")
+                          : "None"}
+                      </td>
                       <td className="px-4 py-3 text-xs">{s.trainerName || "Unassigned"}</td>
                       <td className="px-4 py-3 text-xs capitalize">{s.accountStatus || "active"}</td>
                       <td className="px-4 py-3 text-xs text-slate-400">{new Date(s.createdAt).toLocaleDateString()}</td>
@@ -176,7 +185,7 @@ export default function SuperAdminReportsPage() {
                     <th className="px-4 py-3">Trainer Name</th>
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Assigned Students</th>
-                    <th className="px-4 py-3">Completion SLA</th>
+                    <th className="px-4 py-3">Day Tasks Completed</th>
                     <th className="px-4 py-3">Status</th>
                   </tr>
                 </thead>
@@ -199,9 +208,11 @@ export default function SuperAdminReportsPage() {
                 <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100">
                   <tr>
                     <th className="px-4 py-3">Course Title</th>
+                    <th className="px-4 py-3">Mode</th>
                     <th className="px-4 py-3">Instructor</th>
                     <th className="px-4 py-3">Price</th>
-                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Refund Days</th>
+                    <th className="px-4 py-3">Students</th>
                     <th className="px-4 py-3">Total Modules</th>
                   </tr>
                 </thead>
@@ -209,9 +220,11 @@ export default function SuperAdminReportsPage() {
                   {reportData.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50/50">
                       <td className="px-4 py-3 font-bold text-slate-900">{c.title}</td>
+                      <td className="px-4 py-3 text-xs">{c.isTrainerGuided ? "Trainer Guided" : "Daily Drip"}</td>
                       <td className="px-4 py-3 text-xs">{c.teacherName || c.instructor || "Academy"}</td>
                       <td className="px-4 py-3 text-xs font-bold text-[#2A0066]">₹{c.price || 0}</td>
-                      <td className="px-4 py-3 text-xs capitalize">{c.status || "Published"}</td>
+                      <td className="px-4 py-3 text-xs">{c.refundDays ? `${c.refundDays} days` : "No refund"}</td>
+                      <td className="px-4 py-3 text-xs">{c.studentCount || 0}</td>
                       <td className="px-4 py-3 text-xs">{c.moduleCount || 0} Modules</td>
                     </tr>
                   ))}

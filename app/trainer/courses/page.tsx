@@ -82,7 +82,7 @@ export default function TrainerCourses() {
                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                    />
                    <div className="absolute top-6 right-6 px-4 py-2 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest">
-                      {course.price > 0 ? `$${course.price}` : 'Free'}
+                      {course.price > 0 ? `₹${course.price}` : 'Free'}
                    </div>
                    <div className="absolute inset-x-4 bottom-4 flex justify-center">
                      <span className="bg-white text-[#2A0066] px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
@@ -102,11 +102,11 @@ export default function TrainerCourses() {
                       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
                          <div className="flex items-center gap-2">
                             <Users size={16} className="text-[#2A0066]" />
-                            <span>152 Students</span>
+                            <span>{course.studentCount ?? 0} Students</span>
                          </div>
                          <div className="flex items-center gap-2">
                             <TrendingUp size={16} className="text-emerald-400" />
-                            <span className="text-emerald-500">92% Progress</span>
+                            <span className="text-emerald-500">{course.isTrainerGuided ? "Trainer Guided" : "Daily Drip"}</span>
                          </div>
                       </div>
 
@@ -141,12 +141,12 @@ export default function TrainerCourses() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full lg:w-auto">
                <div className="p-8 bg-white/5 backdrop-blur-md rounded-[40px] border border-white/10 text-center">
-                  <h4 className="text-4xl font-black tracking-tighter mb-1">856</h4>
+                  <h4 className="text-4xl font-black tracking-tighter mb-1">{courses.reduce((sum, c) => sum + (c.studentCount || 0), 0)}</h4>
                   <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Total Enrolled</p>
                </div>
                <div className="p-8 bg-white/5 backdrop-blur-md rounded-[40px] border border-white/10 text-center">
-                  <h4 className="text-4xl font-black tracking-tighter mb-1">124</h4>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Module Hours</p>
+                  <h4 className="text-4xl font-black tracking-tighter mb-1">{courses.reduce((sum, c) => sum + (c.moduleCount || 0), 0)}</h4>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/30">Total Modules</p>
                </div>
             </div>
          </div>

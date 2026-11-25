@@ -146,7 +146,7 @@ export default function StudentDetailPage() {
   const handleResetDevice = async () => {
     if (
       !confirm(
-        "Are you sure you want to reset this student's device access? They will be able to log in from a new device.",
+        "Clear this student's recorded last-login device? (Students can log in from multiple devices regardless.)",
       )
     )
       return;
@@ -345,7 +345,7 @@ export default function StudentDetailPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase">
-                      Registered Device
+                      Last Login Device
                     </p>
                     <p className="text-xs font-bold text-slate-900 truncate">
                       {student.deviceId || "No device linked"}
@@ -368,7 +368,7 @@ export default function StudentDetailPage() {
               </div>
               <p className="text-[10px] text-slate-400 mt-3 italic font-medium">
                 {student.deviceId
-                  ? "Student is locked to this device. Reset to allow login from another device."
+                  ? "Last login device. Students can log in from multiple devices; clearing only removes this record."
                   : "Student hasn't logged in yet."}
               </p>
             </div>
