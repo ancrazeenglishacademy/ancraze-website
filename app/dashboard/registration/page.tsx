@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   UserPlus,
   Key,
@@ -16,6 +16,8 @@ import {
   MessageSquare,
   GraduationCap,
   ArrowRight,
+  ChevronDown,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -44,6 +46,9 @@ export default function StudentRegistrationPage() {
   const [initialFee, setInitialFee] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"completed" | "pending">("completed");
   const [isTrainerPreviewAccount, setIsTrainerPreviewAccount] = useState(false);
+  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
+  const [courseSearch, setCourseSearch] = useState("");
+  const courseDropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Success Slip State
   const [registeredStudent, setRegisteredStudent] = useState<any | null>(null);
@@ -51,6 +56,19 @@ export default function StudentRegistrationPage() {
 
   useEffect(() => {
     fetchMetadata();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        courseDropdownRef.current &&
+        !courseDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCourseDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchMetadata = async () => {
@@ -117,6 +135,8 @@ export default function StudentRegistrationPage() {
       setSelectedTrainer("");
       setInitialFee("");
       setIsTrainerPreviewAccount(false);
+      setCourseDropdownOpen(false);
+      setCourseSearch("");
     } catch (err: any) {
       alert(err.message || "Registration failed");
     } finally {
@@ -227,11 +247,119 @@ export default function StudentRegistrationPage() {
 
             {/* Courses Selection */}
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                Enrolled Course(s)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Enrolled Course(s)
+                </label>
+                {selectedCourses.length > 0 && (
+                  <span className="text-[11px] font-black text-[#2A0066]">
+                    {selectedCourses.length} selected
+                  </span>
+                )}
+              </div>
               {courses.length === 0 ? (
                 <p className="text-xs text-slate-400 italic">No courses found in system.</p>
+              ) : courses.length > 5 ? (
+                <div className="space-y-2" ref={courseDropdownRef}>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setCourseDropdownOpen((prev) => !prev)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-[#2A0066] transition flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="truncate">
+                        {selectedCourses.length === 0
+                          ? "Select course(s)..."
+                          : selectedCourses.length === 1
+                          ? courses.find((c) => c.id === selectedCourses[0])?.title || "1 course selected"
+                          : `${selectedCourses.length} courses selected`}
+                      </span>
+                      <ChevronDown
+                        size={15}
+                        className={`text-slate-400 transition-transform flex-shrink-0 ${
+                          courseDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {courseDropdownOpen && (
+                      <div className="absolute z-30 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+                        <div className="p-2 border-b border-slate-100">
+                          <input
+                            type="text"
+                            placeholder="Search courses..."
+                            value={courseSearch}
+                            onChange={(e) => setCourseSearch(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-[#2A0066]"
+                          />
+                        </div>
+                        <div className="max-h-52 overflow-y-auto p-1.5 space-y-1">
+                          {courses
+                            .filter((c) =>
+                              c.title.toLowerCase().includes(courseSearch.toLowerCase())
+                            )
+                            .map((c) => {
+                              const isSelected = selectedCourses.includes(c.id);
+                              return (
+                                <button
+                                  type="button"
+                                  key={c.id}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedCourses(
+                                        selectedCourses.filter((id) => id !== c.id)
+                                      );
+                                    } else {
+                                      setSelectedCourses([...selectedCourses, c.id]);
+                                    }
+                                  }}
+                                  className={`w-full px-3 py-2 rounded-xl text-left text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                                    isSelected
+                                      ? "bg-[#2A0066] text-white"
+                                      : "text-slate-700 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  <span className="truncate pr-2">{c.title}</span>
+                                  {isSelected && (
+                                    <CheckCircle2 size={14} className="flex-shrink-0" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedCourses.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedCourses.map((courseId) => {
+                        const course = courses.find((c) => c.id === courseId);
+                        if (!course) return null;
+                        return (
+                          <span
+                            key={courseId}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-lg text-[11px] font-bold border border-[#2A0066]/15"
+                          >
+                            <span className="truncate max-w-[180px]">{course.title}</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedCourses(
+                                  selectedCourses.filter((id) => id !== courseId)
+                                )
+                              }
+                              className="hover:text-rose-600 transition cursor-pointer"
+                              aria-label={`Remove ${course.title}`}
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
                   {courses.map((c) => {
