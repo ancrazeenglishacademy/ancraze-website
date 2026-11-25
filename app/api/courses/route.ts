@@ -90,6 +90,49 @@ export async function POST(request: NextRequest) {
     const parsedRefundDays = refundDaysRaw !== null && refundDaysRaw !== '' ? parseInt(refundDaysRaw, 10) : 0;
     const refundDays = isNaN(parsedRefundDays) || parsedRefundDays < 0 ? 0 : parsedRefundDays;
 
+    // Homepage & Courses Page Card/Modal Specific Fields
+    const badge = ((formData.get('badge') as string) || '').trim();
+    const tagline = ((formData.get('tagline') as string) || '').trim();
+    const duration = ((formData.get('duration') as string) || '').trim();
+    const validity = ((formData.get('validity') as string) || '').trim();
+    const liveSessions = ((formData.get('liveSessions') as string) || '').trim();
+    const whoShouldJoin = ((formData.get('whoShouldJoin') as string) || '').trim();
+
+    const featuresRaw = (formData.get('features') as string) || '';
+    let features: string[] = [];
+    if (featuresRaw.trim()) {
+      try {
+        const parsed = JSON.parse(featuresRaw);
+        if (Array.isArray(parsed)) features = parsed;
+      } catch {
+        features = featuresRaw
+          .split('\n')
+          .map((f) => f.trim())
+          .filter(Boolean);
+      }
+    }
+
+    const experienceRaw = (formData.get('experience') as string) || '';
+    let experience: Array<{ title: string; desc: string }> = [];
+    if (experienceRaw.trim()) {
+      try {
+        const parsedExp = JSON.parse(experienceRaw);
+        if (Array.isArray(parsedExp)) experience = parsedExp;
+      } catch {
+        experience = experienceRaw
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => {
+            const [t, ...rest] = line.split(':');
+            return {
+              title: t.trim(),
+              desc: rest.join(':').trim() || t.trim(),
+            };
+          });
+      }
+    }
+
     // Validate required fields
     if (!title || !description || !teacherName || !price || !coverImage) {
       return NextResponse.json(
@@ -133,6 +176,14 @@ export async function POST(request: NextRequest) {
       showOnHomePage: showOnHomePage,
       isTrainerGuided: isTrainerGuided,
       refundDays: refundDays,
+      badge,
+      tagline,
+      duration,
+      validity,
+      liveSessions,
+      features,
+      whoShouldJoin,
+      experience,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
     };
@@ -166,13 +217,25 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!checkApiKey(request)) {
-    console.error(`❌ [GET /api/courses] 401 Unauthorized: Missing or invalid x-api-key header (${request.nextUrl.pathname}${request.nextUrl.search})`);
+  const searchParams = request.nextUrl.searchParams;
+  const courseId = searchParams.get('courseId');
+  const showOnHomePageOnly =
+    searchParams.get('showOnHomePage') === 'true' ||
+    searchParams.get('homeOnly') === 'true' ||
+    searchParams.get('public') === 'true';
+  const hasValidApiKey = checkApiKey(request);
+
+  // Access Control:
+  // Requesting specific course details (courseId) or full internal course list requires a valid x-api-key.
+  // Public catalog requests for courses marked "Show on Home Page" (used by / and /courses) are allowed publicly
+  // and only return public showcase metadata (no unlocked curriculum video streams).
+  if (courseId && !hasValidApiKey) {
+    console.error(`❌ [GET /api/courses] 401 Unauthorized: Access control blocked course detail request without valid x-api-key (${request.nextUrl.pathname}${request.nextUrl.search})`);
     return NextResponse.json(
       {
         success: false,
-        error: "Unauthorized: Invalid or missing API key",
-        message: "Please provide a valid 'x-api-key' request header.",
+        error: "Unauthorized: Access denied for course details",
+        message: "Access control requires a valid 'x-api-key' header when requesting course details.",
       },
       { status: 401 }
     );
@@ -205,8 +268,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Check for single course fetch
-    const searchParams = request.nextUrl.searchParams;
-    const courseId = searchParams.get('courseId');
     const email = searchParams.get('email');
     const loginId = searchParams.get('loginId');
     const deviceId = searchParams.get('deviceId');
@@ -388,13 +449,67 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
 
-    // List All Courses view
+    // List Courses view
     const snapshot = await (adminDb as any).collection('courses').orderBy('createdAt', 'desc').get();
 
+    // If requested for public /courses or homepage (or without internal API key),
+    // filter to courses with showOnHomePage !== false and return public showcase details & features
+    // without exposing internal curriculum video stream URLs.
+    const isPublicShowcaseRequest = showOnHomePageOnly || !hasValidApiKey;
+
+    if (isPublicShowcaseRequest) {
+      const publicCourses = (snapshot as any).docs
+        .map((doc: any) => {
+          const data = doc.data();
+          const normalizedFeatures = Array.isArray(data.features)
+            ? data.features
+            : typeof data.features === 'string' && data.features.trim()
+            ? data.features.split('\n').map((f: string) => f.trim()).filter(Boolean)
+            : Array.isArray(data.lessons) && data.lessons.length > 0
+            ? data.lessons.map((l: any) => (typeof l === 'string' ? l : l.title || 'Interactive lesson'))
+            : [];
+
+          return {
+            id: doc.id,
+            title: data.title || data.name || 'Spoken English Course',
+            name: data.title || data.name || 'Spoken English Course',
+            description: data.description || data.overview || '',
+            overview: data.description || data.overview || '',
+            teacherName: data.teacherName || 'Ancraze Spoken English Academy',
+            price: data.price,
+            coverImage: data.coverImage || data.coverImageUrl || data.imageUrl || '',
+            showOnHomePage: data.showOnHomePage !== false,
+            isTrainerGuided: Boolean(data.isTrainerGuided),
+            refundDays: typeof data.refundDays === 'number' ? data.refundDays : 0,
+            badge: data.badge || '',
+            tagline: data.tagline || '',
+            duration: data.duration || '',
+            validity: data.validity || '',
+            liveSessions: data.liveSessions || '',
+            features: normalizedFeatures,
+            whoShouldJoin: data.whoShouldJoin || '',
+            experience: Array.isArray(data.experience) ? data.experience : [],
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          };
+        })
+        .filter((course: any) => course.showOnHomePage !== false);
+
+      return NextResponse.json(
+        {
+          success: true,
+          courses: publicCourses,
+          total: publicCourses.length,
+        },
+        { status: 200 }
+      );
+    }
+
     const courses = await Promise.all((snapshot as any).docs.map(async (doc: any) => {
+      const courseData = doc.data();
       // Fetch days for this course
       const daysSnapshot = await (adminDb as any).collection('courses').doc(doc.id).collection('days').orderBy('order', 'asc').get();
-      const days = daysSnapshot.docs.map((dDoc: any) => ({
+      const rawDays = daysSnapshot.docs.map((dDoc: any) => ({
         id: dDoc.id,
         ...dDoc.data(),
         modules: [] as any[],
@@ -402,17 +517,29 @@ export async function GET(request: NextRequest) {
       }));
 
       const modulesSnapshot = await (adminDb as any).collection('courses').doc(doc.id).collection('modules').orderBy('createdAt', 'asc').get();
-      const modules = (modulesSnapshot as any).docs.map((mDoc: any) => ({
+      const rawModules = (modulesSnapshot as any).docs.map((mDoc: any) => ({
         id: mDoc.id,
         ...mDoc.data(),
         createdAt: mDoc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       }));
 
-      modules.forEach((module: any) => {
-        const dayIndex = days.findIndex((d: any) => d.id === module.day);
+      rawModules.forEach((module: any) => {
+        const dayIndex = rawDays.findIndex((d: any) => d.id === module.day);
         if (dayIndex !== -1) {
-          days[dayIndex].modules.push(formatModuleForStreaming(module, false));
+          rawDays[dayIndex].modules.push(module);
         }
+      });
+
+      const isCoursePurchased = userEnrolledCourses.includes(doc.id);
+      const lockedResult = computeCourseAccessAndLocking({
+        courseId: doc.id,
+        courseData,
+        days: rawDays,
+        modules: rawModules,
+        userData: matchedUserData,
+        isPurchased: isCoursePurchased,
+        isAdminOrTrainer,
+        approvedTasksCount: 0,
       });
 
       // Fetch enrolled count
@@ -421,12 +548,13 @@ export async function GET(request: NextRequest) {
 
       return {
         id: doc.id,
-        ...doc.data(),
-        days,
-        moduleCount: modules.length,
+        ...courseData,
+        days: lockedResult.days,
+        accessControl: lockedResult.accessControl,
+        moduleCount: rawModules.length,
         studentCount,
-        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        createdAt: courseData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        updatedAt: courseData.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       };
     }));
 

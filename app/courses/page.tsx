@@ -28,6 +28,7 @@ interface CourseItem {
   id: string;
   name: string;
   price?: number;
+  teacherName?: string;
   duration?: string;
   validity?: string;
   liveSessions?: string;
@@ -38,50 +39,62 @@ interface CourseItem {
   whoShouldJoin?: string;
   experience?: Array<{ title: string; desc: string }>;
   imageUrl?: string;
+  isTrainerGuided?: boolean;
+  refundDays?: number;
+  showOnHomePage?: boolean;
 }
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState<CourseItem | null>(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await fetch("/api/courses", {
-          headers: {
-            "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
-          },
-        });
+        setLoading(true);
+        const res = await fetch("/api/courses?showOnHomePage=true");
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
           console.warn("Failed to fetch courses:", errData.message || errData.error || res.statusText);
           return;
         }
         const data = await res.json();
-          if (Array.isArray(data.courses)) {
-            const mapped: CourseItem[] = data.courses.map((c: any) => ({
-              id: c.id,
-              name: c.title || c.name || "Spoken English Course",
-              duration: c.duration || "",
-              validity: c.validity || "",
-              liveSessions: c.liveSessions || "",
-              tagline: c.tagline || "",
-              badge: c.badge || "",
-              overview: c.description || c.overview || "",
-              price: c.price,
-              features: Array.isArray(c.features)
-                ? c.features
-                : typeof c.features === "string" && c.features.trim()
-                ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
-                : [],
-              whoShouldJoin: c.whoShouldJoin || "",
-              experience: Array.isArray(c.experience) ? c.experience : [],
-              imageUrl: c.coverImage || c.coverImageUrl || c.imageUrl,
-            }));
-            setCourses(mapped);
-          }
+        const list = Array.isArray(data) ? data : (data.courses || []);
+        if (Array.isArray(list)) {
+          // Only show courses created from superadmin dashboard and checked in "Show on Home Page"
+          const homeCourses = list.filter((c: any) => c.showOnHomePage !== false);
+          const mapped: CourseItem[] = homeCourses.map((c: any) => ({
+            id: c.id,
+            name: c.title || c.name || "Spoken English Course",
+            teacherName: c.teacherName || "Ancraze Spoken English Academy",
+            duration: c.duration || "",
+            validity: c.validity || "",
+            liveSessions: c.liveSessions || "",
+            tagline: c.tagline || "",
+            badge: c.badge || "",
+            overview: c.description || c.overview || "",
+            price: c.price,
+            features: Array.isArray(c.features)
+              ? c.features
+              : typeof c.features === "string" && c.features.trim()
+              ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
+              : Array.isArray(c.lessons) && c.lessons.length > 0
+              ? c.lessons.map((l: any) => (typeof l === "string" ? l : l.title || "Interactive lesson"))
+              : [],
+            whoShouldJoin: c.whoShouldJoin || "",
+            experience: Array.isArray(c.experience) ? c.experience : [],
+            imageUrl: c.coverImage || c.coverImageUrl || c.imageUrl,
+            isTrainerGuided: Boolean(c.isTrainerGuided),
+            refundDays: typeof c.refundDays === "number" ? c.refundDays : 0,
+            showOnHomePage: c.showOnHomePage !== false,
+          }));
+          setCourses(mapped);
+        }
       } catch (err) {
         console.warn("Error fetching courses:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchCourses();
