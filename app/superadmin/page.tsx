@@ -19,6 +19,7 @@ import {
   MessageSquareText,
   MessageSquare,
   Phone,
+  Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -52,6 +53,70 @@ export default function SuperAdminDashboard() {
   const [recentEnquiries, setRecentEnquiries] = useState<any[]>([]);
   const [newEnquiriesCount, setNewEnquiriesCount] = useState(0);
   const [totalEnquiriesCount, setTotalEnquiriesCount] = useState(0);
+  const [deletingEnquiryId, setDeletingEnquiryId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+
+  const handleDeleteUser = async (user: any) => {
+    if (user.role === "superadmin") {
+      alert("Super Admin accounts cannot be deleted from here.");
+      return;
+    }
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete ${user.fullName || user.email}? This will remove their account from both Firebase Authentication and Firestore.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeletingUserId(user.id);
+      const res = await fetch(`/api/students?studentId=${user.id}`, {
+        method: "DELETE",
+        headers: {
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to delete user");
+      }
+      await fetchMasterStats();
+    } catch (err: any) {
+      alert(err.message || "Error deleting user");
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
+  const handleDeleteEnquiry = async (enq: any) => {
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete the enquiry from ${enq.fullName || "this applicant"}?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeletingEnquiryId(enq.id);
+      const res = await fetch(`/api/enquiry?id=${enq.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete enquiry");
+      }
+      setRecentEnquiries((prev) => prev.filter((item) => item.id !== enq.id));
+      setTotalEnquiriesCount((prev) => Math.max(0, prev - 1));
+      if ((enq.status || "new") === "new") {
+        setNewEnquiriesCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err: any) {
+      alert(err.message || "Error deleting enquiry");
+    } finally {
+      setDeletingEnquiryId(null);
+    }
+  };
 
   useEffect(() => {
     const nameValue = Cookies.get("fullName");
@@ -455,6 +520,19 @@ export default function SuperAdminDashboard() {
                           >
                             <Phone size={14} />
                           </a>
+                          <button
+                            type="button"
+                            disabled={deletingEnquiryId === enq.id}
+                            onClick={() => handleDeleteEnquiry(enq)}
+                            className="p-2 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition cursor-pointer disabled:opacity-50"
+                            title="Delete Enquiry"
+                          >
+                            {deletingEnquiryId === enq.id ? (
+                              <Loader size={14} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -500,6 +578,7 @@ export default function SuperAdminDashboard() {
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Enrolled Courses</th>
                   <th className="px-6 py-3.5">Created Date</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -537,6 +616,27 @@ export default function SuperAdminDashboard() {
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-400 font-medium">
                       {new Date(u.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {u.role !== "superadmin" ? (
+                        <button
+                          type="button"
+                          disabled={deletingUserId === u.id}
+                          onClick={() => handleDeleteUser(u)}
+                          className="p-2 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-xl transition cursor-pointer disabled:opacity-50"
+                          title="Delete User Account"
+                        >
+                          {deletingUserId === u.id ? (
+                            <Loader size={14} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={14} />
+                          )}
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-300 uppercase">
+                          Protected
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
