@@ -47,6 +47,11 @@ export default function CourseDetailPage() {
   const [dayTitle, setDayTitle] = useState("");
   const [editingDay, setEditingDay] = useState<any>(null);
   const [dayOrder, setDayOrder] = useState("");
+  const [dayTaskTitle, setDayTaskTitle] = useState("");
+  const [dayTaskDescription, setDayTaskDescription] = useState("");
+  const [dayTaskType, setDayTaskType] = useState<"speaking_recording" | "assignment" | "exercise" | "quiz">("speaking_recording");
+  const [dayTaskImage, setDayTaskImage] = useState<string | undefined>(undefined);
+  const [dayTaskImagePreview, setDayTaskImagePreview] = useState<string>("");
 
   // Course edit states
   const [editCourseTitle, setEditCourseTitle] = useState("");
@@ -81,12 +86,22 @@ export default function CourseDetailPage() {
   } | null>(null);
   const [editModuleVideoFile, setEditModuleVideoFile] = useState<File | null>(null);
   const [editModuleDuration, setEditModuleDuration] = useState("");
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+  const [editTaskType, setEditTaskType] = useState<"speaking_recording" | "assignment" | "exercise" | "quiz">("speaking_recording");
+  const [editTaskImage, setEditTaskImage] = useState<string | undefined>(undefined);
+  const [editTaskImagePreview, setEditTaskImagePreview] = useState<string>("");
   const [currentEditQuestion, setCurrentEditQuestion] = useState("");
   const [currentEditAnswer, setCurrentEditAnswer] = useState("");
 
   // Modal form states
   const [moduleTitle, setModuleTitle] = useState("");
   const [moduleDay, setModuleDay] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskType, setTaskType] = useState<"speaking_recording" | "assignment" | "exercise" | "quiz">("speaking_recording");
+  const [taskImage, setTaskImage] = useState<string>("");
+  const [taskImagePreview, setTaskImagePreview] = useState<string>("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [selectedMuxVideo, setSelectedMuxVideo] = useState<{
     url: string;
@@ -156,6 +171,32 @@ export default function CourseDetailPage() {
     }
   };
 
+  const handleTaskImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const res = reader.result as string;
+        setTaskImage(res);
+        setTaskImagePreview(res);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditTaskImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const res = reader.result as string;
+        setEditTaskImage(res);
+        setEditTaskImagePreview(res);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const addQuestion = () => {
     if (currentQuestion.trim() && currentAnswer.trim()) {
       setQuestions([
@@ -181,6 +222,42 @@ export default function CourseDetailPage() {
   const removeQuestion = (index: number) => {
     setQuestions(questions.filter((_, i) => i !== index));
   };
+  const handleDayTaskImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const res = reader.result as string;
+        setDayTaskImage(res);
+        setDayTaskImagePreview(res);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const openCreateDayModal = () => {
+    setDayTitle("");
+    setDayOrder("");
+    setDayTaskTitle("");
+    setDayTaskDescription("");
+    setDayTaskType("speaking_recording");
+    setDayTaskImage(undefined);
+    setDayTaskImagePreview("");
+    setShowDayModal(true);
+  };
+
+  const openEditDayModal = (day: any) => {
+    setEditingDay(day);
+    setDayTitle(day.title || "");
+    setDayOrder(day.order !== undefined ? String(day.order) : "");
+    setDayTaskTitle(day.taskTitle || day.task?.title || "");
+    setDayTaskDescription(day.taskDescription || day.task?.description || "");
+    setDayTaskType(day.taskType || day.task?.type || "speaking_recording");
+    setDayTaskImage(undefined);
+    setDayTaskImagePreview(day.taskImageUrl || day.taskImage || day.task?.imageUrl || "");
+    setShowEditDayModal(true);
+  };
+
   const handleSubmitDay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dayTitle.trim()) return;
@@ -197,6 +274,10 @@ export default function CourseDetailPage() {
           courseId,
           title: dayTitle,
           order: dayOrder ? parseInt(dayOrder) : days.length,
+          taskTitle: dayTaskTitle,
+          taskDescription: dayTaskDescription,
+          taskType: dayTaskType,
+          taskImage: dayTaskImage || "",
         }),
       });
 
@@ -206,6 +287,11 @@ export default function CourseDetailPage() {
       setDays([...days, { id: data.dayId, ...data.day, createdAt: new Date().toISOString() }]);
       setDayTitle("");
       setDayOrder("");
+      setDayTaskTitle("");
+      setDayTaskDescription("");
+      setDayTaskType("speaking_recording");
+      setDayTaskImage(undefined);
+      setDayTaskImagePreview("");
       setShowDayModal(false);
     } catch (error) {
       console.error("Error creating day:", error);
@@ -221,23 +307,51 @@ export default function CourseDetailPage() {
 
     setModalLoading(true);
     try {
+      const updateDayPayload: any = {
+        courseId,
+        dayId: editingDay.id,
+        title: dayTitle,
+        order: dayOrder ? parseInt(dayOrder) : editingDay.order,
+        taskTitle: dayTaskTitle,
+        taskDescription: dayTaskDescription,
+        taskType: dayTaskType,
+      };
+      if (dayTaskImage !== undefined) {
+        updateDayPayload.taskImage = dayTaskImage;
+      }
+
       const response = await fetch("/api/days/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
-        body: JSON.stringify({
-          courseId,
-          dayId: editingDay.id,
-          title: dayTitle,
-          order: dayOrder ? parseInt(dayOrder) : editingDay.order,
-        }),
+        body: JSON.stringify(updateDayPayload),
       });
 
       if (!response.ok) throw new Error("Failed to update day");
+      const resData = await response.json();
+      const updatedTaskImageUrl =
+        resData?.day?.taskImageUrl !== undefined
+          ? resData.day.taskImageUrl
+          : dayTaskImagePreview;
 
-      setDays(days.map(d => d.id === editingDay.id ? { ...d, title: dayTitle, order: dayOrder ? parseInt(dayOrder) : d.order } : d));
+      setDays(
+        days.map((d) =>
+          d.id === editingDay.id
+            ? {
+                ...d,
+                title: dayTitle,
+                order: dayOrder ? parseInt(dayOrder) : d.order,
+                taskTitle: dayTaskTitle,
+                taskDescription: dayTaskDescription,
+                taskType: dayTaskType,
+                taskImageUrl: updatedTaskImageUrl,
+                task: resData?.day?.task ?? d.task,
+              }
+            : d
+        )
+      );
       setShowEditDayModal(false);
       setEditingDay(null);
     } catch (error) {
@@ -318,6 +432,10 @@ export default function CourseDetailPage() {
         streamType: finalPlaybackId ? "mux" : "legacy",
         questions,
         duration: finalDuration,
+        taskTitle,
+        taskDescription,
+        taskType,
+        taskImage,
       };
 
       const response = await fetch("/api/modules", {
@@ -355,6 +473,11 @@ export default function CourseDetailPage() {
       // Reset form
       setModuleTitle("");
       setModuleDay("");
+      setTaskTitle("");
+      setTaskDescription("");
+      setTaskType("speaking_recording");
+      setTaskImage("");
+      setTaskImagePreview("");
       setSelectedMuxVideo(null);
       setVideoFile(null);
       setVideoPreview("");
@@ -547,6 +670,11 @@ export default function CourseDetailPage() {
     setEditModuleVideoUrl(module.videoUrl || "");
     setEditModulePlaybackId(module.playbackId || "");
     setEditModuleDuration(module.duration || "");
+    setEditTaskTitle(module.taskTitle || module.task?.title || "");
+    setEditTaskDescription(module.taskDescription || module.task?.description || "");
+    setEditTaskType(module.taskType || module.task?.type || "speaking_recording");
+    setEditTaskImage(undefined);
+    setEditTaskImagePreview(module.taskImageUrl || module.taskImage || module.task?.imageUrl || "");
     setEditSelectedMuxVideo(
       module.playbackId
         ? {
@@ -586,30 +714,39 @@ export default function CourseDetailPage() {
       const finalThumbnail = editSelectedMuxVideo?.thumbnailUrl || editingModule.thumbnailUrl || (finalPlaybackId ? `https://image.mux.com/${finalPlaybackId}/thumbnail.jpg` : "");
       const finalDuration = editModuleDuration || editSelectedMuxVideo?.duration || editingModule.duration || "";
 
+      const updateModulePayload: any = {
+        courseId,
+        moduleId: editingModule.id,
+        title: editModuleTitle,
+        day: editModuleDay,
+        questions: editModuleQuestions,
+        videoUrl: finalVideoUrl,
+        playbackId: finalPlaybackId,
+        assetId: editSelectedMuxVideo?.assetId || editingModule.assetId || "",
+        thumbnailUrl: finalThumbnail,
+        streamType: "mux",
+        duration: finalDuration,
+        taskTitle: editTaskTitle,
+        taskDescription: editTaskDescription,
+        taskType: editTaskType,
+      };
+      if (editTaskImage !== undefined) {
+        updateModulePayload.taskImage = editTaskImage;
+      }
+
       const response = await fetch("/api/modules/update", {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
           "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
-        body: JSON.stringify({
-          courseId,
-          moduleId: editingModule.id,
-          title: editModuleTitle,
-          day: editModuleDay,
-          questions: editModuleQuestions,
-          videoUrl: finalVideoUrl,
-          playbackId: finalPlaybackId,
-          assetId: editSelectedMuxVideo?.assetId || editingModule.assetId || "",
-          thumbnailUrl: finalThumbnail,
-          streamType: "mux",
-          duration: finalDuration,
-        }),
+        body: JSON.stringify(updateModulePayload),
       });
 
       if (!response.ok) {
         throw new Error("Failed to update module");
       }
+      const resData = await response.json();
 
       const updatedModule = {
         ...editingModule,
@@ -620,6 +757,14 @@ export default function CourseDetailPage() {
         playbackId: finalPlaybackId,
         thumbnailUrl: finalThumbnail,
         duration: finalDuration,
+        taskTitle: editTaskTitle,
+        taskDescription: editTaskDescription,
+        taskType: editTaskType,
+        taskImageUrl:
+          resData?.module?.taskImageUrl !== undefined
+            ? resData.module.taskImageUrl
+            : editTaskImagePreview,
+        task: resData?.module?.task ?? editingModule.task,
       };
 
       setModules(modules.map((m) => (m.id === editingModule.id ? updatedModule : m)));
@@ -717,11 +862,20 @@ export default function CourseDetailPage() {
                           {String(dIdx + 1).padStart(2, '0')}
                         </div>
                         <div>
-                          <h3 className="text-lg font-black text-slate-900 leading-tight">
-                            {day.title}
-                          </h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-lg font-black text-slate-900 leading-tight">
+                              {day.title}
+                            </h3>
+                            {(day.taskImageUrl || day.taskTitle || day.task?.imageUrl) && (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-50 text-[#2A0066] border border-purple-200">
+                                📋 Day Task {(day.taskImageUrl || day.task?.imageUrl) ? "+ Image" : ""}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                            Click to manage modules for this day
+                            {day.taskTitle || day.task?.title
+                              ? `Task: ${day.taskTitle || day.task?.title}`
+                              : "Click to manage modules for this day • Use edit icon to configure day task & image"}
                           </p>
                         </div>
                       </div>
@@ -729,11 +883,10 @@ export default function CourseDetailPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setEditingDay(day);
-                            setDayTitle(day.title);
-                            setShowEditDayModal(true);
+                            openEditDayModal(day);
                           }}
                           className="p-3 bg-slate-50 text-slate-400 hover:text-[#2A0066] rounded-xl border border-slate-100 transition"
+                          title="Edit Day Name, Details & Task Image"
                         >
                           <Edit3 size={18} />
                         </button>
@@ -751,7 +904,7 @@ export default function CourseDetailPage() {
                   ))
                 )}
                 <button
-                  onClick={() => setShowDayModal(true)}
+                  onClick={openCreateDayModal}
                   className="w-full py-4 border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 text-xs font-bold hover:border-[#2A0066] hover:text-[#2A0066] transition-all flex items-center justify-center gap-2"
                 >
                   <Plus size={16} /> Add New Day
@@ -808,33 +961,142 @@ export default function CourseDetailPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-[32px] max-w-md w-full p-8 shadow-2xl"
+              className="bg-white rounded-[32px] max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-2xl font-black text-slate-900 mb-6 uppercase tracking-tight">Create New Day</h2>
-              <form onSubmit={handleSubmitDay} className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Day Title</label>
-                  <input
-                    type="text"
-                    required
-                    value={dayTitle}
-                    onChange={(e) => setDayTitle(e.target.value)}
-                    placeholder="e.g., Week 1 - Introduction"
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
-                  />
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Create New Day</h2>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Set the day title, order, and optional daily task with task image (stored in Firebase Storage).
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Order Index (Optional)</label>
-                  <input
-                    type="number"
-                    value={dayOrder}
-                    onChange={(e) => setDayOrder(e.target.value)}
-                    placeholder="e.g., 0"
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
-                  />
+                <button
+                  type="button"
+                  onClick={() => !modalLoading && setShowDayModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl text-slate-500"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleSubmitDay} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Day Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={dayTitle}
+                      onChange={(e) => setDayTitle(e.target.value)}
+                      placeholder="e.g., Day 1 - Foundation & Code 1"
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Order Index</label>
+                    <input
+                      type="number"
+                      value={dayOrder}
+                      onChange={(e) => setDayOrder(e.target.value)}
+                      placeholder="e.g., 1"
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
+                    />
+                  </div>
                 </div>
-                <div className="flex gap-3 pt-4">
+
+                {/* Day Task & Task Image Setup */}
+                <div className="p-4 sm:p-5 bg-purple-50/50 border border-purple-200/80 rounded-2xl space-y-4">
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-[#2A0066]">
+                      Day Task & Task Image (Firebase Storage)
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Configure this day&apos;s task and upload a task image to display in the app alongside the day&apos;s video.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                        Task Title / Prompt Heading
+                      </label>
+                      <input
+                        type="text"
+                        value={dayTaskTitle}
+                        onChange={(e) => setDayTaskTitle(e.target.value)}
+                        placeholder="e.g., Day 1 Speaking Task: Practice Code 1"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#2A0066]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                        Task Type
+                      </label>
+                      <select
+                        value={dayTaskType}
+                        onChange={(e: any) => setDayTaskType(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-[#2A0066]"
+                      >
+                        <option value="speaking_recording">🎙️ Speaking Task</option>
+                        <option value="assignment">📄 Written Task</option>
+                        <option value="exercise">✍️ Practice Exercise</option>
+                        <option value="quiz">📝 Quiz Task</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                      Task Instructions / Details
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={dayTaskDescription}
+                      onChange={(e) => setDayTaskDescription(e.target.value)}
+                      placeholder="Explain what the student should do for this day's task..."
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#2A0066] resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                      Day Task Image (Stored in Firebase Storage)
+                    </label>
+                    {!dayTaskImagePreview ? (
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-purple-200 bg-white rounded-2xl cursor-pointer hover:border-[#2A0066] transition">
+                        <Upload size={22} className="text-[#2A0066] mb-1.5" />
+                        <span className="text-xs font-bold text-slate-700">Click to upload day task image</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP • Shown in app with day video</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleDayTaskImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    ) : (
+                      <div className="relative rounded-2xl overflow-hidden border border-purple-200 bg-white p-2 flex items-center justify-center">
+                        <img
+                          src={dayTaskImagePreview}
+                          alt="Day Task Preview"
+                          className="max-h-44 rounded-xl object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDayTaskImage("");
+                            setDayTaskImagePreview("");
+                          }}
+                          className="absolute top-3 right-3 p-1.5 bg-rose-600 text-white rounded-lg shadow hover:bg-rose-700 transition"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowDayModal(false)}
@@ -870,22 +1132,152 @@ export default function CourseDetailPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-[32px] max-w-md w-full p-8 shadow-2xl"
+              className="bg-white rounded-[32px] max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-2xl font-black text-slate-900 mb-6 uppercase tracking-tight">Edit Day</h2>
-              <form onSubmit={handleUpdateDay} className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Day Title</label>
-                  <input
-                    type="text"
-                    required
-                    value={dayTitle}
-                    onChange={(e) => setDayTitle(e.target.value)}
-                    className="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
-                  />
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Edit Day & Task</h2>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Update day name, order, task instructions, and upload a task image to Firebase Storage.
+                  </p>
                 </div>
-                <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => !modalLoading && setShowEditDayModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl text-slate-500"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleUpdateDay} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Day Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={dayTitle}
+                      onChange={(e) => setDayTitle(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Order Index</label>
+                    <input
+                      type="number"
+                      value={dayOrder}
+                      onChange={(e) => setDayOrder(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
+                    />
+                  </div>
+                </div>
+
+                {/* Edit Day Task & Task Image Setup */}
+                <div className="p-4 sm:p-5 bg-purple-50/50 border border-purple-200/80 rounded-2xl space-y-4">
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-[#2A0066]">
+                      Day Task & Task Image (Firebase Storage)
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Configure this day&apos;s task and upload a task image to display in the app alongside the day&apos;s video.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                        Task Title / Prompt Heading
+                      </label>
+                      <input
+                        type="text"
+                        value={dayTaskTitle}
+                        onChange={(e) => setDayTaskTitle(e.target.value)}
+                        placeholder="e.g., Day 1 Speaking Task: Practice Code 1"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#2A0066]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                        Task Type
+                      </label>
+                      <select
+                        value={dayTaskType}
+                        onChange={(e: any) => setDayTaskType(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-[#2A0066]"
+                      >
+                        <option value="speaking_recording">🎙️ Speaking Task</option>
+                        <option value="assignment">📄 Written Task</option>
+                        <option value="exercise">✍️ Practice Exercise</option>
+                        <option value="quiz">📝 Quiz Task</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                      Task Instructions / Details
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={dayTaskDescription}
+                      onChange={(e) => setDayTaskDescription(e.target.value)}
+                      placeholder="Explain what the student should do for this day's task..."
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#2A0066] resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                      Day Task Image (Stored in Firebase Storage)
+                    </label>
+                    {!dayTaskImagePreview ? (
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-purple-200 bg-white rounded-2xl cursor-pointer hover:border-[#2A0066] transition">
+                        <Upload size={22} className="text-[#2A0066] mb-1.5" />
+                        <span className="text-xs font-bold text-slate-700">Click to upload day task image</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP • Shown in app with day video</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleDayTaskImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="relative rounded-2xl overflow-hidden border border-purple-200 bg-white p-2 flex items-center justify-center">
+                          <img
+                            src={dayTaskImagePreview}
+                            alt="Day Task Preview"
+                            className="max-h-44 rounded-xl object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDayTaskImage("");
+                              setDayTaskImagePreview("");
+                            }}
+                            className="absolute top-3 right-3 p-1.5 bg-rose-600 text-white rounded-lg shadow hover:bg-rose-700 transition"
+                            title="Remove Task Image"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#2A0066] cursor-pointer hover:bg-purple-50 transition">
+                          <Upload size={13} /> Replace Task Image
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleDayTaskImageChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowEditDayModal(false)}

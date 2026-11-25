@@ -1,6 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb, adminStorage } from '@/lib/firebaseAdmin';
 import * as admin from 'firebase-admin';
+
+async function uploadDayTaskImageToFirebaseStorage(
+  courseId: string,
+  taskImageInput?: string | null
+): Promise<string> {
+  if (!taskImageInput) return '';
+  if (taskImageInput.startsWith('http://') || taskImageInput.startsWith('https://')) {
+    return taskImageInput;
+  }
+  if (taskImageInput.startsWith('data:image/') && adminStorage) {
+    try {
+      const mimeMatch = taskImageInput.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+      const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      const ext = contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+      const base64Data = taskImageInput.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      const bucket = (adminStorage as any).bucket();
+      const fileName = `courses/${courseId}/days/tasks/${Date.now()}_day_task.${ext}`;
+      const file = bucket.file(fileName);
+
+      await file.save(buffer, {
+        metadata: {
+          contentType,
+        },
+      });
+
+      await file.makePublic();
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      console.log('✅ Day task image uploaded to Firebase Storage:', publicUrl);
+      return publicUrl;
+    } catch (err) {
+      console.error('❌ Error uploading day task image to Firebase Storage:', err);
+      return '';
+    }
+  }
+  return '';
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,7 +47,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { courseId, title, order } = body;
+    const {
+      courseId,
+      title,
+      order,
+      taskTitle = '',
+      taskDescription = '',
+      taskType = 'speaking_recording',
+      taskImage,
+      taskImageUrl,
+    } = body;
 
     if (!courseId || !title) {
       return NextResponse.json(
@@ -18,10 +65,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const rawTaskImage = taskImage !== undefined ? taskImage : taskImageUrl;
+    const finalTaskImageUrl = await uploadDayTaskImageToFirebaseStorage(courseId, rawTaskImage);
+    const cleanTaskTitle = String(taskTitle || '').trim();
+    const cleanTaskDescription = String(taskDescription || '').trim();
+    const cleanTaskType = String(taskType || 'speaking_recording').trim();
+    const hasTask = Boolean(cleanTaskTitle || cleanTaskDescription || finalTaskImageUrl);
+
     const dayData = {
       courseId,
       title,
       order: order !== undefined ? order : 0,
+      taskTitle: cleanTaskTitle,
+      taskDescription: cleanTaskDescription,
+      taskType: cleanTaskType,
+      taskImageUrl: finalTaskImageUrl,
+      task: hasTask
+        ? {
+            title: cleanTaskTitle,
+            description: cleanTaskDescription,
+            type: cleanTaskType,
+            imageUrl: finalTaskImageUrl,
+          }
+        : null,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
     };

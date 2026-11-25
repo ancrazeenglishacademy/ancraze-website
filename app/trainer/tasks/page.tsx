@@ -40,6 +40,10 @@ interface TaskItem {
   status: "pending" | "submitted" | "approved" | "needs_correction" | "completed";
   submission?: string;
   audioRecordingUrl?: string;
+  taskImageUrl?: string;
+  courseId?: string;
+  dayId?: string;
+  dayNumber?: number;
   trainerFeedback?: string;
   score?: number;
   dueDate?: string;
@@ -350,11 +354,25 @@ export default function TrainerTasks() {
                 </div>
               </div>
 
-              {/* Task Instructions */}
-              {task.description && (
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-700">
-                  <span className="font-bold text-slate-400 block mb-0.5">Prompt:</span>
-                  <p className="font-medium">{task.description}</p>
+              {/* Task Instructions & Task Image */}
+              {(task.description || task.taskImageUrl) && (
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-700 space-y-2.5">
+                  {task.description && (
+                    <div>
+                      <span className="font-bold text-slate-400 block mb-0.5">Prompt:</span>
+                      <p className="font-medium">{task.description}</p>
+                    </div>
+                  )}
+                  {task.taskImageUrl && (
+                    <div>
+                      <span className="font-bold text-slate-400 block mb-1">Task Image:</span>
+                      <img
+                        src={task.taskImageUrl}
+                        alt="Task attachment"
+                        className="max-h-48 rounded-xl border border-slate-200 object-contain bg-white"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -477,7 +495,7 @@ export default function TrainerTasks() {
                   className="flex-1 py-3 bg-[#2A0066] text-white hover:opacity-95 rounded-xl text-xs font-bold transition shadow-md shadow-[#2A0066]/15 flex items-center justify-center gap-1.5"
                 >
                   {evaluatingLoading ? <Loader size={15} className="animate-spin" /> : <Check size={15} />}
-                  Approve Completed Task
+                  Approve & Unlock Next 3 Days
                 </button>
               </div>
             </motion.div>

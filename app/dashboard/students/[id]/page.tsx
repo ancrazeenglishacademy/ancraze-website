@@ -28,6 +28,7 @@ interface Student {
   deviceId: string | null;
   enrolledCourses: string[];
   trainerId?: string;
+  isTrainerPreviewAccount?: boolean;
   createdAt: string;
   createdByAdminName?: string;
 }
@@ -59,6 +60,7 @@ export default function StudentDetailPage() {
   const [editName, setEditName] = useState("");
   const [editCourses, setEditCourses] = useState<string[]>([]);
   const [editTrainer, setEditTrainer] = useState<string>("");
+  const [editIsTrainerPreview, setEditIsTrainerPreview] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -104,6 +106,7 @@ export default function StudentDetailPage() {
       setEditName(studentData.student.fullName);
       setEditCourses(studentData.student.enrolledCourses || []);
       setEditTrainer(studentData.student.trainerId || "");
+      setEditIsTrainerPreview(Boolean(studentData.student.isTrainerPreviewAccount));
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -125,6 +128,7 @@ export default function StudentDetailPage() {
           fullName: editName,
           enrolledCourses: editCourses,
           trainerId: editTrainer || null,
+          isTrainerPreviewAccount: editIsTrainerPreview,
         }),
       });
 
@@ -491,6 +495,25 @@ export default function StudentDetailPage() {
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  {/* Trainer Preview Account Toggle */}
+                  <div className="p-4 bg-purple-50/70 border border-purple-200/80 rounded-2xl flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="editTrainerPreviewToggle"
+                      checked={editIsTrainerPreview}
+                      onChange={(e) => setEditIsTrainerPreview(e.target.checked)}
+                      className="w-5 h-5 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
+                    />
+                    <label htmlFor="editTrainerPreviewToggle" className="cursor-pointer select-none">
+                      <p className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                        Trainer Preview Account
+                      </p>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Unlock all course videos immediately without waiting for daily drip or task completions.
+                      </p>
+                    </label>
                   </div>
 
                   {/* Course Selection */}

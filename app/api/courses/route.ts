@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminStorage } from '@/lib/firebaseAdmin';
 export const dynamic = 'force-dynamic';
 import * as admin from 'firebase-admin';
-import { formatModuleForStreaming } from '@/lib/mux';
+import { formatModuleForStreaming, computeCourseAccessAndLocking } from '@/lib/mux';
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; lastRequest: number }>();
@@ -201,42 +201,57 @@ export async function GET(request: NextRequest) {
     }
 
     let hasPurchased = false;
+    let matchedUserData: any = null;
+    let isAdminOrTrainer = false;
     if (courseId) {
-      const pUserId = searchParams.get('userId');
+      const pUserId = searchParams.get('userId') || searchParams.get('stdId');
       
       const checkEnrolled = (uData: any) => {
-        // Admins automatically have access to all content
-        if (uData.role === 'admin') return true;
-        // Check if course is in student's enrolled list
+        if (
+          uData.role === 'admin' ||
+          uData.role === 'superadmin' ||
+          uData.role === 'trainer' ||
+          uData.isTrainerPreviewAccount === true ||
+          uData.trainerPreviewAccount === true
+        ) {
+          isAdminOrTrainer = true;
+          return true;
+        }
         return uData.enrolledCourses && uData.enrolledCourses.includes(courseId);
       };
 
       if (email) {
-        // Use data from security check (re-using earlier fetch)
-        // Note: userEnrolledCourses was fetched in the security block if email exists
         const userSnapshot = await (adminDb as any).collection('users').where('email', '==', email).limit(1).get();
         if (!userSnapshot.empty) {
           const uData = userSnapshot.docs[0].data();
+          matchedUserData = uData;
+          currentUserId = userSnapshot.docs[0].id;
           if (checkEnrolled(uData)) hasPurchased = true;
         }
       } else if (pUserId) {
-         // Try direct docId first
           let userDoc = await (adminDb as any).collection('users').doc(pUserId).get();
           let uData = userDoc.exists ? userDoc.data() : null;
+          if (userDoc.exists) currentUserId = userDoc.id;
 
-          // If doc not found, try searching by a potential 'userId' or 'uid' field
           if (!uData) {
             const userIdQuery = await (adminDb as any).collection('users').where('userId', '==', pUserId).limit(1).get();
             if (!userIdQuery.empty) {
               uData = userIdQuery.docs[0].data();
+              currentUserId = userIdQuery.docs[0].id;
             } else {
               const uidQuery = await (adminDb as any).collection('users').where('uid', '==', pUserId).limit(1).get();
-              if (!uidQuery.empty) uData = uidQuery.docs[0].data();
+              if (!uidQuery.empty) {
+                uData = uidQuery.docs[0].data();
+                currentUserId = uidQuery.docs[0].id;
+              }
             }
           }
 
-          if (uData && checkEnrolled(uData)) {
-             hasPurchased = true;
+          if (uData) {
+            matchedUserData = uData;
+            if (checkEnrolled(uData)) {
+              hasPurchased = true;
+            }
           }
       }
     }
@@ -246,6 +261,7 @@ export async function GET(request: NextRequest) {
       if (!doc.exists) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 });
       }
+      const courseData = doc.data();
 
       // Fetch days for this course
       const daysSnapshot = await (adminDb as any)
@@ -255,7 +271,7 @@ export async function GET(request: NextRequest) {
         .orderBy('order', 'asc')
         .get();
 
-      const days = daysSnapshot.docs.map((dDoc: any) => ({
+      const rawDays = daysSnapshot.docs.map((dDoc: any) => ({
         id: dDoc.id,
         ...dDoc.data(),
         modules: [] as any[],
@@ -270,38 +286,61 @@ export async function GET(request: NextRequest) {
         .orderBy('createdAt', 'asc')
         .get();
 
-      const modules = (modulesSnapshot as any).docs.map((mDoc: any) => ({
+      const rawModules = (modulesSnapshot as any).docs.map((mDoc: any) => ({
         id: mDoc.id,
         ...mDoc.data(),
         createdAt: mDoc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       }));
 
-      // Nest modules inside their respective days
-      modules.forEach((module: any) => {
-        const dayIndex = days.findIndex((d: any) => d.id === module.day);
+      // Nest raw modules inside their respective days
+      rawModules.forEach((module: any) => {
+        const dayIndex = rawDays.findIndex((d: any) => d.id === module.day);
         if (dayIndex !== -1) {
-          days[dayIndex].modules.push(formatModuleForStreaming(module, false));
+          rawDays[dayIndex].modules.push(module);
         }
       });
 
-      // Apply locking logic after nesting and normalize Mux video streaming for mobile & web
-      let globalModuleCount = 0;
-      days.forEach((day: any) => {
-        day.modules = day.modules.map((module: any) => {
-          const isLocked = !hasPurchased && globalModuleCount >= 3;
-          globalModuleCount++;
-          return formatModuleForStreaming(module, isLocked);
-        });
+      // Count approved/completed tasks for this student if trainer-guided
+      let approvedTasksCount = 0;
+      if (hasPurchased && courseData?.isTrainerGuided && currentUserId) {
+        try {
+          const tasksSnap = await (adminDb as any)
+            .collection('tasks')
+            .where('studentId', '==', currentUserId)
+            .get();
+          approvedTasksCount = tasksSnap.docs.filter((tDoc: any) => {
+            const t = tDoc.data();
+            const isDone = t.status === 'approved' || t.status === 'completed';
+            const matchesCourse = !t.courseId || t.courseId === courseId;
+            return isDone && matchesCourse;
+          }).length;
+        } catch (tErr) {
+          console.warn('Could not query student tasks for unlocking:', tErr);
+        }
+      }
+
+      const lockedResult = computeCourseAccessAndLocking({
+        courseId,
+        courseData,
+        days: rawDays,
+        modules: rawModules,
+        userData: matchedUserData,
+        isPurchased: hasPurchased,
+        isAdminOrTrainer,
+        approvedTasksCount,
       });
 
       return NextResponse.json({
         success: true,
         isPurchased: hasPurchased,
+        accessControl: lockedResult.accessControl,
         course: {
           id: doc.id,
-          ...doc.data(),
-          days,
-          createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          ...courseData,
+          days: lockedResult.days,
+          modules: lockedResult.modules,
+          accessControl: lockedResult.accessControl,
+          createdAt: courseData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
         }
       }, { status: 200 });
     }

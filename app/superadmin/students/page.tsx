@@ -33,6 +33,7 @@ interface Student {
   enrolledCoursesDetails?: any[];
   trainerName?: string;
   trainerId?: string;
+  isTrainerPreviewAccount?: boolean;
   createdAt: string;
 }
 
@@ -49,6 +50,7 @@ export default function SuperAdminStudentsPage() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [newStatus, setNewStatus] = useState<string>("active");
+  const [editIsTrainerPreview, setEditIsTrainerPreview] = useState<boolean>(false);
 
   useEffect(() => {
     fetchStudents();
@@ -88,6 +90,7 @@ export default function SuperAdminStudentsPage() {
           studentId: selectedStudent.id,
           accountStatus: newStatus,
           isBlocked,
+          isTrainerPreviewAccount: editIsTrainerPreview,
         }),
       });
 
@@ -194,7 +197,14 @@ export default function SuperAdminStudentsPage() {
                             {s.fullName?.charAt(0) || "S"}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900 text-xs sm:text-sm">{s.fullName}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-bold text-slate-900 text-xs sm:text-sm">{s.fullName}</p>
+                              {s.isTrainerPreviewAccount && (
+                                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-[#2A0066] border border-purple-200">
+                                  Trainer Preview
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[11px] text-slate-400 font-medium">{s.email}</p>
                           </div>
                         </div>
@@ -254,6 +264,7 @@ export default function SuperAdminStudentsPage() {
                           onClick={() => {
                             setSelectedStudent(s);
                             setNewStatus(currentStatus);
+                            setEditIsTrainerPreview(Boolean(s.isTrainerPreviewAccount));
                             setShowStatusModal(true);
                           }}
                           className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-[#2A0066] hover:text-white rounded-xl text-xs font-bold transition shadow-sm"
@@ -326,6 +337,23 @@ export default function SuperAdminStudentsPage() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Trainer Preview Account Checkbox */}
+              <div className="p-3.5 bg-purple-50/70 border border-purple-200/80 rounded-2xl flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="superAdminTrainerPreview"
+                  checked={editIsTrainerPreview}
+                  onChange={(e) => setEditIsTrainerPreview(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
+                />
+                <label htmlFor="superAdminTrainerPreview" className="cursor-pointer select-none">
+                  <p className="text-xs font-black text-slate-900">Trainer Preview Account</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Unlock all course videos immediately without waiting for daily drip releases or task completions.
+                  </p>
+                </label>
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-slate-100">

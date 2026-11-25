@@ -43,6 +43,7 @@ export default function StudentRegistrationPage() {
   const [selectedTrainer, setSelectedTrainer] = useState("");
   const [initialFee, setInitialFee] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"completed" | "pending">("completed");
+  const [isTrainerPreviewAccount, setIsTrainerPreviewAccount] = useState(false);
 
   // Success Slip State
   const [registeredStudent, setRegisteredStudent] = useState<any | null>(null);
@@ -99,6 +100,7 @@ export default function StudentRegistrationPage() {
           trainerId: selectedTrainer || null,
           initialFee: initialFee ? Number(initialFee) : 0,
           paymentStatus,
+          isTrainerPreviewAccount,
         }),
       });
 
@@ -114,6 +116,7 @@ export default function StudentRegistrationPage() {
       setSelectedCourses([]);
       setSelectedTrainer("");
       setInitialFee("");
+      setIsTrainerPreviewAccount(false);
     } catch (err: any) {
       alert(err.message || "Registration failed");
     } finally {
@@ -287,6 +290,23 @@ export default function StudentRegistrationPage() {
                   <option value="pending">Outstanding / Partial</option>
                 </select>
               </div>
+            </div>
+
+            {/* Trainer Preview Account Checkbox */}
+            <div className="p-3.5 bg-purple-50/70 border border-purple-200/80 rounded-2xl flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="isTrainerPreviewAccountReg"
+                checked={isTrainerPreviewAccount}
+                onChange={(e) => setIsTrainerPreviewAccount(e.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
+              />
+              <label htmlFor="isTrainerPreviewAccountReg" className="cursor-pointer select-none">
+                <p className="text-xs font-black text-slate-900">Trainer Preview Account</p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Grant immediate access to all course videos without waiting for daily drip releases or task completions.
+                </p>
+              </label>
             </div>
 
             <div className="pt-4 border-t border-slate-100">

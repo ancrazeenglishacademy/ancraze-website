@@ -21,20 +21,73 @@ interface StudentProgress {
   email: string;
   loginId?: string;
   enrolledCoursesDetails?: any[];
+  courseProgress?: Record<string, any>;
   completedLessonsCount?: number;
   totalLessonsCount?: number;
   taskSubmissionRate?: number;
   averageScore?: number;
+  unlockedDaysCount?: number;
+  isTrainerGuidedCourse?: boolean;
+  primaryCourseId?: string;
 }
 
 export default function TrainerProgressPage() {
   const [students, setStudents] = useState<StudentProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [unlockingStudentId, setUnlockingStudentId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAssignedStudentsProgress();
   }, []);
+
+  const handleMarkDayTaskCompleted = async (student: StudentProgress) => {
+    try {
+      setUnlockingStudentId(student.id);
+      const userDataCookie = Cookies.get("userData");
+      let trainerUid = "";
+      if (userDataCookie) {
+        try {
+          trainerUid = JSON.parse(userDataCookie).uid || "";
+        } catch (e) {
+          // ignore
+        }
+      }
+      if (!trainerUid) trainerUid = Cookies.get("uid") || "";
+
+      const currentCompleted =
+        student.primaryCourseId && student.courseProgress?.[student.primaryCourseId]
+          ? Number(student.courseProgress[student.primaryCourseId].completedTasksCount || 0)
+          : 0;
+      const nextDayNum = currentCompleted + 1;
+
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+        body: JSON.stringify({
+          title: `Day ${nextDayNum} Task Completed`,
+          description: `Trainer marked Day ${nextDayNum} task as completed, unlocking the next 3 days' videos.`,
+          studentId: student.id,
+          trainerId: trainerUid || null,
+          courseId: student.primaryCourseId || null,
+          dayNumber: nextDayNum,
+          taskType: "speaking_recording",
+          status: "completed",
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to mark day task completed");
+      await fetchAssignedStudentsProgress();
+    } catch (err) {
+      console.error("Failed to unlock next 3 days:", err);
+      alert("Error marking day task as completed");
+    } finally {
+      setUnlockingStudentId(null);
+    }
+  };
 
   const fetchAssignedStudentsProgress = async () => {
     try {
@@ -59,21 +112,34 @@ export default function TrainerProgressPage() {
       const data = await res.json();
       const myStudents: any[] = data.students || [];
 
-      // Calculate mock/calculated progress metrics for demonstration
+      // Calculate progress and unlocked video days metrics
       const formatted: StudentProgress[] = myStudents.map((s, idx) => {
-        const completed = 8 + (idx * 3) % 15;
-        const total = 24;
-        const rate = Math.min(100, Math.round((completed / total) * 100));
+        const primaryCourse = s.enrolledCoursesDetails?.[0] || null;
+        const primaryCourseId = primaryCourse?.id || s.enrolledCourses?.[0] || "";
+        const isTrainerGuidedCourse = Boolean(primaryCourse?.isTrainerGuided);
+        const progressInfo = (primaryCourseId && s.courseProgress?.[primaryCourseId]) || {};
+        const completedTasks = Number(progressInfo.completedTasksCount || 0);
+        const unlockedDaysCount = isTrainerGuidedCourse
+          ? Math.max(1, Number(progressInfo.unlockedDaysCount || 0), 1 + completedTasks * 3)
+          : Math.max(1, Number(progressInfo.unlockedVideosCount || 1));
+
+        const completed = completedTasks > 0 ? completedTasks : 1;
+        const total = 30;
+        const rate = Math.min(100, Math.round((unlockedDaysCount / total) * 100));
         return {
           id: s.id,
           fullName: s.fullName,
           email: s.email,
           loginId: s.loginId,
           enrolledCoursesDetails: s.enrolledCoursesDetails,
+          courseProgress: s.courseProgress || {},
           completedLessonsCount: completed,
           totalLessonsCount: total,
           taskSubmissionRate: rate,
           averageScore: 82 + (idx * 4) % 15,
+          unlockedDaysCount,
+          isTrainerGuidedCourse,
+          primaryCourseId,
         };
       });
 
@@ -170,12 +236,35 @@ export default function TrainerProgressPage() {
                 </div>
               </div>
 
-              {/* Course Info */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium truncate max-w-[180px]">
-                  {s.enrolledCoursesDetails?.[0]?.title || "Spoken English Mastery"}
-                </span>
-                <span className="font-bold text-[#2A0066] text-[11px]">On Track</span>
+              {/* Course Info & Trainer-Guided 3-Day Video Unlock Action */}
+              <div className="pt-3 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500 font-medium truncate max-w-[180px]">
+                    {s.enrolledCoursesDetails?.[0]?.title || "Spoken English Mastery"}
+                  </span>
+                  <span className="font-bold text-[#2A0066] text-[11px]">
+                    {s.unlockedDaysCount || 1} Days Unlocked
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={unlockingStudentId === s.id}
+                  onClick={() => handleMarkDayTaskCompleted(s)}
+                  className="w-full py-2.5 px-3 bg-[#2A0066] hover:bg-[#3d0099] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {unlockingStudentId === s.id ? (
+                    <>
+                      <Loader size={14} className="animate-spin" />
+                      <span>Unlocking Next 3 Days...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={14} />
+                      <span>Mark Day Task Completed (+3 Days Videos)</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           ))

@@ -208,7 +208,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, fullName, enrolledCourses, phone, trainerId, customLoginId, initialFee, paymentStatus } = body;
+    const {
+      email,
+      fullName,
+      enrolledCourses,
+      phone,
+      trainerId,
+      customLoginId,
+      initialFee,
+      paymentStatus,
+      isTrainerPreviewAccount,
+      trainerPreviewAccount,
+    } = body;
 
     if (!email || !fullName) {
       return NextResponse.json(
@@ -241,6 +252,27 @@ export async function POST(request: NextRequest) {
       displayName: fullName,
     });
 
+    const now = new Date();
+    const courseEnrollments: Record<string, any> = {};
+    const courseProgress: Record<string, any> = {};
+    if (Array.isArray(enrolledCourses)) {
+      enrolledCourses.forEach((cId: string) => {
+        courseEnrollments[cId] = {
+          courseId: cId,
+          enrolledAt: now,
+        };
+        courseProgress[cId] = {
+          courseId: cId,
+          enrolledAt: now,
+          completedTasksCount: 0,
+          completedDayIds: [],
+          unlockedDaysCount: 1,
+        };
+      });
+    }
+
+    const isPreviewAccount = Boolean(isTrainerPreviewAccount || trainerPreviewAccount);
+
     const studentData = {
       uid: userRecord.uid,
       email,
@@ -248,8 +280,11 @@ export async function POST(request: NextRequest) {
       loginId, // Store the plain loginId for admin/student reference
       phone: phone || null,
       role: "student",
+      isTrainerPreviewAccount: isPreviewAccount,
       trainerId: trainerId || null,
       enrolledCourses: enrolledCourses || [],
+      courseEnrollments,
+      courseProgress,
       accountStatus: "active",
       isBlocked: false,
       deviceId: null,
@@ -340,6 +375,8 @@ export async function PATCH(request: NextRequest) {
       isBlocked,
       accountStatus,
       notes,
+      isTrainerPreviewAccount,
+      trainerPreviewAccount,
     } = body;
 
     // Handle bulk update (e.g. bulk trainer allocation or mass freeze)
@@ -387,6 +424,11 @@ export async function PATCH(request: NextRequest) {
     }
     if (accountStatus) updateData.accountStatus = accountStatus;
     if (notes !== undefined) updateData.notes = notes;
+    if (isTrainerPreviewAccount !== undefined || trainerPreviewAccount !== undefined) {
+      updateData.isTrainerPreviewAccount = Boolean(
+        isTrainerPreviewAccount !== undefined ? isTrainerPreviewAccount : trainerPreviewAccount
+      );
+    }
 
     await (adminDb as any)
       .collection("users")

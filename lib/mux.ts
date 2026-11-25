@@ -270,6 +270,13 @@ export function formatModuleForStreaming(data: any, isLocked = false) {
 
   const posterUrl = thumbnailUrl || (playbackId ? `https://image.mux.com/${playbackId}/thumbnail.jpg` : "");
 
+  // Normalize module task & task image stored in Firebase Storage
+  const rawTaskTitle = data.taskTitle ?? data.task?.title ?? "";
+  const rawTaskDescription = data.taskDescription ?? data.task?.description ?? "";
+  const rawTaskType = data.taskType ?? data.task?.type ?? "speaking_recording";
+  const rawTaskImageUrl = data.taskImageUrl ?? data.taskImage ?? data.task?.imageUrl ?? "";
+  const hasTask = Boolean(rawTaskTitle || rawTaskDescription || rawTaskImageUrl);
+
   return {
     ...data,
     isLocked: !!isLocked,
@@ -280,7 +287,365 @@ export function formatModuleForStreaming(data: any, isLocked = false) {
     thumbnailUrl: thumbnailUrl || posterUrl || null,
     posterUrl: posterUrl || null,
     streamType: playbackId ? "mux" : (data.streamType || "legacy"),
+    taskTitle: rawTaskTitle || null,
+    taskDescription: rawTaskDescription || null,
+    taskType: rawTaskType,
+    taskImageUrl: isLocked ? null : (rawTaskImageUrl || null),
+    taskImage: isLocked ? null : (rawTaskImageUrl || null),
+    hasTask,
+    task: hasTask
+      ? {
+          title: rawTaskTitle || "",
+          description: rawTaskDescription || "",
+          type: rawTaskType,
+          imageUrl: isLocked ? null : (rawTaskImageUrl || null),
+        }
+      : null,
   };
+}
+
+/**
+ * Helper to parse any Firestore Timestamp, Date, or ISO string into a Date object.
+ */
+function parseFirestoreDate(val: any): Date | null {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val?.toDate === "function") {
+    const d = val.toDate();
+    return d instanceof Date && !isNaN(d.getTime()) ? d : null;
+  }
+  if (typeof val?._seconds === "number") {
+    return new Date(val._seconds * 1000);
+  }
+  if (typeof val?.seconds === "number") {
+    return new Date(val.seconds * 1000);
+  }
+  if (typeof val === "string" || typeof val === "number") {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/**
+ * Formats a Day object's task & taskImageUrl (stored in Firebase Storage)
+ */
+export function formatDayTask(day: any, isLocked = false) {
+  const rawTaskTitle = day?.taskTitle ?? day?.task?.title ?? "";
+  const rawTaskDescription = day?.taskDescription ?? day?.task?.description ?? "";
+  const rawTaskType = day?.taskType ?? day?.task?.type ?? "speaking_recording";
+  const rawTaskImageUrl = day?.taskImageUrl ?? day?.taskImage ?? day?.task?.imageUrl ?? "";
+  const hasTask = Boolean(rawTaskTitle || rawTaskDescription || rawTaskImageUrl);
+
+  return {
+    taskTitle: rawTaskTitle || null,
+    taskDescription: rawTaskDescription || null,
+    taskType: rawTaskType,
+    taskImageUrl: isLocked ? null : (rawTaskImageUrl || null),
+    taskImage: isLocked ? null : (rawTaskImageUrl || null),
+    hasTask,
+    task: hasTask
+      ? {
+          title: rawTaskTitle || "",
+          description: rawTaskDescription || "",
+          type: rawTaskType,
+          imageUrl: isLocked ? null : (rawTaskImageUrl || null),
+        }
+      : null,
+  };
+}
+
+/**
+ * Helper to merge a parent Day's task fields onto a module so the app always receives
+ * the Day's task & taskImageUrl alongside the module video.
+ */
+function attachDayTaskToModule(formattedMod: any, dayObj: any, isLocked: boolean) {
+  if (!dayObj) return formattedMod;
+  const dayTaskFields = formatDayTask(dayObj, isLocked);
+  if (!dayTaskFields.hasTask) return formattedMod;
+
+  return {
+    ...formattedMod,
+    taskTitle: dayTaskFields.taskTitle || formattedMod.taskTitle,
+    taskDescription: dayTaskFields.taskDescription || formattedMod.taskDescription,
+    taskType: dayTaskFields.taskType || formattedMod.taskType,
+    taskImageUrl: dayTaskFields.taskImageUrl || formattedMod.taskImageUrl,
+    taskImage: dayTaskFields.taskImage || formattedMod.taskImage,
+    hasTask: true,
+    task: dayTaskFields.task || formattedMod.task,
+  };
+}
+
+/**
+ * Computes day-by-day video release (for non-trainer-guided courses: 1 video per day)
+ * or task-based 3-day batch unlocking (for trainer-guided courses: next 3 days unlocked
+ * whenever the trainer marks a day's task as completed).
+ */
+export function computeCourseAccessAndLocking(options: {
+  courseId: string;
+  courseData: any;
+  days?: any[];
+  modules: any[];
+  userData?: any | null;
+  isPurchased: boolean;
+  isAdminOrTrainer?: boolean;
+  approvedTasksCount?: number;
+}) {
+  const {
+    courseId,
+    courseData,
+    days = [],
+    modules = [],
+    userData = null,
+    isPurchased,
+    isAdminOrTrainer = false,
+    approvedTasksCount = 0,
+  } = options;
+
+  const isTrainerGuided = Boolean(courseData?.isTrainerGuided);
+  const isTrainerPreviewAccount = Boolean(
+    userData?.isTrainerPreviewAccount || userData?.trainerPreviewAccount
+  );
+  const dayMap = new Map<string, any>();
+  days.forEach((d: any) => {
+    if (d?.id) dayMap.set(d.id, d);
+  });
+
+  // Admins / SuperAdmins / Trainers or Trainer Preview Student Accounts get full unlocked access to all videos without waiting for days or task completions
+  if (isAdminOrTrainer || isTrainerPreviewAccount) {
+    const formattedDays = days.map((d: any, dIdx: number) => ({
+      ...d,
+      ...formatDayTask(d, false),
+      dayNumber: dIdx + 1,
+      isLocked: false,
+      modules: (d.modules || []).map((m: any) =>
+        attachDayTaskToModule(formatModuleForStreaming(m, false), d, false)
+      ),
+    }));
+    const formattedModules = modules.map((m: any) =>
+      attachDayTaskToModule(formatModuleForStreaming(m, false), dayMap.get(m.day), false)
+    );
+    return {
+      days: formattedDays,
+      modules: formattedModules,
+      accessControl: {
+        mode: isTrainerPreviewAccount
+          ? "trainer_preview"
+          : isTrainerGuided
+          ? "trainer_guided"
+          : "daily_drip",
+        isTrainerGuided,
+        isTrainerPreviewAccount,
+        isAdminOrTrainer: Boolean(isAdminOrTrainer),
+        isPurchased: true,
+        unlockedDaysCount: days.length || modules.length,
+        unlockedVideosCount: modules.length,
+        totalDaysCount: days.length,
+        totalVideosCount: modules.length,
+      },
+    };
+  }
+
+  // Unenrolled user: lock after first 3 preview videos
+  if (!isPurchased) {
+    let globalIdx = 0;
+    const formattedDays = days.map((d: any, dIdx: number) => {
+      const dayMods = (d.modules || []).map((m: any) => {
+        const isLocked = globalIdx >= 3;
+        globalIdx++;
+        return {
+          ...attachDayTaskToModule(formatModuleForStreaming(m, isLocked), d, isLocked),
+          unlockDayNumber: dIdx + 1,
+          lockReason: isLocked ? "Enroll in this course to unlock full video access." : null,
+        };
+      });
+      const isDayLocked = dayMods.length > 0 ? dayMods.every((m: any) => m.isLocked) : dIdx >= 3;
+      return {
+        ...d,
+        ...formatDayTask(d, isDayLocked),
+        isLocked: isDayLocked,
+        modules: dayMods,
+      };
+    });
+
+    const formattedModules = modules.map((m: any, idx: number) => {
+      const isLocked = idx >= 3;
+      return {
+        ...attachDayTaskToModule(formatModuleForStreaming(m, isLocked), dayMap.get(m.day), isLocked),
+        unlockDayNumber: idx + 1,
+        lockReason: isLocked ? "Enroll in this course to unlock full video access." : null,
+      };
+    });
+
+    return {
+      days: formattedDays,
+      modules: formattedModules,
+      accessControl: {
+        mode: isTrainerGuided ? "trainer_guided" : "daily_drip",
+        isTrainerGuided,
+        isPurchased: false,
+        unlockedDaysCount: Math.min(3, days.length || 3),
+        unlockedVideosCount: Math.min(3, modules.length),
+        totalDaysCount: days.length,
+        totalVideosCount: modules.length,
+      },
+    };
+  }
+
+  // Enrolled Student:
+  const progress = userData?.courseProgress?.[courseId] || {};
+  const enrollmentInfo = userData?.courseEnrollments?.[courseId] || {};
+
+  if (!isTrainerGuided) {
+    // NON-TRAINER-GUIDED COURSE:
+    // Release one by one on a daily basis as 1 video each day since enrollment.
+    const enrolledDate =
+      parseFirestoreDate(enrollmentInfo.enrolledAt) ||
+      parseFirestoreDate(progress.enrolledAt) ||
+      parseFirestoreDate(userData?.createdAt) ||
+      new Date();
+
+    // Calculate calendar days elapsed in IST (UTC+5:30) so each new day releases 1 video
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+    const enrolledDayNumber = Math.floor((enrolledDate.getTime() + IST_OFFSET_MS) / (1000 * 60 * 60 * 24));
+    const currentDayNumber = Math.floor((Date.now() + IST_OFFSET_MS) / (1000 * 60 * 60 * 24));
+    const elapsedDays = Math.max(0, currentDayNumber - enrolledDayNumber);
+
+    // Day 1 of enrollment = 1 video unlocked; Day 2 = 2 videos unlocked, etc.
+    const manualUnlocked = Number(progress.unlockedVideosCount || progress.unlockedDaysCount || 0);
+    const unlockedVideosCount = Math.max(1, elapsedDays + 1, manualUnlocked);
+
+    let globalVideoCounter = 0;
+    const unlockedModuleIds = new Set<string>();
+
+    const formattedDays = days.map((d: any, dIdx: number) => {
+      const dayMods = (d.modules || []).map((m: any) => {
+        const videoIndex = globalVideoCounter;
+        globalVideoCounter++;
+        const isLocked = videoIndex >= unlockedVideosCount;
+        if (!isLocked && m.id) unlockedModuleIds.add(m.id);
+        return {
+          ...attachDayTaskToModule(formatModuleForStreaming(m, isLocked), d, isLocked),
+          unlockDayNumber: videoIndex + 1,
+          lockReason: isLocked
+            ? `Released 1 video per day. This video unlocks on Day ${videoIndex + 1}.`
+            : null,
+        };
+      });
+      const isDayLocked = dayMods.length > 0 ? dayMods.every((m: any) => m.isLocked) : dIdx >= unlockedVideosCount;
+
+      return {
+        ...d,
+        ...formatDayTask(d, isDayLocked),
+        dayNumber: dIdx + 1,
+        isLocked: isDayLocked,
+        modules: dayMods,
+      };
+    });
+
+    const formattedModules = modules.map((m: any, idx: number) => {
+      const isLocked =
+        days.length > 0 && globalVideoCounter > 0
+          ? !unlockedModuleIds.has(m.id) && idx >= unlockedVideosCount
+          : idx >= unlockedVideosCount;
+      return {
+        ...attachDayTaskToModule(formatModuleForStreaming(m, isLocked), dayMap.get(m.day), isLocked),
+        unlockDayNumber: idx + 1,
+        lockReason: isLocked
+          ? `Released 1 video per day. This video unlocks on Day ${idx + 1}.`
+          : null,
+      };
+    });
+
+    return {
+      days: formattedDays,
+      modules: formattedModules,
+      accessControl: {
+        mode: "daily_drip",
+        isTrainerGuided: false,
+        isPurchased: true,
+        enrolledAt: enrolledDate.toISOString(),
+        currentCourseDay: elapsedDays + 1,
+        unlockedVideosCount,
+        unlockedDaysCount: unlockedVideosCount,
+        totalDaysCount: days.length,
+        totalVideosCount: modules.length,
+      },
+    };
+  } else {
+    // TRAINER-GUIDED COURSE:
+    // Initially Day 1 is unlocked. Whenever the trainer marks a day's task as completed,
+    // the next 3 days' videos are unlocked.
+    const completedDayIds: string[] = Array.isArray(progress.completedDayIds)
+      ? progress.completedDayIds
+      : [];
+    const completedTasksCount = Math.max(
+      Number(progress.completedTasksCount || 0),
+      Number(approvedTasksCount || 0),
+      completedDayIds.length
+    );
+    const storedUnlockedDays = Number(progress.unlockedDaysCount || 0);
+    const unlockedDaysCount = Math.max(1, storedUnlockedDays, 1 + completedTasksCount * 3);
+
+    const unlockedDayIds = new Set<string>();
+    const formattedDays = days.map((d: any, dIdx: number) => {
+      const isDayLocked = dIdx >= unlockedDaysCount;
+      if (!isDayLocked && d.id) unlockedDayIds.add(d.id);
+      const isTaskCompleted = completedDayIds.includes(d.id) || dIdx < completedTasksCount;
+
+      const dayMods = (d.modules || []).map((m: any) => ({
+        ...attachDayTaskToModule(formatModuleForStreaming(m, isDayLocked), d, isDayLocked),
+        unlockDayNumber: dIdx + 1,
+        isTaskCompleted,
+        lockReason: isDayLocked
+          ? "Complete your current day's task and get trainer approval to unlock the next 3 days' videos."
+          : null,
+      }));
+
+      return {
+        ...d,
+        ...formatDayTask(d, isDayLocked),
+        dayNumber: dIdx + 1,
+        isLocked: isDayLocked,
+        isTaskCompleted,
+        modules: dayMods,
+      };
+    });
+
+    let unlockedVideosCount = 0;
+    const formattedModules = modules.map((m: any, idx: number) => {
+      let isLocked: boolean;
+      if (days.length > 0 && m.day) {
+        isLocked = !unlockedDayIds.has(m.day);
+      } else {
+        isLocked = idx >= unlockedDaysCount;
+      }
+      if (!isLocked) unlockedVideosCount++;
+      return {
+        ...attachDayTaskToModule(formatModuleForStreaming(m, isLocked), dayMap.get(m.day), isLocked),
+        unlockDayNumber: idx + 1,
+        lockReason: isLocked
+          ? "Complete your current day's task and get trainer approval to unlock the next 3 days' videos."
+          : null,
+      };
+    });
+
+    return {
+      days: formattedDays,
+      modules: formattedModules,
+      accessControl: {
+        mode: "trainer_guided",
+        isTrainerGuided: true,
+        isPurchased: true,
+        completedTasksCount,
+        completedDayIds,
+        unlockedDaysCount,
+        unlockedVideosCount,
+        totalDaysCount: days.length,
+        totalVideosCount: modules.length,
+      },
+    };
+  }
 }
 
 /**

@@ -14,6 +14,9 @@ import {
   Grid,
   CheckCircle2,
   Tv,
+  Upload,
+  Image as ImageIcon,
+  CheckSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MuxVideoPicker from "@/app/componets/MuxVideoPicker";
@@ -36,6 +39,16 @@ export default function DayDetailPage() {
   const [showEditModuleModal, setShowEditModuleModal] = useState(false);
   const [editingModule, setEditingModule] = useState<any>(null);
   const [previewingModule, setPreviewingModule] = useState<any>(null);
+  const [showEditDayModal, setShowEditDayModal] = useState(false);
+
+  // Edit Day & Day Task state
+  const [editDayTitle, setEditDayTitle] = useState("");
+  const [editDayOrder, setEditDayOrder] = useState("");
+  const [dayTaskTitle, setDayTaskTitle] = useState("");
+  const [dayTaskDescription, setDayTaskDescription] = useState("");
+  const [dayTaskType, setDayTaskType] = useState<"speaking_recording" | "assignment" | "exercise" | "quiz">("speaking_recording");
+  const [dayTaskImage, setDayTaskImage] = useState<string | undefined>(undefined);
+  const [dayTaskImagePreview, setDayTaskImagePreview] = useState<string>("");
 
   // Create form state
   const [moduleTitle, setModuleTitle] = useState("");
@@ -58,6 +71,8 @@ export default function DayDetailPage() {
   const [editModuleDescription, setEditModuleDescription] = useState("");
   const [editModuleDuration, setEditModuleDuration] = useState("");
   const [editModuleQuestions, setEditModuleQuestions] = useState<any[]>([]);
+  const [currentEditQuestion, setCurrentEditQuestion] = useState("");
+  const [currentEditAnswer, setCurrentEditAnswer] = useState("");
   const [editSelectedMuxVideo, setEditSelectedMuxVideo] = useState<{
     url: string;
     playbackId: string;
@@ -68,6 +83,90 @@ export default function DayDetailPage() {
   } | null>(null);
   const [editModuleVideoUrl, setEditModuleVideoUrl] = useState("");
   const [editModulePlaybackId, setEditModulePlaybackId] = useState("");
+
+  const handleDayTaskImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setDayTaskImage(result);
+        setDayTaskImagePreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const openEditDayDetailsModal = () => {
+    setEditDayTitle(dayData?.title || "");
+    setEditDayOrder(dayData?.order !== undefined ? String(dayData.order) : "");
+    setDayTaskTitle(dayData?.taskTitle || dayData?.task?.title || "");
+    setDayTaskDescription(dayData?.taskDescription || dayData?.task?.description || "");
+    setDayTaskType(dayData?.taskType || dayData?.task?.type || "speaking_recording");
+    setDayTaskImage(undefined);
+    setDayTaskImagePreview(dayData?.taskImageUrl || dayData?.taskImage || dayData?.task?.imageUrl || "");
+    setShowEditDayModal(true);
+  };
+
+  const handleSaveDayDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editDayTitle.trim()) return;
+
+    setModalLoading(true);
+    try {
+      const payload: any = {
+        courseId,
+        dayId,
+        title: editDayTitle,
+        order: editDayOrder !== "" ? parseInt(editDayOrder, 10) : dayData?.order ?? 0,
+        taskTitle: dayTaskTitle,
+        taskDescription: dayTaskDescription,
+        taskType: dayTaskType,
+      };
+      if (dayTaskImage !== undefined) {
+        payload.taskImage = dayTaskImage;
+      }
+
+      const res = await fetch("/api/days/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to update day details");
+      const resData = await res.json();
+      const updatedTaskImageUrl =
+        resData?.day?.taskImageUrl !== undefined ? resData.day.taskImageUrl : dayTaskImagePreview;
+
+      setDayData((prev: any) => ({
+        ...prev,
+        title: editDayTitle,
+        order: editDayOrder !== "" ? parseInt(editDayOrder, 10) : prev?.order ?? 0,
+        taskTitle: dayTaskTitle,
+        taskDescription: dayTaskDescription,
+        taskType: dayTaskType,
+        taskImageUrl: updatedTaskImageUrl,
+        task: resData?.day?.task ?? prev?.task,
+      }));
+      setShowEditDayModal(false);
+    } catch (err) {
+      console.error("Error updating day details:", err);
+      alert("Error updating day details");
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const addEditQuestion = () => {
+    if (currentEditQuestion.trim() && currentEditAnswer.trim()) {
+      setEditModuleQuestions([...editModuleQuestions, { question: currentEditQuestion, answer: currentEditAnswer }]);
+      setCurrentEditQuestion("");
+      setCurrentEditAnswer("");
+    }
+  };
 
   const addQuestion = () => {
     if (currentQuestion.trim() && currentAnswer.trim()) {
@@ -194,6 +293,8 @@ export default function DayDetailPage() {
     setEditModuleDescription(module.description || "");
     setEditModuleDuration(module.duration || "");
     setEditModuleQuestions(module.questions || []);
+    setCurrentEditQuestion("");
+    setCurrentEditAnswer("");
     setEditModuleVideoUrl(module.videoUrl || "");
     setEditModulePlaybackId(module.playbackId || "");
     setEditSelectedMuxVideo(
@@ -222,26 +323,28 @@ export default function DayDetailPage() {
       const finalThumbnail = editSelectedMuxVideo?.thumbnailUrl || (finalPlaybackId ? `https://image.mux.com/${finalPlaybackId}/thumbnail.jpg` : "");
       const finalDuration = editModuleDuration || editSelectedMuxVideo?.duration || editingModule.duration || "10 mins";
 
+      const updatePayload: any = {
+        courseId,
+        moduleId: editingModule.id,
+        title: editModuleTitle,
+        day: dayId,
+        questions: editModuleQuestions,
+        videoUrl: finalVideoUrl,
+        playbackId: finalPlaybackId,
+        assetId: editSelectedMuxVideo?.assetId || editingModule.assetId || "",
+        thumbnailUrl: finalThumbnail,
+        streamType: "mux",
+        duration: finalDuration,
+        description: editModuleDescription,
+      };
+
       const response = await fetch("/api/modules/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
-        body: JSON.stringify({
-          courseId,
-          moduleId: editingModule.id,
-          title: editModuleTitle,
-          day: dayId,
-          questions: editModuleQuestions,
-          videoUrl: finalVideoUrl,
-          playbackId: finalPlaybackId,
-          assetId: editSelectedMuxVideo?.assetId || editingModule.assetId || "",
-          thumbnailUrl: finalThumbnail,
-          streamType: "mux",
-          duration: finalDuration,
-          description: editModuleDescription,
-        }),
+        body: JSON.stringify(updatePayload),
       });
 
       if (!response.ok) throw new Error("Failed to update module");
@@ -293,24 +396,79 @@ export default function DayDetailPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => router.push(`/dashboard/course/${courseId}`)}
-          className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition text-slate-700"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#2A0066]">
-              Mux HLS Streaming
-            </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push(`/dashboard/course/${courseId}`)}
+            className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition text-slate-700"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-[#2A0066]">
+                Mux HLS Streaming
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 mt-1">{dayData?.title || "Day Modules"}</h1>
+            <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest mt-0.5">
+              Manage video lessons and day task via Mux Video CDN & Firebase Storage
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 mt-1">{dayData?.title || "Day Modules"}</h1>
-          <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest mt-0.5">
-            Manage video lessons and tasks with Mux Video CDN
-          </p>
         </div>
+        <button
+          type="button"
+          onClick={openEditDayDetailsModal}
+          className="px-4 py-2.5 bg-white border border-purple-200 hover:border-[#2A0066] text-[#2A0066] rounded-2xl font-bold text-xs shadow-sm flex items-center gap-2 transition self-start sm:self-auto cursor-pointer"
+        >
+          <Settings size={15} /> Edit Day Name & Task Image
+        </button>
+      </div>
+
+      {/* Day Task & Task Image Card */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-purple-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          {(dayData?.taskImageUrl || dayData?.task?.imageUrl) ? (
+            <img
+              src={dayData?.taskImageUrl || dayData?.task?.imageUrl}
+              alt="Day Task"
+              className="w-20 h-20 rounded-2xl object-cover border border-purple-200 flex-shrink-0 bg-slate-50"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl bg-purple-50 text-[#2A0066] flex items-center justify-center flex-shrink-0">
+              <CheckSquare size={22} />
+            </div>
+          )}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#2A0066] bg-purple-50 px-2.5 py-0.5 rounded-full">
+                Day Task (Shown in App with Video)
+              </span>
+              {(dayData?.taskType || dayData?.task?.type) && (
+                <span className="text-[10px] font-bold uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                  {(dayData?.taskType || dayData?.task?.type).replace("_", " ")}
+                </span>
+              )}
+            </div>
+            <h3 className="text-sm font-black text-slate-900">
+              {dayData?.taskTitle || dayData?.task?.title || "No day task configured yet"}
+            </h3>
+            <p className="text-xs text-slate-500 line-clamp-2">
+              {dayData?.taskDescription ||
+                dayData?.task?.description ||
+                "Click 'Edit Day Name & Task Image' to set up this day's task and upload a task image to Firebase Storage."}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={openEditDayDetailsModal}
+          className="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-[#2A0066] rounded-xl text-xs font-bold transition flex-shrink-0 self-start sm:self-center cursor-pointer"
+        >
+          {(dayData?.taskTitle || dayData?.taskImageUrl || dayData?.task?.imageUrl)
+            ? "Update Day & Task"
+            : "+ Configure Day Task"}
+        </button>
       </div>
 
       {/* Main Card */}
@@ -403,6 +561,11 @@ export default function DayDetailPage() {
                         {module.playbackId && (
                           <span className="text-[9px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md">
                             Mux HLS
+                          </span>
+                        )}
+                        {(module.taskImageUrl || module.taskTitle || module.task?.imageUrl) && (
+                          <span className="text-[9px] font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                            <ImageIcon size={10} /> Task {(module.taskImageUrl || module.task?.imageUrl) ? "+ Image" : ""}
                           </span>
                         )}
                       </div>
@@ -566,6 +729,41 @@ export default function DayDetailPage() {
                 <span>Duration: {previewingModule.duration || "N/A"}</span>
                 <span className="text-emerald-400 font-medium">Streamed via Mux Video CDN</span>
               </div>
+
+              {(dayData?.taskTitle ||
+                dayData?.taskDescription ||
+                dayData?.taskImageUrl ||
+                dayData?.task?.imageUrl) && (
+                <div className="p-4 bg-slate-950 border-t border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-purple-400">
+                      Day Task (Shown in App with Video)
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase px-2 py-0.5 bg-slate-800 rounded">
+                      {(dayData?.taskType || dayData?.task?.type || "speaking_recording").replace("_", " ")}
+                    </span>
+                  </div>
+                  {(dayData?.taskTitle || dayData?.task?.title) && (
+                    <p className="text-sm font-bold text-white">
+                      {dayData?.taskTitle || dayData?.task?.title}
+                    </p>
+                  )}
+                  {(dayData?.taskDescription || dayData?.task?.description) && (
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {dayData?.taskDescription || dayData?.task?.description}
+                    </p>
+                  )}
+                  {(dayData?.taskImageUrl || dayData?.task?.imageUrl) && (
+                    <div className="pt-1">
+                      <img
+                        src={dayData?.taskImageUrl || dayData?.task?.imageUrl}
+                        alt="Day Task"
+                        className="max-h-52 rounded-xl border border-slate-700 object-contain bg-slate-900"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -855,6 +1053,66 @@ export default function DayDetailPage() {
                   />
                 </div>
 
+                {/* Edit Quiz / Checkpoint Questions */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-slate-700">Quiz / Checkpoint Questions ({editModuleQuestions.length})</span>
+                    <span className="text-[11px] text-slate-400 font-medium">Optional</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Question prompt..."
+                      value={currentEditQuestion}
+                      onChange={(e) => setCurrentEditQuestion(e.target.value)}
+                      className="px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none"
+                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Expected answer / model answer..."
+                        value={currentEditAnswer}
+                        onChange={(e) => setCurrentEditAnswer(e.target.value)}
+                        className="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={addEditQuestion}
+                        className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+
+                  {editModuleQuestions.length > 0 && (
+                    <div className="space-y-1.5 mt-2">
+                      {editModuleQuestions.map((q, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-100 text-xs"
+                        >
+                          <div className="truncate pr-2">
+                            <span className="font-bold text-slate-700">Q{idx + 1}: </span>
+                            <span className="text-slate-600">{q.question}</span>
+                            <span className="text-slate-400 ml-2">→ {q.answer}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditModuleQuestions(editModuleQuestions.filter((_, i) => i !== idx))
+                            }
+                            className="text-slate-400 hover:text-red-500 ml-2 flex-shrink-0"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="pt-2 flex gap-3">
                   <button
                     type="button"
@@ -869,6 +1127,187 @@ export default function DayDetailPage() {
                     className="flex-1 py-3.5 bg-[#2A0066] hover:bg-[#3d0099] disabled:bg-slate-300 text-white rounded-2xl font-bold uppercase text-xs shadow-lg shadow-[#2A0066]/20 transition flex items-center justify-center gap-2"
                   >
                     {modalLoading ? <Loader className="animate-spin" size={18} /> : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Day Details & Day Task Image Modal */}
+      <AnimatePresence>
+        {showEditDayModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[70] flex items-center justify-center p-4"
+            onClick={() => !modalLoading && setShowEditDayModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              className="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Edit Day & Task</h2>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Update day name, order, task instructions, and upload a task image to Firebase Storage.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !modalLoading && setShowEditDayModal(false)}
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveDayDetails} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Day Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editDayTitle}
+                      onChange={(e) => setEditDayTitle(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Order Index</label>
+                    <input
+                      type="number"
+                      value={editDayOrder}
+                      onChange={(e) => setEditDayOrder(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#2A0066] outline-none font-bold text-slate-700"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-5 bg-purple-50/50 border border-purple-200/80 rounded-2xl space-y-4">
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-[#2A0066]">
+                      Day Task & Task Image (Firebase Storage)
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Configure this day&apos;s task and upload a task image to display in the app alongside the day&apos;s video.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                        Task Title / Prompt Heading
+                      </label>
+                      <input
+                        type="text"
+                        value={dayTaskTitle}
+                        onChange={(e) => setDayTaskTitle(e.target.value)}
+                        placeholder="e.g., Day 1 Speaking Task: Practice Code 1"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-[#2A0066]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                        Task Type
+                      </label>
+                      <select
+                        value={dayTaskType}
+                        onChange={(e: any) => setDayTaskType(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-[#2A0066]"
+                      >
+                        <option value="speaking_recording">🎙️ Speaking Task</option>
+                        <option value="assignment">📄 Written Task</option>
+                        <option value="exercise">✍️ Practice Exercise</option>
+                        <option value="quiz">📝 Quiz Task</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                      Task Instructions / Details
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={dayTaskDescription}
+                      onChange={(e) => setDayTaskDescription(e.target.value)}
+                      placeholder="Explain what the student should do for this day's task..."
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#2A0066] resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                      Day Task Image (Stored in Firebase Storage)
+                    </label>
+                    {!dayTaskImagePreview ? (
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-purple-200 bg-white rounded-2xl cursor-pointer hover:border-[#2A0066] transition">
+                        <Upload size={22} className="text-[#2A0066] mb-1.5" />
+                        <span className="text-xs font-bold text-slate-700">Click to upload day task image</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WEBP • Shown in app with day video</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleDayTaskImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="relative rounded-2xl overflow-hidden border border-purple-200 bg-white p-2 flex items-center justify-center">
+                          <img
+                            src={dayTaskImagePreview}
+                            alt="Day Task Preview"
+                            className="max-h-44 rounded-xl object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDayTaskImage("");
+                              setDayTaskImagePreview("");
+                            }}
+                            className="absolute top-3 right-3 p-1.5 bg-rose-600 text-white rounded-lg shadow hover:bg-rose-700 transition"
+                            title="Remove Task Image"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#2A0066] cursor-pointer hover:bg-purple-50 transition">
+                          <Upload size={13} /> Replace Task Image
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleDayTaskImageChange}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditDayModal(false)}
+                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold uppercase text-xs transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={modalLoading}
+                    className="flex-1 py-3.5 bg-[#2A0066] hover:bg-[#3d0099] disabled:bg-slate-300 text-white rounded-2xl font-bold uppercase text-xs shadow-lg shadow-[#2A0066]/20 transition flex items-center justify-center gap-2"
+                  >
+                    {modalLoading ? <Loader className="animate-spin" size={18} /> : "Save Day & Task"}
                   </button>
                 </div>
               </form>

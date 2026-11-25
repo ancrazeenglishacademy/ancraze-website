@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
             fullName: userData.fullName || '',
             loginId: userData.loginId || loginId,
             role: 'student',
+            isTrainerPreviewAccount: Boolean(userData.isTrainerPreviewAccount || userData.trainerPreviewAccount),
             isBlocked: userData.isBlocked || false,
             enrolledCourses,
             deviceId: userData.deviceId || deviceId,

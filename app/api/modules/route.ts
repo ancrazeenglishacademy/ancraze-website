@@ -1,10 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb, adminStorage } from '@/lib/firebaseAdmin';
 import * as admin from 'firebase-admin';
 import { formatModuleForStreaming } from '@/lib/mux';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+async function uploadTaskImageToFirebaseStorage(
+  courseId: string,
+  taskImageInput?: string | null
+): Promise<string> {
+  if (!taskImageInput) return '';
+  // If already a public URL, return as-is
+  if (taskImageInput.startsWith('http://') || taskImageInput.startsWith('https://')) {
+    return taskImageInput;
+  }
+  // If base64 data URL, upload to Firebase Storage
+  if (taskImageInput.startsWith('data:image/') && adminStorage) {
+    try {
+      const mimeMatch = taskImageInput.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+      const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      const ext = contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+      const base64Data = taskImageInput.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      const bucket = (adminStorage as any).bucket();
+      const fileName = `courses/${courseId}/tasks/${Date.now()}_task.${ext}`;
+      const file = bucket.file(fileName);
+
+      await file.save(buffer, {
+        metadata: {
+          contentType,
+        },
+      });
+
+      await file.makePublic();
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      console.log('✅ Module task image uploaded to Firebase Storage:', publicUrl);
+      return publicUrl;
+    } catch (err) {
+      console.error('❌ Error uploading task image to Firebase Storage:', err);
+      return '';
+    }
+  }
+  return '';
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +68,10 @@ export async function POST(request: NextRequest) {
     let playbackId = '';
     let assetId = '';
     let streamType = 'mux';
+    let taskTitle = '';
+    let taskDescription = '';
+    let taskType = 'speaking_recording';
+    let taskImageInput = '';
 
     try {
       console.log('🔄 Parsing request body...');
@@ -44,6 +88,10 @@ export async function POST(request: NextRequest) {
       playbackId = body.playbackId || '';
       assetId = body.assetId || '';
       streamType = body.streamType || (playbackId ? 'mux' : 'legacy');
+      taskTitle = body.taskTitle ?? body.task?.title ?? '';
+      taskDescription = body.taskDescription ?? body.task?.description ?? '';
+      taskType = body.taskType ?? body.task?.type ?? 'speaking_recording';
+      taskImageInput = body.taskImage ?? body.taskImageUrl ?? body.task?.imageUrl ?? '';
 
       // Auto-populate Mux streaming URL and thumbnail if playbackId is provided
       if (playbackId) {
@@ -81,6 +129,9 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Validation passed, creating module...');
 
+    const finalTaskImageUrl = await uploadTaskImageToFirebaseStorage(courseId, taskImageInput);
+    const hasTask = Boolean(taskTitle.trim() || taskDescription.trim() || finalTaskImageUrl);
+
     // Create module data
     const moduleData = {
       courseId,
@@ -94,6 +145,18 @@ export async function POST(request: NextRequest) {
       day: body.day || '',
       description: description || '',
       thumbnailUrl: thumbnailUrl || '',
+      taskTitle: taskTitle.trim(),
+      taskDescription: taskDescription.trim(),
+      taskType: taskType || 'speaking_recording',
+      taskImageUrl: finalTaskImageUrl,
+      task: hasTask
+        ? {
+            title: taskTitle.trim(),
+            description: taskDescription.trim(),
+            type: taskType || 'speaking_recording',
+            imageUrl: finalTaskImageUrl,
+          }
+        : null,
       createdAt: admin.firestore.Timestamp.now(),
       updatedAt: admin.firestore.Timestamp.now(),
     };

@@ -175,10 +175,22 @@ Register the student's Expo push token immediately upon login:
   ```json
   {
     "success": true,
+    "accessControl": {
+      "mode": "trainer_guided",
+      "isTrainerGuided": true,
+      "isPurchased": true,
+      "completedTasksCount": 1,
+      "unlockedDaysCount": 4,
+      "unlockedVideosCount": 4,
+      "totalDaysCount": 30,
+      "totalVideosCount": 30
+    },
     "course": {
       "id": "course_abc123",
       "title": "30-Day Foundational Spoken English Course",
       "isPurchased": true,
+      "isTrainerGuided": true,
+      "refundDays": 7,
       "modules": [
         {
           "id": "mod_01",
@@ -187,6 +199,8 @@ Register the student's Expo push token immediately upon login:
           "duration": "14 mins",
           "day": "day_01_id",
           "isLocked": false,
+          "unlockDayNumber": 1,
+          "lockReason": null,
           "streamType": "mux",
           "playbackId": "mUxPlAyBaCkId123",
           "streamUrl": "https://stream.mux.com/mUxPlAyBaCkId123.m3u8",
@@ -194,6 +208,18 @@ Register the student's Expo push token immediately upon login:
           "videoUrl": "https://stream.mux.com/mUxPlAyBaCkId123.m3u8",
           "thumbnailUrl": "https://image.mux.com/mUxPlAyBaCkId123/thumbnail.jpg",
           "posterUrl": "https://image.mux.com/mUxPlAyBaCkId123/thumbnail.jpg",
+          "taskTitle": "Day 1 Speaking Task: Practice Code 1 Sentences",
+          "taskDescription": "Record a 2-minute voice clip using today's sentence patterns.",
+          "taskType": "speaking_recording",
+          "taskImageUrl": "https://storage.googleapis.com/your-bucket/courses/course_abc123/tasks/1732512000_task.jpg",
+          "taskImage": "https://storage.googleapis.com/your-bucket/courses/course_abc123/tasks/1732512000_task.jpg",
+          "hasTask": true,
+          "task": {
+            "title": "Day 1 Speaking Task: Practice Code 1 Sentences",
+            "description": "Record a 2-minute voice clip using today's sentence patterns.",
+            "type": "speaking_recording",
+            "imageUrl": "https://storage.googleapis.com/your-bucket/courses/course_abc123/tasks/1732512000_task.jpg"
+          },
           "questions": [
             {
               "question": "Construct a sentence using Code 1.",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
-import { formatModuleForStreaming } from '@/lib/mux';
+import { computeCourseAccessAndLocking } from '@/lib/mux';
 
 export async function GET(request: NextRequest) {
     try {
@@ -37,6 +37,13 @@ export async function GET(request: NextRequest) {
         }
 
         const userData = userSnapshot.docs[0].data();
+        const studentDocId = userSnapshot.docs[0].id;
+        const isAdminOrTrainer =
+            userData.role === 'admin' ||
+            userData.role === 'superadmin' ||
+            userData.role === 'trainer' ||
+            userData.isTrainerPreviewAccount === true ||
+            userData.trainerPreviewAccount === true;
 
         // Security Check: Device Verification
         if (userData.deviceId && userData.deviceId !== deviceId) {
@@ -48,52 +55,103 @@ export async function GET(request: NextRequest) {
 
         const enrolledCourseIds = userData.enrolledCourses || [];
 
+        // Fetch student's approved/completed tasks for trainer-guided course unlocking
+        let studentTasks: any[] = [];
+        try {
+            const tasksSnap = await (adminDb as any)
+                .collection('tasks')
+                .where('studentId', '==', studentDocId)
+                .get();
+            studentTasks = tasksSnap.docs.map((tDoc: any) => tDoc.data());
+        } catch (tErr) {
+            console.warn('Could not fetch tasks for student courses:', tErr);
+        }
+
+        const buildCourseWithAccess = async (cId: string) => {
+            const courseDoc = await (adminDb as any).collection('courses').doc(cId).get();
+            if (!courseDoc.exists) return null;
+
+            const courseData = courseDoc.data();
+
+            const daysSnapshot = await (adminDb as any)
+                .collection('courses')
+                .doc(cId)
+                .collection('days')
+                .orderBy('order', 'asc')
+                .get();
+
+            const rawDays = daysSnapshot.docs.map((dDoc: any) => ({
+                id: dDoc.id,
+                ...dDoc.data(),
+                modules: [] as any[],
+                createdAt: dDoc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+            }));
+
+            const modulesSnapshot = await (adminDb as any)
+                .collection('courses')
+                .doc(cId)
+                .collection('modules')
+                .orderBy('createdAt', 'asc')
+                .get();
+
+            const rawModules = (modulesSnapshot as any).docs.map((doc: any) => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+            }));
+
+            rawModules.forEach((mod: any) => {
+                const dayIdx = rawDays.findIndex((d: any) => d.id === mod.day);
+                if (dayIdx !== -1) {
+                    rawDays[dayIdx].modules.push(mod);
+                }
+            });
+
+            const approvedTasksCount = studentTasks.filter((t: any) => {
+                const isDone = t.status === 'approved' || t.status === 'completed';
+                const matchesCourse = !t.courseId || t.courseId === cId;
+                return isDone && matchesCourse;
+            }).length;
+
+            const lockedResult = computeCourseAccessAndLocking({
+                courseId: cId,
+                courseData,
+                days: rawDays,
+                modules: rawModules,
+                userData,
+                isPurchased: true,
+                isAdminOrTrainer,
+                approvedTasksCount,
+            });
+
+            return {
+                id: cId,
+                ...courseData,
+                days: lockedResult.days,
+                modules: lockedResult.modules,
+                accessControl: lockedResult.accessControl,
+                createdAt: courseData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                updatedAt: courseData.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+            };
+        };
+
         // If courseId is provided, fetch only that specific course
         if (courseId) {
-            // Check if student is enrolled in this course
-            if (!enrolledCourseIds.includes(courseId)) {
+            if (!enrolledCourseIds.includes(courseId) && !isAdminOrTrainer) {
                 return NextResponse.json(
                     { error: 'Access denied: You are not enrolled in this course' },
                     { status: 403 }
                 );
             }
 
-            // Fetch the specific course
-            const courseDoc = await (adminDb as any).collection('courses').doc(courseId).get();
-
-            if (!courseDoc.exists) {
+            const course = await buildCourseWithAccess(courseId);
+            if (!course) {
                 return NextResponse.json(
                     { error: 'Course not found' },
                     { status: 404 }
                 );
             }
-
-            const courseData = courseDoc.data();
-
-            // Fetch modules for this course
-            const modulesSnapshot = await (adminDb as any)
-                .collection('courses')
-                .doc(courseId)
-                .collection('modules')
-                .orderBy('createdAt', 'asc')
-                .get();
-
-            const modules = (modulesSnapshot as any).docs.map((doc: any) => 
-                formatModuleForStreaming({
-                    id: doc.id,
-                    ...doc.data(),
-                    createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                    updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                }, false)
-            );
-
-            const course = {
-                id: courseId,
-                ...courseData,
-                modules,
-                createdAt: courseData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                updatedAt: courseData.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-            };
 
             return NextResponse.json(
                 {
@@ -104,39 +162,9 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // If no courseId, fetch all enrolled courses (existing behavior)
+        // If no courseId, fetch all enrolled courses
         const coursesData = await Promise.all(
-            enrolledCourseIds.map(async (cId: string) => {
-                const courseDoc = await (adminDb as any).collection('courses').doc(cId).get();
-                if (!courseDoc.exists) return null;
-
-                const courseData = courseDoc.data();
-
-                // Fetch modules for this course
-                const modulesSnapshot = await (adminDb as any)
-                    .collection('courses')
-                    .doc(cId)
-                    .collection('modules')
-                    .orderBy('createdAt', 'asc')
-                    .get();
-
-                const modules = (modulesSnapshot as any).docs.map((doc: any) => 
-                    formatModuleForStreaming({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                    }, false)
-                );
-
-                return {
-                    id: cId,
-                    ...courseData,
-                    modules,
-                    createdAt: courseData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                    updatedAt: courseData.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                };
-            })
+            enrolledCourseIds.map((cId: string) => buildCourseWithAccess(cId))
         );
 
         // Filter out any nulls if course was deleted

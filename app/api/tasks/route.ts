@@ -125,6 +125,92 @@ export async function GET(request: NextRequest) {
 }
 
 /**
+ * Helper: When a trainer marks a day's task as completed/approved,
+ * unlock the next 3 days' videos for the student in trainer-guided courses.
+ */
+async function unlockNextThreeDaysOnTaskCompletion(options: {
+  studentId: string;
+  taskId: string;
+  courseId?: string | null;
+  dayId?: string | null;
+  dayNumber?: number | null;
+}) {
+  const { studentId, taskId, courseId, dayId, dayNumber } = options;
+  if (!adminDb || !studentId) return null;
+
+  try {
+    const studentRef = adminDb.collection("users").doc(studentId);
+    const studentDoc = await studentRef.get();
+    if (!studentDoc.exists) return null;
+
+    const studentData = studentDoc.data() || {};
+    const targetCourseIds: string[] = courseId
+      ? [courseId]
+      : Array.isArray(studentData.enrolledCourses)
+      ? studentData.enrolledCourses
+      : [];
+
+    if (targetCourseIds.length === 0) return null;
+
+    const existingCourseProgress = studentData.courseProgress || {};
+    const updatedProgressMap: Record<string, any> = {};
+
+    for (const cId of targetCourseIds) {
+      const current = existingCourseProgress[cId] || {};
+      const completedTaskIds: string[] = Array.isArray(current.completedTaskIds)
+        ? [...current.completedTaskIds]
+        : [];
+
+      // Prevent double-counting the exact same taskId if already unlocked
+      if (taskId && completedTaskIds.includes(taskId)) {
+        updatedProgressMap[cId] = current;
+        continue;
+      }
+      if (taskId) completedTaskIds.push(taskId);
+
+      const completedDayIds: string[] = Array.isArray(current.completedDayIds)
+        ? [...current.completedDayIds]
+        : [];
+      if (dayId && !completedDayIds.includes(dayId)) {
+        completedDayIds.push(dayId);
+      }
+
+      const prevCompletedCount = Number(current.completedTasksCount || 0);
+      const newCompletedCount = prevCompletedCount + 1;
+      const prevUnlockedDays = Number(current.unlockedDaysCount || 1);
+
+      // Unlock the next 3 days' videos when trainer marks a day's task completed
+      const newUnlockedDays = Math.max(
+        prevUnlockedDays + 3,
+        dayNumber ? Number(dayNumber) + 3 : 0,
+        1 + newCompletedCount * 3
+      );
+
+      const nextCourseProgress = {
+        ...current,
+        courseId: cId,
+        completedTasksCount: newCompletedCount,
+        completedTaskIds,
+        completedDayIds,
+        unlockedDaysCount: newUnlockedDays,
+        lastTaskCompletedAt: new Date(),
+        lastCompletedTaskId: taskId,
+      };
+
+      updatedProgressMap[cId] = nextCourseProgress;
+      await studentRef.update({
+        [`courseProgress.${cId}`]: nextCourseProgress,
+      });
+    }
+
+    return updatedProgressMap;
+  } catch (err) {
+    console.error("❌ Error unlocking next 3 days on task completion:", err);
+    return null;
+  }
+}
+
+/**
  * POST /api/tasks
  */
 export async function POST(request: NextRequest) {
@@ -143,10 +229,16 @@ export async function POST(request: NextRequest) {
       description,
       studentId,
       trainerId,
+      courseId = null,
+      dayId = null,
+      dayNumber = null,
+      moduleId = null,
+      taskImageUrl = null,
       dueDate,
       taskType = "assignment", // 'assignment' | 'exercise' | 'quiz' | 'speaking_recording'
       audioRecordingUrl = null,
       submission = "",
+      status = "pending",
     } = body;
 
     if (!title || !studentId) {
@@ -156,30 +248,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isCompletedInitially = status === "approved" || status === "completed";
+
     const newTask = {
       title,
       description: description || "",
       studentId,
       trainerId: trainerId || null,
+      courseId: courseId || null,
+      dayId: dayId || null,
+      dayNumber: dayNumber ? Number(dayNumber) : null,
+      moduleId: moduleId || null,
+      taskImageUrl: taskImageUrl || null,
       taskType,
       dueDate: dueDate ? new Date(dueDate) : null,
-      status: "pending", // 'pending' | 'submitted' | 'approved' | 'needs_correction'
+      status: status || "pending", // 'pending' | 'submitted' | 'approved' | 'needs_correction' | 'completed'
       submission,
       audioRecordingUrl,
-      trainerFeedback: "",
-      score: null,
+      trainerFeedback: body.trainerFeedback || "",
+      score: body.score !== undefined && body.score !== null ? Number(body.score) : null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      evaluatedAt: isCompletedInitially ? new Date() : null,
     };
 
     const docRef = await adminDb.collection("tasks").add(newTask);
 
+    let unlockedProgress = null;
+    if (isCompletedInitially) {
+      unlockedProgress = await unlockNextThreeDaysOnTaskCompletion({
+        studentId,
+        taskId: docRef.id,
+        courseId,
+        dayId,
+        dayNumber: dayNumber ? Number(dayNumber) : null,
+      });
+    }
+
     return NextResponse.json(
       { 
         success: true, 
-        message: "Task assigned successfully", 
+        message: isCompletedInitially
+          ? "Day task marked completed and next 3 days' videos unlocked!"
+          : "Task assigned successfully", 
         taskId: docRef.id,
-        task: { id: docRef.id, ...newTask }
+        task: { id: docRef.id, ...newTask },
+        courseProgress: unlockedProgress,
       },
       { status: 201 }
     );
@@ -217,11 +331,22 @@ export async function PATCH(request: NextRequest) {
       description,
       dueDate,
       taskType,
+      courseId,
+      dayId,
+      dayNumber,
+      moduleId,
+      taskImageUrl,
     } = body;
 
     if (!taskId) {
       return NextResponse.json({ error: "Task ID is required" }, { status: 400 });
     }
+
+    const existingDoc = await adminDb.collection("tasks").doc(taskId).get();
+    if (!existingDoc.exists) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    }
+    const existingTask = existingDoc.data() || {};
 
     const updateData: any = {
       updatedAt: new Date(),
@@ -229,7 +354,7 @@ export async function PATCH(request: NextRequest) {
 
     if (status) {
       updateData.status = status;
-      if (status === "approved" || status === "needs_correction") {
+      if (status === "approved" || status === "completed" || status === "needs_correction") {
         updateData.evaluatedAt = new Date();
       }
     }
@@ -241,11 +366,36 @@ export async function PATCH(request: NextRequest) {
     if (title) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (dueDate) updateData.dueDate = new Date(dueDate);
+    if (courseId !== undefined) updateData.courseId = courseId;
+    if (dayId !== undefined) updateData.dayId = dayId;
+    if (dayNumber !== undefined) updateData.dayNumber = dayNumber !== null ? Number(dayNumber) : null;
+    if (moduleId !== undefined) updateData.moduleId = moduleId;
+    if (taskImageUrl !== undefined) updateData.taskImageUrl = taskImageUrl;
 
     await adminDb.collection("tasks").doc(taskId).update(updateData);
 
+    // If trainer marked the day's task as completed / approved, unlock the next 3 days' videos!
+    let unlockedProgress = null;
+    if (status === "approved" || status === "completed") {
+      const targetStudentId = existingTask.studentId;
+      unlockedProgress = await unlockNextThreeDaysOnTaskCompletion({
+        studentId: targetStudentId,
+        taskId,
+        courseId: courseId || existingTask.courseId || null,
+        dayId: dayId || existingTask.dayId || null,
+        dayNumber: dayNumber ?? existingTask.dayNumber ?? null,
+      });
+    }
+
     return NextResponse.json(
-      { success: true, message: "Task evaluated / updated successfully" },
+      {
+        success: true,
+        message:
+          status === "approved" || status === "completed"
+            ? "Task completed! Next 3 days' videos unlocked for the student."
+            : "Task evaluated / updated successfully",
+        courseProgress: unlockedProgress,
+      },
       { status: 200 }
     );
   } catch (error: any) {

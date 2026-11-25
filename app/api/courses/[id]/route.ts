@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
-import { formatModuleForStreaming } from "@/lib/mux";
+import { computeCourseAccessAndLocking } from "@/lib/mux";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +24,16 @@ export async function GET(
 
     // Security & Enrollment Check
     let isEnrolled = false;
+    let isAdminOrTrainer = false;
     let loggedInUser = null;
+    let matchedUserData: any = null;
+    let studentDocId = "";
 
     const searchParams = request.nextUrl.searchParams;
     const email = searchParams.get("email");
     const loginId = searchParams.get("loginId");
     const deviceId = searchParams.get("deviceId");
-    const stdId = searchParams.get("stdId");
+    const stdId = searchParams.get("stdId") || searchParams.get("userId");
 
     // Case 1: Fetching via stdId (Direct Student ID)
     if (stdId) {
@@ -40,6 +43,8 @@ export async function GET(
       }
 
       const userData = userDoc.data();
+      matchedUserData = userData;
+      studentDocId = userDoc.id;
       if (userData.isBlocked === true) {
         return NextResponse.json({ error: "Your account is blocked" }, { status: 403 });
       }
@@ -47,7 +52,16 @@ export async function GET(
       const userEnrolledCourses = userData.enrolledCourses || [];
       const userRole = userData.role || "user";
 
-      if (userEnrolledCourses.includes(id) || userRole === "admin" || userRole === "superadmin") {
+      if (
+        userRole === "admin" ||
+        userRole === "superadmin" ||
+        userRole === "trainer" ||
+        userData.isTrainerPreviewAccount === true ||
+        userData.trainerPreviewAccount === true
+      ) {
+        isEnrolled = true;
+        isAdminOrTrainer = true;
+      } else if (userEnrolledCourses.includes(id)) {
         isEnrolled = true;
       }
 
@@ -84,6 +98,8 @@ export async function GET(
       }
 
       const userData = userSnapshot.docs[0].data();
+      matchedUserData = userData;
+      studentDocId = userSnapshot.docs[0].id;
 
       // Device Verification
       if (userData.deviceId && userData.deviceId !== deviceId) {
@@ -105,7 +121,16 @@ export async function GET(
       const userEnrolledCourses = userData.enrolledCourses || [];
       const userRole = userData.role || "user";
       
-      if (userEnrolledCourses.includes(id) || userRole === "admin" || userRole === "superadmin") {
+      if (
+        userRole === "admin" ||
+        userRole === "superadmin" ||
+        userRole === "trainer" ||
+        userData.isTrainerPreviewAccount === true ||
+        userData.trainerPreviewAccount === true
+      ) {
+        isEnrolled = true;
+        isAdminOrTrainer = true;
+      } else if (userEnrolledCourses.includes(id)) {
         isEnrolled = true;
       }
 
@@ -122,6 +147,24 @@ export async function GET(
     if (!doc.exists) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
+    const courseData = doc.data();
+
+    // Fetch Days
+    const daysSnapshot = await (adminDb as any)
+      .collection("courses")
+      .doc(id)
+      .collection("days")
+      .orderBy("order", "asc")
+      .get();
+
+    const rawDays = daysSnapshot.docs.map((dDoc: any) => ({
+      id: dDoc.id,
+      ...dDoc.data(),
+      modules: [] as any[],
+      createdAt:
+        dDoc.data().createdAt?.toDate?.()?.toISOString() ||
+        new Date().toISOString(),
+    }));
 
     // Fetch Modules
     const modulesSnapshot = await (adminDb as any)
@@ -131,38 +174,70 @@ export async function GET(
       .orderBy("createdAt", "asc")
       .get();
 
-    const modules = (modulesSnapshot as any).docs.map((mDoc: any, index: number) => {
+    const rawModules = (modulesSnapshot as any).docs.map((mDoc: any) => {
       const data = mDoc.data();
-      // Unlock all if enrolled, otherwise only first 3
-      const isLocked = !isEnrolled && index >= 3;
-      
-      const moduleFormatted = formatModuleForStreaming(
-        {
-          id: mDoc.id,
-          ...data,
-          createdAt:
-            data.createdAt?.toDate?.()?.toISOString() ||
-            new Date().toISOString(),
-        },
-        isLocked
-      );
+      return {
+        id: mDoc.id,
+        ...data,
+        createdAt:
+          data.createdAt?.toDate?.()?.toISOString() ||
+          new Date().toISOString(),
+      };
+    });
 
-      return moduleFormatted;
+    rawModules.forEach((mod: any) => {
+      const dayIdx = rawDays.findIndex((d: any) => d.id === mod.day);
+      if (dayIdx !== -1) {
+        rawDays[dayIdx].modules.push(mod);
+      }
+    });
+
+    // Count approved/completed tasks for this student if trainer-guided
+    let approvedTasksCount = 0;
+    if (isEnrolled && courseData?.isTrainerGuided && studentDocId) {
+      try {
+        const tasksSnap = await (adminDb as any)
+          .collection("tasks")
+          .where("studentId", "==", studentDocId)
+          .get();
+        approvedTasksCount = tasksSnap.docs.filter((tDoc: any) => {
+          const t = tDoc.data();
+          const isDone = t.status === "approved" || t.status === "completed";
+          const matchesCourse = !t.courseId || t.courseId === id;
+          return isDone && matchesCourse;
+        }).length;
+      } catch (tErr) {
+        console.warn("Could not query tasks for student course unlocking:", tErr);
+      }
+    }
+
+    const lockedResult = computeCourseAccessAndLocking({
+      courseId: id,
+      courseData,
+      days: rawDays,
+      modules: rawModules,
+      userData: matchedUserData,
+      isPurchased: isEnrolled,
+      isAdminOrTrainer,
+      approvedTasksCount,
     });
 
     return NextResponse.json({
       success: true,
       user: loggedInUser, // Pass user enrollment details
+      accessControl: lockedResult.accessControl,
       course: {
         id: doc.id,
-        ...doc.data(),
-        modules,
+        ...courseData,
+        days: lockedResult.days,
+        modules: lockedResult.modules,
+        accessControl: lockedResult.accessControl,
         isPurchased: isEnrolled,
         createdAt:
-          doc.data().createdAt?.toDate?.()?.toISOString() ||
+          courseData.createdAt?.toDate?.()?.toISOString() ||
           new Date().toISOString(),
         updatedAt:
-          doc.data().updatedAt?.toDate?.()?.toISOString() ||
+          courseData.updatedAt?.toDate?.()?.toISOString() ||
           new Date().toISOString(),
       },
     });

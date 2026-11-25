@@ -30,9 +30,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add courseId to enrolledCourses array using FieldValue.arrayUnion
+    // Add courseId to enrolledCourses array and record enrollment timestamp for daily video release
+    const now = admin.firestore.Timestamp.now();
     await (adminDb as any).collection("users").doc(userId).update({
       enrolledCourses: admin.firestore.FieldValue.arrayUnion(courseId),
+      [`courseEnrollments.${courseId}`]: {
+        courseId,
+        enrolledAt: now,
+      },
     });
 
     return NextResponse.json({ success: true, message: "Successfully enrolled" });

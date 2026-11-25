@@ -26,6 +26,7 @@ interface Student {
     enrolledCourses: string[];
     enrolledCoursesDetails?: any[];
     trainerId?: string;
+    isTrainerPreviewAccount?: boolean;
     createdAt: string;
 }
 
@@ -57,6 +58,7 @@ export default function StudentsPage() {
     const [email, setEmail] = useState("");
     const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
     const [selectedTrainer, setSelectedTrainer] = useState<string>("");
+    const [isTrainerPreviewAccount, setIsTrainerPreviewAccount] = useState(false);
 
     useEffect(() => {
         fetchStudents();
@@ -129,6 +131,7 @@ export default function StudentsPage() {
                     email,
                     enrolledCourses: selectedCourses,
                     trainerId: selectedTrainer || null,
+                    isTrainerPreviewAccount,
                 }),
             });
 
@@ -141,6 +144,7 @@ export default function StudentsPage() {
             setEmail("");
             setSelectedCourses([]);
             setSelectedTrainer("");
+            setIsTrainerPreviewAccount(false);
             fetchStudents();
         } catch (err: any) {
             alert(err.message);
@@ -254,7 +258,14 @@ export default function StudentsPage() {
                                                     {student.fullName ? student.fullName.charAt(0).toUpperCase() : "U"}
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-slate-900 leading-none">{student.fullName}</p>
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <p className="font-bold text-slate-900 leading-none">{student.fullName}</p>
+                                                        {student.isTrainerPreviewAccount && (
+                                                            <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-[#2A0066] border border-purple-200">
+                                                                Trainer Preview
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <p className="text-[11px] text-slate-400 mt-1">{student.email}</p>
                                                     {student.trainerId && (
                                                         <p className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded w-fit mt-1">
@@ -422,7 +433,26 @@ export default function StudentsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="pt-4">
+                                    {/* Trainer Preview Account Checkbox */}
+                                    <div className="p-4 bg-purple-50/70 border border-purple-200/80 rounded-2xl flex items-start gap-3">
+                                        <input
+                                            type="checkbox"
+                                            id="trainerPreviewAccountModal"
+                                            checked={isTrainerPreviewAccount}
+                                            onChange={(e) => setIsTrainerPreviewAccount(e.target.checked)}
+                                            className="w-5 h-5 mt-0.5 rounded text-[#2A0066] focus:ring-[#2A0066] cursor-pointer"
+                                        />
+                                        <label htmlFor="trainerPreviewAccountModal" className="cursor-pointer select-none">
+                                            <p className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                                                Trainer Preview Account
+                                            </p>
+                                            <p className="text-[11px] text-slate-600 mt-0.5">
+                                                If checked, this account gets immediate access to all course videos without waiting for daily releases or task completions.
+                                            </p>
+                                        </label>
+                                    </div>
+
+                                    <div className="pt-2">
                                         <button
                                             type="submit"
                                             disabled={modalLoading}
