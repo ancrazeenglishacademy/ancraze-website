@@ -17,6 +17,9 @@ import {
   Filter,
   CheckCircle,
   AlertTriangle,
+  Trash2,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -51,6 +54,10 @@ export default function SuperAdminStudentsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [newStatus, setNewStatus] = useState<string>("active");
   const [editIsTrainerPreview, setEditIsTrainerPreview] = useState<boolean>(false);
+
+  // Bulk Selection States
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -118,6 +125,84 @@ export default function SuperAdminStudentsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const isAllFilteredSelected =
+    filteredStudents.length > 0 &&
+    filteredStudents.every((s) => selectedStudentIds.includes(s.id));
+
+  const toggleSelectStudent = (studentId: string) => {
+    setSelectedStudentIds((prev) =>
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const toggleSelectAllFiltered = () => {
+    if (isAllFilteredSelected) {
+      const visibleSet = new Set(filteredStudents.map((s) => s.id));
+      setSelectedStudentIds((prev) => prev.filter((id) => !visibleSet.has(id)));
+    } else {
+      const next = new Set(selectedStudentIds);
+      filteredStudents.forEach((s) => next.add(s.id));
+      setSelectedStudentIds(Array.from(next));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedStudentIds.length === 0) return;
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete ${selectedStudentIds.length} selected student(s)?`
+      )
+    )
+      return;
+
+    try {
+      setBulkLoading(true);
+      const res = await fetch("/api/students", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+        body: JSON.stringify({ studentIds: selectedStudentIds }),
+      });
+      if (!res.ok) throw new Error("Failed to delete selected students");
+      setSelectedStudentIds([]);
+      await fetchStudents();
+    } catch (err: any) {
+      alert(err.message || "Error deleting students");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkStatusUpdate = async (status: "active" | "frozen") => {
+    if (selectedStudentIds.length === 0) return;
+    try {
+      setBulkLoading(true);
+      const res = await fetch("/api/students", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+        body: JSON.stringify({
+          studentIds: selectedStudentIds,
+          isBlocked: status === "frozen",
+          accountStatus: status,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update selected students");
+      setSelectedStudentIds([]);
+      await fetchStudents();
+    } catch (err: any) {
+      alert(err.message || "Error updating students");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -162,6 +247,62 @@ export default function SuperAdminStudentsPage() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      <AnimatePresence>
+        {selectedStudentIds.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="p-4 bg-[#2A0066] text-white rounded-2xl shadow-lg shadow-[#2A0066]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-white/15 rounded-xl text-xs font-black uppercase tracking-wider">
+                {selectedStudentIds.length} Selected
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentIds([])}
+                className="text-xs text-purple-200 hover:text-white underline font-bold cursor-pointer"
+              >
+                Clear Selection
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={bulkLoading}
+                onClick={() => handleBulkStatusUpdate("active")}
+                className="px-3.5 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 text-emerald-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Unlock size={14} /> Activate Selected
+              </button>
+              <button
+                type="button"
+                disabled={bulkLoading}
+                onClick={() => handleBulkStatusUpdate("frozen")}
+                className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 text-amber-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Lock size={14} /> Freeze Selected
+              </button>
+              <button
+                type="button"
+                disabled={bulkLoading}
+                onClick={handleBulkDelete}
+                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {bulkLoading ? (
+                  <Loader size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                Delete Selected ({selectedStudentIds.length})
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Students Table */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         {loading ? (
@@ -178,7 +319,20 @@ export default function SuperAdminStudentsPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-4">Student</th>
+                  <th className="pl-5 pr-2 py-4 w-10">
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllFiltered}
+                      className="p-1 rounded-lg text-slate-400 hover:text-[#2A0066] transition cursor-pointer flex items-center justify-center"
+                    >
+                      {isAllFilteredSelected ? (
+                        <CheckSquare size={17} className="text-[#2A0066]" />
+                      ) : (
+                        <Square size={17} />
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-4 py-4">Student</th>
                   <th className="px-6 py-4">Student ID</th>
                   <th className="px-6 py-4">Enrolled Courses</th>
                   <th className="px-6 py-4">Assigned Trainer</th>
@@ -189,9 +343,28 @@ export default function SuperAdminStudentsPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredStudents.map((s) => {
                   const currentStatus = s.accountStatus || (s.isBlocked ? "frozen" : "active");
+                  const isSelected = selectedStudentIds.includes(s.id);
                   return (
-                    <tr key={s.id} className="hover:bg-slate-50/60 transition">
-                      <td className="px-6 py-4">
+                    <tr
+                      key={s.id}
+                      className={`transition ${
+                        isSelected ? "bg-purple-50/50 hover:bg-purple-50/80" : "hover:bg-slate-50/60"
+                      }`}
+                    >
+                      <td className="pl-5 pr-2 py-4">
+                        <button
+                          type="button"
+                          onClick={() => toggleSelectStudent(s.id)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-[#2A0066] transition cursor-pointer flex items-center justify-center"
+                        >
+                          {isSelected ? (
+                            <CheckSquare size={17} className="text-[#2A0066]" />
+                          ) : (
+                            <Square size={17} />
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-xl bg-[#2A0066]/10 text-[#2A0066] font-black text-xs flex items-center justify-center">
                             {s.fullName?.charAt(0) || "S"}

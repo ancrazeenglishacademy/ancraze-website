@@ -56,17 +56,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
+    const normalizedEmail = String(email).trim();
+
+    // Check if user already exists in Auth or Firestore.
+    // If an account was previously permanently deleted from Firestore (or marked closed)
+    // while an orphaned record remained in Firebase Auth, remove the stale Auth record so the account can be re-created.
+    let existingAuthUser: any = null;
     try {
-      await adminAuth.getUserByEmail(email);
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
-      );
+      existingAuthUser = await adminAuth.getUserByEmail(normalizedEmail);
     } catch (err: any) {
       if (err.code !== 'auth/user-not-found') {
         throw err;
       }
+    }
+
+    const existingFirestoreSnap = await adminDb
+      .collection('users')
+      .where('email', '==', normalizedEmail)
+      .get();
+
+    let hasActiveFirestoreUser = false;
+    const staleDocs: any[] = [];
+
+    if (existingAuthUser?.uid) {
+      const uidDoc = await adminDb.collection('users').doc(existingAuthUser.uid).get();
+      if (uidDoc.exists) {
+        const uData = uidDoc.data() || {};
+        if (uData.accountStatus !== 'closed' && uData.isDeleted !== true) {
+          hasActiveFirestoreUser = true;
+        } else {
+          staleDocs.push(uidDoc);
+        }
+      }
+    }
+
+    existingFirestoreSnap.docs.forEach((doc: any) => {
+      const uData = doc.data() || {};
+      if (uData.accountStatus !== 'closed' && uData.isDeleted !== true) {
+        hasActiveFirestoreUser = true;
+      } else {
+        staleDocs.push(doc);
+      }
+    });
+
+    if (hasActiveFirestoreUser) {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 409 }
+      );
+    }
+
+    if (existingAuthUser?.uid) {
+      try {
+        await adminAuth.deleteUser(existingAuthUser.uid);
+      } catch (cleanupErr) {
+        console.warn('Could not clean up orphaned Auth account on register:', cleanupErr);
+      }
+    }
+
+    if (staleDocs.length > 0) {
+      await Promise.all(staleDocs.map((d) => d.ref.delete().catch(() => {})));
     }
 
     // Create user with Firebase Authentication

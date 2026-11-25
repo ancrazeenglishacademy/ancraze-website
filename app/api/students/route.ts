@@ -340,15 +340,72 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists in Auth
+    const normalizedEmail = String(email).trim();
+
+    // Check if user already exists in Auth or Firestore.
+    // If an account was previously permanently deleted (or closed in Firestore / orphaned in Firebase Auth
+    // with no active Firestore user document), automatically purge the stale Auth/Firestore record so the
+    // account can be re-created cleanly.
+    let existingAuthUser: any = null;
     try {
-      await (adminAuth as any).getUserByEmail(email);
+      existingAuthUser = await (adminAuth as any).getUserByEmail(normalizedEmail);
+    } catch (err: any) {
+      if (err.code !== "auth/user-not-found") throw err;
+    }
+
+    // Check Firestore for any user documents with this email (case-insensitive check via exact & lowercase)
+    const [exactEmailSnap, lowerEmailSnap] = await Promise.all([
+      (adminDb as any).collection("users").where("email", "==", normalizedEmail).get(),
+      normalizedEmail !== normalizedEmail.toLowerCase()
+        ? (adminDb as any).collection("users").where("email", "==", normalizedEmail.toLowerCase()).get()
+        : Promise.resolve({ docs: [] }),
+    ]);
+
+    const matchingDocsMap = new Map<string, any>();
+    if (existingAuthUser?.uid) {
+      const uidDoc = await (adminDb as any).collection("users").doc(existingAuthUser.uid).get();
+      if (uidDoc.exists) {
+        matchingDocsMap.set(uidDoc.id, uidDoc);
+      }
+    }
+    exactEmailSnap.docs.forEach((d: any) => matchingDocsMap.set(d.id, d));
+    lowerEmailSnap.docs.forEach((d: any) => matchingDocsMap.set(d.id, d));
+
+    const matchingDocs = Array.from(matchingDocsMap.values());
+    const activeDoc = matchingDocs.find((d: any) => {
+      const data = d.data() || {};
+      return data.accountStatus !== "closed" && data.isDeleted !== true;
+    });
+
+    if (activeDoc) {
       return NextResponse.json(
         { error: "A user with this email already exists" },
         { status: 409 },
       );
-    } catch (err: any) {
-      if (err.code !== "auth/user-not-found") throw err;
+    }
+
+    // No active Firestore user exists for this email!
+    // Clean up any orphaned Firebase Auth account and any closed/deleted Firestore documents before creating the new user.
+    if (existingAuthUser?.uid) {
+      try {
+        await (adminAuth as any).deleteUser(existingAuthUser.uid);
+      } catch (cleanupAuthErr) {
+        console.warn("Could not delete orphaned Firebase Auth user during re-creation:", cleanupAuthErr);
+      }
+    }
+    if (matchingDocs.length > 0) {
+      await Promise.all(
+        matchingDocs.map(async (d: any) => {
+          try {
+            if (d.id !== existingAuthUser?.uid) {
+              await (adminAuth as any).deleteUser(d.id).catch(() => {});
+            }
+            await d.ref.delete();
+          } catch {
+            // ignore
+          }
+        })
+      );
     }
 
     const loginId = customLoginId || generateLoginId();
@@ -491,15 +548,26 @@ export async function PATCH(request: NextRequest) {
       trainerPreviewAccount,
     } = body;
 
-    // Handle bulk update (e.g. bulk trainer allocation or mass freeze)
+    // Handle bulk update (e.g. bulk trainer allocation, mass freeze, bulk course assignment, or trainer preview toggle)
     if (studentIds && Array.isArray(studentIds) && studentIds.length > 0) {
       const bulkUpdate: any = {};
-      if (trainerId !== undefined) bulkUpdate.trainerId = trainerId;
+      if (trainerId !== undefined) bulkUpdate.trainerId = trainerId || null;
       if (isBlocked !== undefined) {
         bulkUpdate.isBlocked = isBlocked;
         bulkUpdate.accountStatus = isBlocked ? "frozen" : "active";
       }
       if (accountStatus) bulkUpdate.accountStatus = accountStatus;
+      if (enrolledCourses !== undefined && Array.isArray(enrolledCourses)) {
+        bulkUpdate.enrolledCourses = enrolledCourses;
+      }
+      if (resetDeviceId) {
+        bulkUpdate.deviceId = null;
+      }
+      if (isTrainerPreviewAccount !== undefined || trainerPreviewAccount !== undefined) {
+        bulkUpdate.isTrainerPreviewAccount = Boolean(
+          isTrainerPreviewAccount !== undefined ? isTrainerPreviewAccount : trainerPreviewAccount
+        );
+      }
 
       const batch = (adminDb as any).batch();
       studentIds.forEach((id: string) => {
@@ -586,28 +654,125 @@ export async function DELETE(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const studentId = searchParams.get("studentId");
+    const studentIdsParam = searchParams.get("studentIds");
 
-    if (!studentId) {
+    let targetIds: string[] = [];
+    if (studentId) {
+      targetIds.push(studentId);
+    }
+    if (studentIdsParam) {
+      studentIdsParam
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .forEach((id) => {
+          if (!targetIds.includes(id)) targetIds.push(id);
+        });
+    }
+
+    if (targetIds.length === 0) {
+      try {
+        const body = await request.json();
+        if (Array.isArray(body?.studentIds)) {
+          body.studentIds
+            .map((id: any) => String(id || "").trim())
+            .filter(Boolean)
+            .forEach((id: string) => {
+              if (!targetIds.includes(id)) targetIds.push(id);
+            });
+        } else if (body?.studentId) {
+          targetIds.push(String(body.studentId).trim());
+        }
+      } catch {
+        // ignore if no JSON body
+      }
+    }
+
+    if (targetIds.length === 0) {
       return NextResponse.json(
-        { error: "Student ID is required" },
+        { error: "Student ID or studentIds array is required" },
         { status: 400 },
       );
     }
 
-    // Delete from Auth
-    try {
-      await (adminAuth as any).deleteUser(studentId);
-    } catch (authErr) {
-      console.warn("Student not found in Auth or deletion failed", authErr);
-    }
+    // Delete from Auth (by doc ID, stored uid, AND email lookup) and Firestore (including courseProgress subcollection)
+    await Promise.all(
+      targetIds.map(async (id) => {
+        let studentEmail: string | null = null;
+        let storedUid: string | null = null;
 
-    // Delete from Firestore
-    await (adminDb as any).collection("users").doc(studentId).delete();
+        try {
+          const userDocRef = (adminDb as any).collection("users").doc(id);
+          const userSnap = await userDocRef.get();
+          if (userSnap.exists) {
+            const uData = userSnap.data() || {};
+            studentEmail = uData.email ? String(uData.email).trim() : null;
+            storedUid = uData.uid ? String(uData.uid).trim() : null;
+          }
+        } catch (readErr) {
+          console.warn(`Could not read student document ${id} before deletion:`, readErr);
+        }
+
+        // Collect all candidate Firebase Auth UIDs to delete
+        const authUidsToDelete = new Set<string>();
+        authUidsToDelete.add(id);
+        if (storedUid) {
+          authUidsToDelete.add(storedUid);
+        }
+
+        // Also look up the user in Firebase Auth by their email address to guarantee the email is freed from Firebase Auth
+        if (studentEmail) {
+          try {
+            const userRecordByEmail = await (adminAuth as any).getUserByEmail(studentEmail);
+            if (userRecordByEmail?.uid) {
+              authUidsToDelete.add(userRecordByEmail.uid);
+            }
+          } catch (emailLookupErr: any) {
+            if (emailLookupErr?.code !== "auth/user-not-found") {
+              console.warn(`Firebase Auth email lookup warning for ${studentEmail}:`, emailLookupErr);
+            }
+          }
+        }
+
+        for (const uidToDelete of authUidsToDelete) {
+          try {
+            await (adminAuth as any).deleteUser(uidToDelete);
+          } catch (authErr: any) {
+            if (authErr?.code !== "auth/user-not-found") {
+              console.warn(`Student Auth UID ${uidToDelete} deletion warning:`, authErr);
+            }
+          }
+        }
+
+        // Delete courseProgress subcollection documents if any exist
+        try {
+          const progSnap = await (adminDb as any)
+            .collection("users")
+            .doc(id)
+            .collection("courseProgress")
+            .get();
+          await Promise.all(progSnap.docs.map((pDoc: any) => pDoc.ref.delete()));
+        } catch {
+          // ignore subcollection cleanup error
+        }
+
+        // Delete the Firestore user document
+        try {
+          await (adminDb as any).collection("users").doc(id).delete();
+        } catch (dbErr) {
+          console.warn(`Failed to delete student ${id} from Firestore`, dbErr);
+        }
+      })
+    );
 
     return NextResponse.json(
       {
         success: true,
-        message: "Student deleted successfully",
+        deletedCount: targetIds.length,
+        message:
+          targetIds.length === 1
+            ? "Student deleted successfully"
+            : `${targetIds.length} students deleted successfully`,
       },
       { status: 200 },
     );
