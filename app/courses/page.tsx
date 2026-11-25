@@ -47,9 +47,17 @@ export default function CoursesPage() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const res = await fetch("/api/courses");
-        if (res.ok) {
-          const data = await res.json();
+        const res = await fetch("/api/courses", {
+          headers: {
+            "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+          },
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          console.warn("Failed to fetch courses:", errData.message || errData.error || res.statusText);
+          return;
+        }
+        const data = await res.json();
           if (Array.isArray(data.courses)) {
             const mapped: CourseItem[] = data.courses.map((c: any) => ({
               id: c.id,
@@ -72,7 +80,6 @@ export default function CoursesPage() {
             }));
             setCourses(mapped);
           }
-        }
       } catch (err) {
         console.warn("Error fetching courses:", err);
       }

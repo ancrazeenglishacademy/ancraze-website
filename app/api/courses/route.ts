@@ -30,7 +30,7 @@ const checkApiKey = (request: NextRequest) => {
   const apiKey = request.headers.get("x-api-key");
   const validApiKey = process.env.INTERNAL_API_KEY || process.env.NEXT_PUBLIC_INTERNAL_API_KEY;
   if (!validApiKey) {
-    console.warn("⚠️ NO INTERNAL_API_KEY set");
+    console.warn("⚠️ [API /api/courses] No INTERNAL_API_KEY set in environment variables");
     return true; 
   }
   return apiKey === validApiKey;
@@ -38,17 +38,41 @@ const checkApiKey = (request: NextRequest) => {
 
 export async function POST(request: NextRequest) {
   if (!checkApiKey(request)) {
-    return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
+    console.error("❌ [POST /api/courses] 401 Unauthorized: Missing or invalid x-api-key header");
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Unauthorized: Invalid or missing API key",
+        message: "Please provide a valid 'x-api-key' request header.",
+      },
+      { status: 401 }
+    );
   }
 
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    console.warn(`⚠️ [POST /api/courses] 429 Too Many Requests from IP: ${ip}`);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Too many requests",
+        message: "Rate limit exceeded (max 100 requests per minute). Please try again shortly.",
+      },
+      { status: 429 }
+    );
   }
 
   try {
     if (!adminDb || !adminStorage) {
-      throw new Error('Firebase Admin services not available');
+      console.error("❌ [POST /api/courses] 503 Service Unavailable: Firebase Admin SDK (Firestore/Storage) is not initialized");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Database or storage service unavailable",
+          message: "Firebase Admin SDK is not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in .env.local.",
+        },
+        { status: 503 }
+      );
     }
 
     const formData = await request.formData();
@@ -127,11 +151,14 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('❌ Error creating course:', error);
+    const errMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ [POST /api/courses] 500 Internal Server Error: ${errMsg}`, error);
     return NextResponse.json(
       {
+        success: false,
         error: 'Failed to create course',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        message: `An unexpected error occurred while creating the course: ${errMsg}`,
+        details: errMsg,
       },
       { status: 500 }
     );
@@ -140,17 +167,41 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   if (!checkApiKey(request)) {
-    return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
+    console.error(`❌ [GET /api/courses] 401 Unauthorized: Missing or invalid x-api-key header (${request.nextUrl.pathname}${request.nextUrl.search})`);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Unauthorized: Invalid or missing API key",
+        message: "Please provide a valid 'x-api-key' request header.",
+      },
+      { status: 401 }
+    );
   }
 
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    console.warn(`⚠️ [GET /api/courses] 429 Too Many Requests from IP: ${ip}`);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Too many requests",
+        message: "Rate limit exceeded (max 100 requests per minute). Please try again shortly.",
+      },
+      { status: 429 }
+    );
   }
 
   try {
     if (!adminDb) {
-      throw new Error('Firebase Admin services not available');
+      console.error("❌ [GET /api/courses] 503 Service Unavailable: Firebase Admin Firestore is not initialized");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Database service unavailable",
+          message: "Firebase Admin SDK is not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in .env.local.",
+        },
+        { status: 503 }
+      );
     }
 
     // Check for single course fetch
@@ -388,9 +439,15 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('❌ Error fetching courses:', error);
+    const errMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ [GET /api/courses] 500 Internal Server Error: ${errMsg}`, error);
     return NextResponse.json(
-      { error: 'Failed to fetch courses', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        success: false,
+        error: 'Failed to fetch courses',
+        message: `An unexpected error occurred while fetching courses: ${errMsg}`,
+        details: errMsg,
+      },
       { status: 500 }
     );
   }
@@ -398,17 +455,41 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   if (!checkApiKey(request)) {
-    return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
+    console.error("❌ [DELETE /api/courses] 401 Unauthorized: Missing or invalid x-api-key header");
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Unauthorized: Invalid or missing API key",
+        message: "Please provide a valid 'x-api-key' request header.",
+      },
+      { status: 401 }
+    );
   }
 
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    console.warn(`⚠️ [DELETE /api/courses] 429 Too Many Requests from IP: ${ip}`);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Too many requests",
+        message: "Rate limit exceeded (max 100 requests per minute). Please try again shortly.",
+      },
+      { status: 429 }
+    );
   }
 
   try {
     if (!adminDb) {
-      throw new Error('Firebase Admin services not available');
+      console.error("❌ [DELETE /api/courses] 503 Service Unavailable: Firebase Admin Firestore is not initialized");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Database service unavailable",
+          message: "Firebase Admin SDK is not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in .env.local.",
+        },
+        { status: 503 }
+      );
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -433,11 +514,14 @@ export async function DELETE(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('❌ Error deleting course:', error);
+    const errMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`❌ [DELETE /api/courses] 500 Internal Server Error: ${errMsg}`, error);
     return NextResponse.json(
       {
+        success: false,
         error: 'Failed to delete course',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        message: `An unexpected error occurred while deleting the course: ${errMsg}`,
+        details: errMsg,
       },
       { status: 500 }
     );

@@ -27,7 +27,15 @@ export default function TrainerCourses() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/courses"); // We'll filter them by the trainer's trainerId in Firestore shortly
+      const res = await fetch("/api/courses", {
+        headers: {
+          "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+        },
+      }); // We'll filter them by the trainer's trainerId in Firestore shortly
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || errData.error || "Failed to fetch courses");
+      }
       const data = await res.json();
       setCourses(data.courses || []);
     } catch (err) {

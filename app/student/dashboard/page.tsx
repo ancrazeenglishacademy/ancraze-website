@@ -37,10 +37,17 @@ export default function StudentDashboardPage() {
     const fetchStudentData = async () => {
         try {
             setLoading(true);
-            const response = await fetch("/api/courses");
-            if (!response.ok) throw new Error("Failed to fetch courses");
+            const response = await fetch("/api/courses", {
+                headers: {
+                    "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+                },
+            });
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.message || errData.error || "Failed to fetch courses");
+            }
             const data = await response.json();
-            setCourses(data.courses);
+            setCourses(data.courses || []);
         } catch (err) {
             console.error(err);
         } finally {

@@ -618,34 +618,41 @@ function OurCourses({ onOpenCourseModal }: { onOpenCourseModal: (course: CourseI
   useEffect(() => {
     const fetchHomeCourses = async () => {
       try {
-        const res = await fetch("/api/courses");
-        if (res.ok) {
-          const data = await res.json();
-          const list = Array.isArray(data) ? data : (data.courses || []);
-          if (Array.isArray(list)) {
-            // Only courses with showOnHomePage !== false
-            const homeCourses = list.filter((c: any) => c.showOnHomePage !== false);
-            const mapped: CourseItem[] = homeCourses.map((c: any) => ({
-              id: c.id,
-              name: c.title || c.name || "Spoken English Course",
-              duration: c.duration || "",
-              validity: c.validity || "",
-              liveSessions: c.liveSessions || "",
-              tagline: c.tagline || "",
-              overview: c.description || c.overview || "",
-              badge: c.badge || undefined,
-              features: Array.isArray(c.features)
-                ? c.features
-                : typeof c.features === "string" && c.features.trim()
-                ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
-                : Array.isArray(c.lessons) && c.lessons.length > 0
-                ? c.lessons.map((l: any) => (typeof l === "string" ? l : l.title || "Interactive lesson"))
-                : [],
-              whoShouldJoin: c.whoShouldJoin || "",
-              experience: Array.isArray(c.experience) ? c.experience : [],
-            }));
-            setCourses(mapped);
-          }
+        const res = await fetch("/api/courses", {
+          headers: {
+            "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
+          },
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          console.error("Failed to fetch home courses:", errData.message || errData.error || res.statusText);
+          return;
+        }
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.courses || []);
+        if (Array.isArray(list)) {
+          // Only courses with showOnHomePage !== false
+          const homeCourses = list.filter((c: any) => c.showOnHomePage !== false);
+          const mapped: CourseItem[] = homeCourses.map((c: any) => ({
+            id: c.id,
+            name: c.title || c.name || "Spoken English Course",
+            duration: c.duration || "",
+            validity: c.validity || "",
+            liveSessions: c.liveSessions || "",
+            tagline: c.tagline || "",
+            overview: c.description || c.overview || "",
+            badge: c.badge || undefined,
+            features: Array.isArray(c.features)
+              ? c.features
+              : typeof c.features === "string" && c.features.trim()
+              ? c.features.split("\n").map((f: string) => f.trim()).filter(Boolean)
+              : Array.isArray(c.lessons) && c.lessons.length > 0
+              ? c.lessons.map((l: any) => (typeof l === "string" ? l : l.title || "Interactive lesson"))
+              : [],
+            whoShouldJoin: c.whoShouldJoin || "",
+            experience: Array.isArray(c.experience) ? c.experience : [],
+          }));
+          setCourses(mapped);
         }
       } catch (err) {
         console.error("Error loading home courses:", err);

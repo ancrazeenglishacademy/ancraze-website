@@ -7,7 +7,12 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     if (!adminDb) {
-      return NextResponse.json({ success: true, faculties: [] });
+      console.warn("⚠️ [GET /api/faculties] Firebase Admin Firestore is not initialized; returning empty faculties list");
+      return NextResponse.json({
+        success: true,
+        faculties: [],
+        warning: "Firebase Admin SDK is not initialized.",
+      });
     }
 
     const { searchParams } = new URL(request.url);
@@ -52,9 +57,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, faculties });
   } catch (error: any) {
-    console.error("❌ Error fetching faculties:", error);
+    const errMsg = error instanceof Error ? error.message : String(error || "Unknown error");
+    console.error(`❌ [GET /api/faculties] 500 Internal Server Error: ${errMsg}`, error);
     return NextResponse.json(
-      { error: "Failed to fetch faculties", details: error.message },
+      {
+        success: false,
+        error: "Failed to fetch faculties",
+        message: `An unexpected error occurred while fetching faculties: ${errMsg}`,
+        details: errMsg,
+      },
       { status: 500 }
     );
   }
@@ -63,7 +74,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     if (!adminDb) {
-      throw new Error("Firebase Admin not configured");
+      console.error("❌ [POST /api/faculties] 503 Service Unavailable: Firebase Admin Firestore is not initialized");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Database service unavailable",
+          message: "Firebase Admin SDK is not initialized. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in .env.local.",
+        },
+        { status: 503 }
+      );
     }
 
     const contentType = request.headers.get("content-type") || "";
@@ -147,9 +166,15 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("❌ Error creating faculty:", error);
+    const errMsg = error instanceof Error ? error.message : String(error || "Unknown error");
+    console.error(`❌ [POST /api/faculties] 500 Internal Server Error: ${errMsg}`, error);
     return NextResponse.json(
-      { error: "Failed to create faculty", details: error.message },
+      {
+        success: false,
+        error: "Failed to create faculty",
+        message: `An unexpected error occurred while creating the faculty profile: ${errMsg}`,
+        details: errMsg,
+      },
       { status: 500 }
     );
   }
