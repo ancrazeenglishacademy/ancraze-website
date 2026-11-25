@@ -141,15 +141,60 @@ export async function GET(request: NextRequest) {
         );
       });
 
-    // Resolve course details for each student
+    // Resolve course details for each student (including daysCount and modulesCount)
     const coursesSnapshot = await (adminDb as any).collection("courses").get();
     const coursesMap = new Map();
-    coursesSnapshot.docs.forEach((doc: any) => {
-      coursesMap.set(doc.id, {
-        id: doc.id,
-        ...doc.data(),
-      });
-    });
+    await Promise.all(
+      coursesSnapshot.docs.map(async (doc: any) => {
+        const courseData = doc.data();
+        let daysCount = 0;
+        let modulesCount = 0;
+        let moduleIds: string[] = [];
+        let dayIds: string[] = [];
+        let days: any[] = [];
+        try {
+          const [daysSnap, modulesSnap] = await Promise.all([
+            (adminDb as any)
+              .collection("courses")
+              .doc(doc.id)
+              .collection("days")
+              .orderBy("order", "asc")
+              .get(),
+            (adminDb as any).collection("courses").doc(doc.id).collection("modules").get(),
+          ]);
+          daysCount = daysSnap.size;
+          modulesCount = modulesSnap.size;
+          dayIds = daysSnap.docs.map((d: any) => d.id);
+          moduleIds = modulesSnap.docs.map((m: any) => m.id);
+          days = daysSnap.docs.map((d: any, idx: number) => {
+            const dData = d.data();
+            return {
+              id: d.id,
+              title: dData.title || `Day ${idx + 1}`,
+              order: dData.order !== undefined ? dData.order : idx,
+              dayNumber: idx + 1,
+              taskTitle: dData.taskTitle || dData.task?.title || "",
+              taskDescription: dData.taskDescription || dData.task?.description || "",
+              taskType: dData.taskType || dData.task?.type || "speaking_recording",
+              taskImageUrl:
+                dData.taskImageUrl || dData.taskImage || dData.task?.imageUrl || "",
+            };
+          });
+        } catch (subErr) {
+          console.warn(`Could not fetch subcollection counts for course ${doc.id}:`, subErr);
+        }
+
+        coursesMap.set(doc.id, {
+          id: doc.id,
+          ...courseData,
+          daysCount,
+          modulesCount,
+          dayIds,
+          moduleIds,
+          days,
+        });
+      })
+    );
 
     // Resolve trainer details
     const trainersMap = new Map();
@@ -160,18 +205,85 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const studentsWithCourses = students.map((student: any) => {
-      const enrolledCourseIds = student.enrolledCourses || [];
-      const enrolledCoursesDetails = enrolledCourseIds
-        .map((id: string) => coursesMap.get(id))
-        .filter(Boolean);
+    const studentsWithCourses = await Promise.all(
+      students.map(async (student: any) => {
+        const enrolledCourseIds = student.enrolledCourses || [];
+        const enrolledCoursesDetails = enrolledCourseIds
+          .map((id: string) => coursesMap.get(id))
+          .filter(Boolean);
 
-      return {
-        ...student,
-        trainerName: student.trainerId ? trainersMap.get(student.trainerId) || "Assigned Trainer" : null,
-        enrolledCoursesDetails,
-      };
-    });
+        // Merge users/{studentId}/courseProgress subcollection with student.courseProgress map
+        const mergedCourseProgress: Record<string, any> = {
+          ...(student.courseProgress || {}),
+        };
+        try {
+          const progSnap = await (adminDb as any)
+            .collection("users")
+            .doc(student.id)
+            .collection("courseProgress")
+            .get();
+          progSnap.docs.forEach((pDoc: any) => {
+            const pData = pDoc.data();
+            const existing = mergedCourseProgress[pDoc.id] || {};
+            mergedCourseProgress[pDoc.id] = {
+              ...existing,
+              ...pData,
+              courseId: pDoc.id,
+              startedAt:
+                pData.startedAt?.toDate?.()?.toISOString() ||
+                pData.startedAt ||
+                existing.startedAt?.toDate?.()?.toISOString() ||
+                existing.startedAt ||
+                existing.enrolledAt?.toDate?.()?.toISOString() ||
+                existing.enrolledAt ||
+                null,
+              updatedAt:
+                pData.updatedAt?.toDate?.()?.toISOString() ||
+                pData.updatedAt ||
+                existing.updatedAt?.toDate?.()?.toISOString() ||
+                existing.updatedAt ||
+                null,
+              watchedModuleIds: Array.isArray(pData.watchedModuleIds)
+                ? pData.watchedModuleIds
+                : Array.isArray(existing.watchedModuleIds)
+                ? existing.watchedModuleIds
+                : [],
+            };
+          });
+        } catch (progErr) {
+          console.warn(`Could not read courseProgress subcollection for ${student.id}:`, progErr);
+        }
+
+        // Normalize dates in courseEnrollments as ISO strings
+        const normalizedEnrollments: Record<string, any> = {};
+        if (student.courseEnrollments && typeof student.courseEnrollments === "object") {
+          for (const [cId, eVal] of Object.entries<any>(student.courseEnrollments)) {
+            normalizedEnrollments[cId] = {
+              ...eVal,
+              enrolledAt:
+                eVal?.enrolledAt?.toDate?.()?.toISOString() ||
+                eVal?.enrolledAt ||
+                student.createdAt ||
+                null,
+              startedAt:
+                eVal?.startedAt?.toDate?.()?.toISOString() ||
+                eVal?.startedAt ||
+                null,
+            };
+          }
+        }
+
+        return {
+          ...student,
+          courseProgress: mergedCourseProgress,
+          courseEnrollments: normalizedEnrollments,
+          trainerName: student.trainerId
+            ? trainersMap.get(student.trainerId) || "Assigned Trainer"
+            : null,
+          enrolledCoursesDetails,
+        };
+      })
+    );
 
     return NextResponse.json(
       { success: true, students: studentsWithCourses },

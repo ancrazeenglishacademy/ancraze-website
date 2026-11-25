@@ -171,17 +171,21 @@ async function unlockNextThreeDaysOnTaskCompletion(options: {
       const completedDayIds: string[] = Array.isArray(current.completedDayIds)
         ? [...current.completedDayIds]
         : [];
+      const isNewDayCompletion = dayId ? !completedDayIds.includes(dayId) : true;
       if (dayId && !completedDayIds.includes(dayId)) {
         completedDayIds.push(dayId);
       }
 
       const prevCompletedCount = Number(current.completedTasksCount || 0);
-      const newCompletedCount = prevCompletedCount + 1;
+      const newCompletedCount = Math.max(
+        isNewDayCompletion ? prevCompletedCount + 1 : prevCompletedCount,
+        completedDayIds.length
+      );
       const prevUnlockedDays = Number(current.unlockedDaysCount || 1);
 
       // Unlock the next 3 days' videos when trainer marks a day's task completed
       const newUnlockedDays = Math.max(
-        prevUnlockedDays + 3,
+        isNewDayCompletion ? prevUnlockedDays + 3 : prevUnlockedDays,
         dayNumber ? Number(dayNumber) + 3 : 0,
         1 + newCompletedCount * 3
       );
