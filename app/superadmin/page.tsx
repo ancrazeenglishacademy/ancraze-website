@@ -40,6 +40,13 @@ export default function SuperAdminDashboard() {
     netProfit: 0,
     pendingBalances: 0,
   });
+  const [qualityStats, setQualityStats] = useState({
+    enrolledRate: 0,
+    activeAccountRate: 0,
+    trainerAllocationRate: 0,
+    taskCompletionRate: 0,
+    overallIndex: 0,
+  });
 
   // Enquiries state
   const [recentEnquiries, setRecentEnquiries] = useState<any[]>([]);
@@ -59,15 +66,47 @@ export default function SuperAdminDashboard() {
         "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
       };
 
-      // 1. Fetch Users
+      // 1. Fetch Users (already synced with live Firebase Auth accounts)
       const usersRes = await fetch("/api/users", { headers });
       if (usersRes.ok) {
         const uData = await usersRes.json();
         const allUsers: any[] = uData.users || [];
-        setTotalStudents(allUsers.filter((u) => u.role === "student" || u.role === "user").length);
+        const studentUsers = allUsers.filter((u) => u.role === "student");
+        setTotalStudents(studentUsers.length);
         setTotalTrainers(allUsers.filter((u) => u.role === "trainer").length);
         setTotalAdmins(allUsers.filter((u) => u.role === "admin" || u.role === "superadmin").length);
         setRecentUsers(allUsers.slice(0, 6));
+
+        // Compute live quality metrics from actual student records
+        const sCount = studentUsers.length;
+        const enrolledCount = studentUsers.filter(
+          (s) => Array.isArray(s.enrolledCourses) && s.enrolledCourses.length > 0
+        ).length;
+        const activeCount = studentUsers.filter(
+          (s) => !s.isBlocked && s.accountStatus !== "frozen" && s.accountStatus !== "closed"
+        ).length;
+        const allocatedCount = studentUsers.filter((s) => Boolean(s.trainerId)).length;
+        const withCompletedTasksCount = studentUsers.filter((s) => {
+          const progValues = Object.values<any>(s.courseProgress || {});
+          return progValues.some((p) => Number(p?.completedTasksCount || 0) > 0);
+        }).length;
+
+        const enrolledRate = sCount > 0 ? Math.round((enrolledCount / sCount) * 100) : 0;
+        const activeAccountRate = sCount > 0 ? Math.round((activeCount / sCount) * 100) : 0;
+        const trainerAllocationRate = sCount > 0 ? Math.round((allocatedCount / sCount) * 100) : 0;
+        const taskCompletionRate = sCount > 0 ? Math.round((withCompletedTasksCount / sCount) * 100) : 0;
+        const overallIndex =
+          sCount > 0
+            ? Math.round((enrolledRate + activeAccountRate + trainerAllocationRate + taskCompletionRate) / 4)
+            : 0;
+
+        setQualityStats({
+          enrolledRate,
+          activeAccountRate,
+          trainerAllocationRate,
+          taskCompletionRate,
+          overallIndex,
+        });
       }
 
       // 2. Fetch Courses
@@ -207,15 +246,15 @@ export default function SuperAdminDashboard() {
           </div>
 
           <div className="space-y-4">
-            <QualityBar label="Course Completion Rate" percentage={84} color="bg-indigo-600" />
-            <QualityBar label="Student Retention Rate" percentage={92} color="bg-emerald-500" />
-            <QualityBar label="Trainer Evaluation SLA" percentage={96} color="bg-[#2A0066]" />
-            <QualityBar label="Speaking Task Approvals" percentage={78} color="bg-amber-500" />
+            <QualityBar label="Course Enrolment Rate" percentage={qualityStats.enrolledRate} color="bg-indigo-600" />
+            <QualityBar label="Active Student Accounts" percentage={qualityStats.activeAccountRate} color="bg-emerald-500" />
+            <QualityBar label="Trainer Allocation Rate" percentage={qualityStats.trainerAllocationRate} color="bg-[#2A0066]" />
+            <QualityBar label="Students With Completed Day Tasks" percentage={qualityStats.taskCompletionRate} color="bg-amber-500" />
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-bold">
             <span>Overall Academy Index</span>
-            <span className="text-sm font-black text-[#2A0066]">88% Exceptional</span>
+            <span className="text-sm font-black text-[#2A0066]">{qualityStats.overallIndex}% Live</span>
           </div>
         </div>
 
@@ -240,7 +279,7 @@ export default function SuperAdminDashboard() {
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Gross Inflow</p>
                 <p className="text-lg font-black text-slate-900">₹{financialSummary.totalRevenue.toLocaleString()}</p>
               </div>
-              <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-lg">+14% MoM</span>
+              <span className="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-lg">Live Ledger</span>
             </div>
 
             <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">

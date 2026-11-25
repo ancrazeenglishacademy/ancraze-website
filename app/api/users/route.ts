@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { adminAuth, adminDb, getActiveAuthUserSets, isUserPresentInAuth } from "@/lib/firebaseAdmin";
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; lastRequest: number }>();
@@ -51,16 +51,25 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const requestedRole = searchParams.get("role");
 
-    // Fetch all users
-    const snapshot = await (adminDb as any).collection("users").get();
+    // Fetch all Firestore users and active Firebase Auth users in parallel
+    const [snapshot, authSets] = await Promise.all([
+      (adminDb as any).collection("users").get(),
+      getActiveAuthUserSets(),
+    ]);
 
-    let users = snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt:
-        doc.data().createdAt?.toDate?.()?.toISOString() ||
-        new Date().toISOString(),
-    }));
+    let users = snapshot.docs
+      .map((doc: any) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt:
+          doc.data().createdAt?.toDate?.()?.toISOString() ||
+          new Date().toISOString(),
+      }))
+      .filter((u: any) => isUserPresentInAuth(u, authSets))
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     if (requestedRole && requestedRole !== "all") {
       users = users.filter((u: any) => u.role === requestedRole);

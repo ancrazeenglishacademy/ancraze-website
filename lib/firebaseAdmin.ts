@@ -64,4 +64,45 @@ export const adminAuth = initializedAdmin ? initializedAdmin.auth() as any : nul
 export const adminDb = initializedAdmin ? initializedAdmin.firestore() as any : null;
 export const adminStorage = initializedAdmin ? initializedAdmin.storage() as any : null;
 
+/**
+ * Fetches all currently existing UIDs and lowercased emails from Firebase Authentication.
+ * Used to exclude orphaned Firestore `users` documents whose accounts were manually deleted in Firebase Auth.
+ */
+export async function getActiveAuthUserSets(): Promise<{
+  uids: Set<string>;
+  emails: Set<string>;
+} | null> {
+  if (!adminAuth) return null;
+  try {
+    const uids = new Set<string>();
+    const emails = new Set<string>();
+    let nextPageToken: string | undefined = undefined;
+    do {
+      const listResult: any = await adminAuth.listUsers(1000, nextPageToken);
+      (listResult.users || []).forEach((u: any) => {
+        if (u.uid) uids.add(u.uid);
+        if (u.email) emails.add(String(u.email).trim().toLowerCase());
+      });
+      nextPageToken = listResult.pageToken;
+    } while (nextPageToken);
+    return { uids, emails };
+  } catch (err) {
+    console.warn('⚠️ Could not list Firebase Auth users for sync check:', err);
+    return null;
+  }
+}
+
+export function isUserPresentInAuth(
+  user: { id?: string; uid?: string; email?: string | null },
+  authSets: { uids: Set<string>; emails: Set<string> } | null
+): boolean {
+  if (!authSets) return true;
+  if (user.id && authSets.uids.has(user.id)) return true;
+  if (user.uid && authSets.uids.has(user.uid)) return true;
+  if (user.email && authSets.emails.has(String(user.email).trim().toLowerCase())) {
+    return true;
+  }
+  return false;
+}
+
 export default admin;

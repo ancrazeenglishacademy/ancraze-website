@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { adminAuth, adminDb, getActiveAuthUserSets, isUserPresentInAuth } from "@/lib/firebaseAdmin";
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; lastRequest: number }>();
@@ -109,7 +109,10 @@ export async function GET(request: NextRequest) {
     const requestedRole = searchParams.get("role");
     const trainerIdFilter = searchParams.get("trainerId");
 
-    const snapshot = await (adminDb as any).collection("users").get();
+    const [snapshot, authSets] = await Promise.all([
+      (adminDb as any).collection("users").get(),
+      getActiveAuthUserSets(),
+    ]);
 
     const students = snapshot.docs
       .map((doc: any) => {
@@ -126,6 +129,9 @@ export async function GET(request: NextRequest) {
         };
       })
       .filter((u: any) => {
+        // Exclude orphaned Firestore docs whose accounts were deleted in Firebase Auth
+        if (!isUserPresentInAuth(u, authSets)) return false;
+
         // Filter by trainerId if provided
         if (trainerIdFilter && u.trainerId !== trainerIdFilter) return false;
 
@@ -139,7 +145,11 @@ export async function GET(request: NextRequest) {
           u.role === "trainer" ||
           !u.role
         );
-      });
+      })
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     // Resolve course details for each student (including daysCount and modulesCount)
     const coursesSnapshot = await (adminDb as any).collection("courses").get();
