@@ -100,7 +100,6 @@ export default function LandingPage({ initialCourses = [] }: { initialCourses?: 
       {faculties.length > 0 && <OurFaculties faculties={faculties} />}
       <FAQSection />
       <ContactSection />
-      <FinalCTA />
       <Footer hasFaculties={faculties.length > 0} />
 
       {/* Course Detail Modal */}
@@ -502,7 +501,7 @@ function WhyChooseAncraze() {
   ];
 
   return (
-    <section id="why-ancraze" className="py-28 bg-slate-50 border-b border-slate-200/70 relative">
+    <section id="why-ancraze" className="py-28 bg-white border-b border-slate-200/70 relative">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-20">
           <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest">
@@ -521,7 +520,7 @@ function WhyChooseAncraze() {
           {pillars.map((item) => (
             <div
               key={item.title}
-              className="p-8 sm:p-9 rounded-[28px] bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/8 transition-all flex flex-col justify-between h-full group"
+              className="p-8 sm:p-9 rounded-[28px] bg-slate-50 border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/8 transition-all flex flex-col justify-between h-full group"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -666,7 +665,7 @@ function OurCourses({ initialCourses, onOpenCourseModal }: { initialCourses: Cou
   }, []);
 
   return (
-    <section id="courses" className="py-28 bg-white border-b border-slate-200/70 relative">
+    <section id="courses" className="py-28 bg-slate-50 border-b border-slate-200/70 relative">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-20">
           <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest">
@@ -688,7 +687,7 @@ function OurCourses({ initialCourses, onOpenCourseModal }: { initialCourses: Cou
               className={`rounded-[32px] p-6 flex flex-col justify-between transition-all duration-300 relative ${
                 idx === 1
                   ? "bg-gradient-to-b from-purple-50/60 to-white border-2 border-[#2A0066] shadow-2xl shadow-[#2A0066]/10"
-                  : "bg-slate-50/70 border border-slate-200 hover:shadow-xl hover:shadow-[#2A0066]/5"
+                  : "bg-white border border-slate-200 hover:shadow-xl hover:shadow-[#2A0066]/5"
               }`}
             >
               {/* Badge */}
@@ -840,7 +839,7 @@ function WhatWeProvide() {
   ];
 
   return (
-    <section id="what-we-provide" className="py-28 bg-slate-50 relative">
+    <section id="what-we-provide" className="py-28 bg-slate-50 border-b border-slate-200/70 relative">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-20">
           <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest">
@@ -903,7 +902,7 @@ function WhatWeProvide() {
 // ==========================================
 function AboutUs() {
   return (
-    <section id="about" className="py-28 bg-slate-50 border-b border-slate-200/70 relative">
+    <section id="about" className="py-28 bg-white border-b border-slate-200/70 relative">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6">
@@ -1065,7 +1064,7 @@ function OurFaculties({ faculties }: { faculties: FacultyItem[] }) {
   if (!faculties || faculties.length === 0) return null;
 
   return (
-    <section id="faculties" className="py-28 bg-white border-b border-slate-200/70 relative">
+    <section id="faculties" className="py-28 bg-slate-50 border-b border-slate-200/70 relative">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-20">
           <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 w-max mx-auto">
@@ -1287,7 +1286,7 @@ function ContactSection() {
   };
 
   return (
-    <section id="contact" className="py-28 bg-slate-50 relative">
+    <section id="contact" className="py-28 bg-slate-50 border-b border-slate-200/70 relative">
       <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
         <div className="max-w-3xl mx-auto text-center space-y-4 mb-20">
           <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest">
@@ -1512,43 +1511,6 @@ function ContactSection() {
                   </button>
                 </form>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ==========================================
-// 12. FINAL CALL TO ACTION (PAGE 1)
-// ==========================================
-function FinalCTA() {
-  return (
-    <section className="py-24 bg-white relative">
-      <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
-        <div className="rounded-[36px] bg-gradient-to-r from-[#2A0066] via-[#4805A3] to-[#6912CE] p-10 sm:p-16 text-center text-white shadow-2xl shadow-[#2A0066]/25 relative overflow-hidden">
-          <div className="max-w-2xl mx-auto space-y-6 relative z-10">
-            <span className="px-4 py-1.5 bg-white/10 rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-md">
-              START YOUR JOURNEY
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              Your English-Speaking Journey Starts Here!
-            </h2>
-            <p className="text-purple-100 text-base sm:text-lg font-medium leading-relaxed">
-              Don&apos;t let hesitation stop you. Take the first step towards speaking English confidently.
-            </p>
-            <div className="pt-2">
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-9 py-4 bg-white hover:bg-slate-100 text-[#2A0066] rounded-2xl font-black text-xs uppercase tracking-widest transition transform hover:scale-105 shadow-xl shadow-black/10"
-              >
-                <MessageSquare size={16} className="fill-[#2A0066]" />
-                <span>Enroll Now</span>
-                <ArrowRight size={16} />
-              </a>
             </div>
           </div>
         </div>
