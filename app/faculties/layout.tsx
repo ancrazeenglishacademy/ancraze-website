@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Faculties & Speaking Mentors | Ancraze English Academy",
+  title: "Faculties & Speaking Mentors",
   description:
     "Meet our certified speaking trainers and language coaches at Ancraze English Academy. Providing dedicated 1-on-1 speaking guidance, live corrections, and constant motivation in Bangla.",
   alternates: {

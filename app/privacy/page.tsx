@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Ancraze English Academy',
+  title: 'Privacy Policy',
   description: 'Privacy Policy for Ancraze English Academy mobile application and website.',
   alternates: {
     canonical: '/privacy',
