@@ -1538,7 +1538,7 @@ function Footer({ hasFaculties = false }: { hasFaculties?: boolean }) {
               </span>
             </div>
             <p className="text-xs font-black uppercase tracking-widest text-purple-300">
-              Ancraze Online Spoken English Academy
+              Ancraze English Academy
             </p>
             <p className="text-sm text-purple-200/80 leading-relaxed font-normal max-w-sm">
               Don&apos;t Just Learn English. Speak English with Our 20 Codes.
@@ -1656,7 +1656,7 @@ function Footer({ hasFaculties = false }: { hasFaculties?: boolean }) {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p className="text-[11px] text-purple-300/60 font-medium">
-            ©️ 2026 Ancraze Online Spoken English Academy. All Rights Reserved.
+            ©️ 2026 Ancraze English Academy. All Rights Reserved.
           </p>
           <div className="flex items-center gap-6 text-[11px] text-purple-300/60 font-medium">
             <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>

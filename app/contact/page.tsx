@@ -540,7 +540,7 @@ export default function ContactPage() {
             <div className="w-8 h-8 rounded-lg bg-white p-1 relative flex items-center justify-center">
               <Image src="/logo.png" alt="Ancraze" width={28} height={28} className="object-contain" />
             </div>
-            <span className="font-bold text-white">Ancraze Online Spoken English Academy</span>
+            <span className="font-bold text-white">Ancraze English Academy</span>
           </div>
 
           <p className="text-[11px] text-slate-500">
