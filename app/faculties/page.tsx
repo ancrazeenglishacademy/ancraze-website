@@ -67,14 +67,14 @@ export default function FacultiesPage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12] max-w-4xl mx-auto">
-            Learn From Dedicated{" "}
+            Meet Our{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
               Spoken English Mentors
             </span>
           </h1>
 
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto mt-5">
-            Our certified speaking trainers and language coaches provide dedicated 1-on-1 guidance, live corrections, and constant motivation in Bangla.
+            Learn from Ancraze speaking trainers and language coaches who offer 1-on-1 English speaking practice, live corrections and guidance in Bangla.
           </p>
         </div>
       </section>

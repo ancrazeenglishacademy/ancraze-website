@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact Us & Admissions Office",
+  title: "Spoken English Course Admission",
   description:
-    "Get in touch with Ancraze Admissions Office. Enroll in our spoken English courses taught in Bangla language with our 20 Codes Method and personal speaking trainers. Call or WhatsApp +91 93824 52699.",
+    "Ask about fees and admission to Ancraze online spoken English classes in Bangla. Call or WhatsApp +91 93824 52699 today.",
   alternates: {
     canonical: "/contact",
   },
   openGraph: {
-    title: "Contact Ancraze English Academy | Admissions Office",
+    title: "Spoken English Course Admission | Ancraze",
     description:
-      "Have questions about admissions, trial sessions, or our 20 Codes Method taught in Bangla? Reach out to our admissions team directly.",
+      "Ask about fees and admission to Ancraze online spoken English classes in Bangla. Call or WhatsApp +91 93824 52699 today.",
     url: "https://www.ancraze.com/contact",
     siteName: "Ancraze English Academy",
     images: [

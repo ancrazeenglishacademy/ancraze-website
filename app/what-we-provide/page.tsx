@@ -78,14 +78,14 @@ export default function WhatWeProvidePage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12] max-w-4xl mx-auto">
-            What You Receive as an{" "}
+            English Speaking Practice{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
-              Ancraze Learner
+              App and Training
             </span>
           </h1>
 
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto mt-5">
-            Everything you need to turn hesitation into spontaneous, confident English speech.
+            See what Ancraze provides to help you speak English confidently: Bangla lessons, the 20 Codes Method, app-based practice and personal speaking trainers in trainer-guided courses.
           </p>
         </div>
       </section>

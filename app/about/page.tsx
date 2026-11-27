@@ -67,14 +67,14 @@ export default function AboutPage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12] max-w-4xl mx-auto">
-            We Don&apos;t Just Teach English.{" "}
+            About Ancraze{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
-              We Help You Speak It.
+              English Academy
             </span>
           </h1>
 
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-3xl mx-auto mt-6">
-            Ancraze Online Spoken English Academy was founded on a simple realization: millions of Bengali speakers spend years studying grammar rules in books, yet freeze when having to speak a single sentence in public. We changed the entire learning paradigm.
+            Ancraze is an online spoken English academy for Bengali speakers. We teach through Bangla with our 20 Codes Method, helping you move from studying grammar rules to speaking English with confidence.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">

@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "About Our Online Spoken English Academy",
   description:
-    "Discover the mission and story behind Ancraze Online Spoken English Academy. Learn how our 20 Codes Method and personal speaking trainers help Bengali speakers speak English confidently without memorizing grammar.",
+    "Meet Ancraze, an online spoken English academy for Bengali speakers. Learn through Bangla with our 20 Codes Method. Explore our courses and enrol today.",
   alternates: {
     canonical: "/about",
   },
   openGraph: {
-    title: "About Ancraze English Academy | A Different Approach to Learning English",
+    title: "About Our Online Spoken English Academy | Ancraze",
     description:
-      "We don't just teach English. We help you speak it. Discover our 20 Codes Method taught in Bangla with dedicated 1-on-1 speaking mentors.",
+      "Meet Ancraze, an online spoken English academy for Bengali speakers. Learn through Bangla with our 20 Codes Method. Explore our courses and enrol today.",
     url: "https://www.ancraze.com/about",
     siteName: "Ancraze English Academy",
     images: [

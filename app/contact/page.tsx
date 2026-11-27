@@ -186,14 +186,14 @@ export default function ContactPage() {
             <span>Connect & Learn</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.15]">
-            Contact Ancraze Admissions {faculties.length > 0 ? (
+            Spoken English Course Admissions {faculties.length > 0 ? (
               <>
                 & Meet Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] to-purple-600">Expert Faculties</span>
               </>
             ) : null}
           </h1>
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
-            Get in touch with the Ancraze Admissions Office and discover our structured spoken English courses taught in Bangla.
+            Contact Ancraze by phone or WhatsApp for course details and admission to our online spoken English classes taught in Bangla.
           </p>
         </div>
       </header>

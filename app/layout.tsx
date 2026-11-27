@@ -26,11 +26,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Spoken English Course in Bangla | ANCRAZE",
+    default: "Spoken English Course in Bangla Online | ANCRAZE",
     template: "%s | ANCRAZE",
   },
   description:
-    "Learn to speak English confidently with ANCRAZE, an online spoken English course taught in Bengali. Practise with personal speaking trainers, our 20 Codes Method and 24/7 app access.",
+    "Join the Ancraze spoken English course in Bangla. Learn with our 20 Codes Method and app, with personal trainer courses. Enrol on WhatsApp today.",
   applicationName: "Ancraze English Academy",
   keywords: [
     "spoken english course in bangla",
@@ -63,9 +63,9 @@ export const metadata: Metadata = {
     alternateLocale: ["en_US", "bn_BD"],
     url: SITE_URL,
     siteName: "Ancraze English Academy",
-    title: "Ancraze English Academy | Best Spoken English Course in Bangla",
+    title: "Spoken English Course in Bangla Online | Ancraze",
     description:
-      "Stop memorising. Start speaking. Master practical English in Bangla with our 20 Codes Method and 1-on-1 personal speaking trainers.",
+      "Join the Ancraze spoken English course in Bangla. Learn with our 20 Codes Method and app, with personal trainer courses. Enrol on WhatsApp today.",
     images: [
       {
         url: "/student-avatar.png",
@@ -83,9 +83,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ancraze English Academy | Speak English in Bangla",
+    title: "Spoken English Course in Bangla Online | Ancraze",
     description:
-      "Best Spoken English Course in Bangla Language with 20 Codes Method and personal speaking trainers.",
+      "Join the Ancraze spoken English course in Bangla. Learn with our 20 Codes Method and app, with personal trainer courses. Enrol on WhatsApp today.",
     images: ["/student-avatar.png"],
   },
   verification: {
