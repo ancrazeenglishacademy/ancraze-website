@@ -114,14 +114,14 @@ export default function CoursesPage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12] max-w-4xl mx-auto">
-            Choose the Perfect Plan for Your{" "}
+            Online Spoken English Courses{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
-              Speaking Goals
+              in Bangla
             </span>
           </h1>
 
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto mt-5">
-            Every course is taught in simple Bangla with our 20 Codes Method, 1-on-1 personal speaking trainers, and 24/7 app access.
+            Learn English speaking online through Bangla with our 20 Codes Method and mobile app. Choose a self-study course or practise daily with a personal speaking trainer.
           </p>
         </div>
       </section>
