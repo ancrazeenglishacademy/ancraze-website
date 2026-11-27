@@ -38,6 +38,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import Link from "next/link";
+import { headingLines } from "@/lib/headingLines";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import studentAvatar from "@/public/student-avatar.png";
@@ -608,15 +609,6 @@ interface CourseItem {
   features?: string[];
   whoShouldJoin?: string;
   experience?: { title: string; desc: string }[];
-}
-
-// Shows card headings in two lines, e.g. "Self Fluent" / "in 30 Days"
-function headingLines(name: string) {
-  const text =
-    name === name.toUpperCase()
-      ? name.toLowerCase().replace(/\b[a-z]/g, (ch) => ch.toUpperCase()).replace(/\bIn\b/g, "in")
-      : name;
-  return text.trim().split(/\s+(?=in\s+\d)/i);
 }
 
 function OurCourses({ initialCourses, onOpenCourseModal }: { initialCourses: CourseItem[]; onOpenCourseModal: (course: CourseItem) => void }) {

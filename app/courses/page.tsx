@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/app/componets/Navbar";
 import Footer from "@/app/componets/Footer";
+import { headingLines } from "@/lib/headingLines";
 
 const PHONE_CLEAN = "919382452699";
 const WHATSAPP_URL = `https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent(
@@ -129,8 +130,8 @@ export default function CoursesPage() {
       <section className="py-20 bg-white border-b border-slate-200/70">
         <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map((n) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+              {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
                   className="rounded-[32px] p-7 sm:p-8 bg-slate-50 border border-slate-200/80 animate-pulse space-y-6 h-[480px]"
@@ -155,101 +156,96 @@ export default function CoursesPage() {
               </p>
             </div>
           ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch">
             {courses.map((course, index) => {
               const isPopular = index === 1; // Highlight the 60-day or middle course
               return (
                 <div
                   key={course.id}
-                  className={`rounded-[32px] p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
+                  className={`rounded-[32px] p-6 flex flex-col justify-between transition-all duration-300 relative ${
                     isPopular
-                      ? "bg-white border-2 border-[#2A0066] shadow-2xl shadow-[#2A0066]/15 lg:-translate-y-2"
+                      ? "bg-gradient-to-b from-purple-50/60 to-white border-2 border-[#2A0066] shadow-2xl shadow-[#2A0066]/10"
                       : "bg-slate-50/80 border border-slate-200/90 shadow-sm hover:shadow-xl hover:shadow-[#2A0066]/5"
                   }`}
                 >
                   {/* Badge */}
                   {course.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#2A0066] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md whitespace-nowrap">
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-3.5 py-1 bg-[#2A0066] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-md">
                       {course.badge}
                     </div>
                   )}
 
-                  <div>
-                    {/* Header */}
-                    <div className="text-center pt-2 pb-5 border-b border-slate-200/80">
-                      <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
-                        {course.name}
+                  <div className="space-y-6">
+                    <h2 className="min-h-[4rem] flex items-center justify-center text-center text-2xl font-black text-slate-900 leading-tight">
+                        <span>
+                          {headingLines(course.name).map((line) => (
+                            <span key={line} className="block">
+                              {line}{" "}
+                            </span>
+                          ))}
+                        </span>
                       </h2>
-                      {course.tagline && (
-                        <p className="text-xs text-[#2A0066] font-bold mt-2 leading-snug">
-                          {course.tagline}
-                        </p>
-                      )}
-                      {course.overview && (
-                        <p className="text-xs text-slate-600 leading-relaxed font-normal mt-3">
-                          {course.overview}
-                        </p>
-                      )}
-                    </div>
 
-                    {/* Quick Specs Pill Box */}
-                    <div className="grid grid-cols-3 gap-2 my-6 p-3 bg-white rounded-2xl border border-slate-200/70 text-center shadow-xs">
-                      <div>
+                    {/* Metrics Pill */}
+                    <div className="p-3 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between text-center gap-2">
+                      <div className="flex-1">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Duration</p>
-                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.duration || "—"}</p>
+                        <p className="text-xs font-black text-slate-900">{course.duration || "—"}</p>
                       </div>
-                      <div className="border-x border-slate-200/80">
+                      <div className="w-px h-6 bg-slate-200" />
+                      <div className="flex-1">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Validity</p>
-                        <p className="text-xs font-black text-slate-900 mt-0.5">{course.validity || "—"}</p>
+                        <p className="text-xs font-black text-slate-900">{course.validity || "—"}</p>
                       </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Live</p>
-                        <p className="text-xs font-black text-[#2A0066] mt-0.5">{course.liveSessions || "—"}</p>
+                      <div className="w-px h-6 bg-slate-200" />
+                      <div className="flex-1">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Live Sessions</p>
+                        <p className="text-xs font-black text-[#2A0066]">{course.liveSessions || "—"}</p>
                       </div>
                     </div>
 
-                    {/* Features Checklist */}
+                    {/* Features List Preview */}
                     {(course.features && course.features.length > 0) && (
-                      <div className="space-y-3 pt-2">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                          INCLUDED IN THIS COURSE:
+                      <div className="space-y-2.5 pt-2">
+                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                          Course Features:
                         </p>
-                        <ul className="space-y-2.5">
-                          {course.features.slice(0, 6).map((feature, fIdx) => (
-                            <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700 leading-snug">
-                              <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                              <span>{feature}</span>
+                        <ul className="space-y-2">
+                          {course.features.slice(0, 6).map((feat) => (
+                            <li key={feat} className="flex items-start gap-2 text-xs text-slate-700">
+                              <CheckCircle2 size={14} className="text-[#2A0066] shrink-0 mt-0.5" />
+                              <span>{feat}</span>
                             </li>
                           ))}
+                          {course.features.length > 6 && (
+                            <li className="text-[11px] font-bold text-[#2A0066] pl-5">
+                              + {course.features.length - 6} more included features
+                            </li>
+                          )}
                         </ul>
-                        {course.features.length > 6 && (
-                          <p className="text-[11px] font-bold text-[#2A0066] pt-1">
-                            + {course.features.length - 6} more included features
-                          </p>
-                        )}
                       </div>
                     )}
                   </div>
 
-                  {/* Bottom CTAs */}
-                  <div className="pt-8 space-y-3">
+                  {/* Action Buttons */}
+                  <div className="pt-8 space-y-2.5">
                     <button
+                      type="button"
                       onClick={() => setSelectedCourse(course)}
-                      className="w-full py-3 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold rounded-2xl text-xs uppercase tracking-wider transition text-center shadow-xs cursor-pointer"
+                      className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider transition cursor-pointer"
                     >
-                      View Full Syllabus & Details
+                      View Course Details
                     </button>
-
                     <a
                       href={`https://wa.me/${PHONE_CLEAN}?text=${encodeURIComponent(
-                        `Hello Ancraze Team! I want to enroll in the ${course.name}. Please guide me on enrollment steps.`
+                        `Hello Ancraze! I want to enroll in the ${course.name}. Please share details.`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-3.5 bg-[#2A0066] hover:bg-[#3D0099] text-white font-black rounded-2xl text-xs uppercase tracking-wider transition shadow-lg shadow-[#2A0066]/20 flex items-center justify-center gap-2 text-center"
+                      className="w-full py-3.5 bg-[#2A0066] hover:bg-[#3D0099] text-white rounded-xl font-black text-xs uppercase tracking-wider transition shadow-lg shadow-[#2A0066]/20 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <MessageSquare size={14} className="fill-white" />
-                      <span>Enroll Now on WhatsApp</span>
+                      <span>Enroll Now</span>
                     </a>
                   </div>
                 </div>
