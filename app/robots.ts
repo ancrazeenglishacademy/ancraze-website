@@ -16,8 +16,6 @@ export default function robots(): MetadataRoute.Robots {
           "/faculties",
           "/contact",
           "/privacy",
-          "/login",
-          "/register",
         ],
         disallow: [
           "/superadmin/",

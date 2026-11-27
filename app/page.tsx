@@ -1273,20 +1273,12 @@ function FAQSection() {
                     {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </div>
                 </button>
-                <AnimatePresence>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed border-t border-slate-200/60 bg-white">
-                        {faq.a}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* Answers stay in the HTML so search engines can read them */}
+                <div
+                  className={`${isOpen ? "block" : "hidden"} px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 font-normal leading-relaxed border-t border-slate-200/60 bg-white`}
+                >
+                  {faq.a}
+                </div>
               </div>
             );
           })}

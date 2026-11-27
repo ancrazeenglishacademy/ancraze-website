@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Spoken English Courses in Bangla | Ancraze Academy",
+  title: "Spoken English Courses in Bangla",
   description:
     "Explore our structured spoken English courses taught in Bangla. Featuring the 20 Codes Method, 1-on-1 personal speaking trainer sessions, 24/7 app access, and live interactive classes.",
   alternates: {
