@@ -116,7 +116,7 @@ export default function ContactPage() {
                 Ancraze
               </span>
               <span className="text-[9px] font-bold text-[#2A0066] tracking-widest uppercase mt-0.5">
-                Spoken English Academy
+                English Academy
               </span>
             </div>
           </Link>
