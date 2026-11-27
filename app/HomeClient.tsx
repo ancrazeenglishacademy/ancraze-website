@@ -691,7 +691,7 @@ function OurCourses({ initialCourses, onOpenCourseModal }: { initialCourses: Cou
               )}
 
               <div className="space-y-6">
-                <h3 className="min-h-[3.5rem] flex items-center justify-center text-center text-xl font-black uppercase text-slate-900 leading-snug">
+                <h3 className="min-h-[3.5rem] flex items-center justify-center text-center text-xl font-black text-slate-900 leading-tight">
                     {course.name}
                   </h3>
 
