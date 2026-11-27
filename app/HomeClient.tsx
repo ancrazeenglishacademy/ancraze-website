@@ -95,7 +95,6 @@ export default function LandingPage({ initialCourses = [] }: { initialCourses?: 
       <OurCourses initialCourses={initialCourses} onOpenCourseModal={(course) => setSelectedCourseDetail(course)} />
       <WhyChooseAncraze />
       <WhatWeProvide />
-      <LearningJourney />
       <AboutUs />
       <DownloadAppSection />
       {faculties.length > 0 && <OurFaculties faculties={faculties} />}
@@ -891,56 +890,6 @@ function WhatWeProvide() {
                   </ul>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ==========================================
-// 7. YOUR LEARNING JOURNEY
-// ==========================================
-function LearningJourney() {
-  const steps = [
-    { title: "Learn", desc: "Understand sentence formation through our 20 Codes Method.", icon: <BookOpen size={20} /> },
-    { title: "Practise", desc: "Reinforce daily vocabulary, translation and writing exercises.", icon: <Clock size={20} /> },
-    { title: "Speak", desc: "Engage in 1-on-1 daily speaking practice with your personal trainer.", icon: <MessageSquare size={20} /> },
-    { title: "Improve", desc: "Receive personal feedback, corrections, and weekly live revision.", icon: <Award size={20} /> },
-    { title: "Become Confident", desc: "Speak English fluently, effortlessly, and without hesitation.", icon: <Sparkles size={20} /> },
-  ];
-
-  return (
-    <section className="py-24 bg-white border-b border-slate-200/70 relative overflow-hidden">
-      <div className="max-w-[1320px] mx-auto px-5 sm:px-6">
-        <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
-          <div className="inline-block px-3.5 py-1 bg-[#2A0066]/10 text-[#2A0066] rounded-full text-xs font-black uppercase tracking-widest">
-            YOUR LEARNING JOURNEY
-          </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-            Learn → Practise → Speak → Improve → Become Confident.
-          </h2>
-          <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed pt-1">
-            A structured learning experience designed to transform your English knowledge into practical speaking ability.
-          </p>
-        </div>
-
-        {/* Steps Road */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 relative">
-          {steps.map((st, i) => (
-            <div
-              key={st.title}
-              className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-[#2A0066]/40 transition-all flex flex-col items-center text-center space-y-3 relative group"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-[#2A0066] text-white flex items-center justify-center shadow-md shadow-[#2A0066]/20 group-hover:scale-110 transition-transform">
-                {st.icon}
-              </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">
-                Step 0{i + 1}
-              </span>
-              <h4 className="text-lg font-bold text-slate-900">{st.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{st.desc}</p>
             </div>
           ))}
         </div>
