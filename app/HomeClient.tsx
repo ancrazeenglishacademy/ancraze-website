@@ -249,15 +249,15 @@ function Hero() {
             {/* Main Headline */}
 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
-    Speak English Through Bangla 
+    Learn Spoken English in Bangla 
   </span>{" "}
   with Our 20 Codes Method
-</h1>
+            </h1>
 
 
             {/* Subtitle */}
             <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              <strong className="text-slate-900 font-bold">Join ANCRAZE's online spoken English course in Bengali.</strong> Learn with our 20 Codes Method, a personal speaking trainer and daily practice on our app. Made for students, job seekers, housewives and working professionals across West Bengal. 
+              <strong className="text-slate-900 font-bold">Join Ancraze's online English speaking course for Bengali speakers.</strong> Practise daily on our app, with a personal speaking trainer in trainer-guided courses. Made for students, job seekers, housewives and working professionals across West Bengal. 
             </p>
 
             {/* Action Buttons */}

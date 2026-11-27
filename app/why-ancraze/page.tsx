@@ -102,14 +102,14 @@ export default function WhyAncrazePage() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12] max-w-4xl mx-auto">
-            Why Learners Across Bengal{" "}
+            Why Learn Spoken English{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2A0066] via-[#5B13B9] to-[#7928CA]">
-              Trust Ancraze
+              with Ancraze?
             </span>
           </h1>
 
           <p className="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto mt-5">
-            Discover the 5 pillars that make Ancraze the most effective spoken English academy for Bengali speakers.
+            Discover the 5 pillars of our online English speaking classes for Bengali speakers, including Bangla explanations and the 20 Codes Method.
           </p>
         </div>
       </section>
