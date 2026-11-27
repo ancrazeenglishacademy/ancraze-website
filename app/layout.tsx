@@ -144,7 +144,8 @@ export default function RootLayout({
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       "url": SITE_URL,
-      "name": "Ancraze English Academy",
+            "name": "Ancraze",
+      "alternateName": "Ancraze English Academy",
       "publisher": {
         "@id": `${SITE_URL}/#organization`
       },
