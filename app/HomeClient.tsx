@@ -612,6 +612,15 @@ interface CourseItem {
   experience?: { title: string; desc: string }[];
 }
 
+// Shows card headings in two lines, e.g. "Self Fluent" / "in 30 Days"
+function headingLines(name: string) {
+  const text =
+    name === name.toUpperCase()
+      ? name.toLowerCase().replace(/\b[a-z]/g, (ch) => ch.toUpperCase()).replace(/\bIn\b/g, "in")
+      : name;
+  return text.trim().split(/\s+(?=in\s+\d)/i);
+}
+
 function OurCourses({ initialCourses, onOpenCourseModal }: { initialCourses: CourseItem[]; onOpenCourseModal: (course: CourseItem) => void }) {
   const [courses, setCourses] = useState<CourseItem[]>(initialCourses);
 
@@ -679,30 +688,27 @@ function OurCourses({ initialCourses, onOpenCourseModal }: { initialCourses: Cou
               key={course.id}
               className={`rounded-[32px] p-6 flex flex-col justify-between transition-all duration-300 relative ${
                 idx === 1
-                  ? "bg-gradient-to-b from-purple-50/60 to-white border-2 border-[#2A0066] shadow-2xl shadow-[#2A0066]/10 lg:-translate-y-2"
+                  ? "bg-gradient-to-b from-purple-50/60 to-white border-2 border-[#2A0066] shadow-2xl shadow-[#2A0066]/10"
                   : "bg-slate-50/70 border border-slate-200 hover:shadow-xl hover:shadow-[#2A0066]/5"
               }`}
             >
               {/* Badge */}
               {course.badge && (
-                <div className="absolute -top-3.5 left-8 px-3.5 py-1 bg-[#2A0066] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-md">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-3.5 py-1 bg-[#2A0066] text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-md">
                   {course.badge}
                 </div>
               )}
 
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 leading-tight">
-                    {course.name}
+                <h3 className="min-h-[4rem] flex items-center justify-center text-center text-2xl font-black text-slate-900 leading-tight">
+                    <span>
+                      {headingLines(course.name).map((line) => (
+                        <span key={line} className="block">
+                          {line}{" "}
+                        </span>
+                      ))}
+                    </span>
                   </h3>
-                  <p className="text-xs font-bold text-[#2A0066] mt-2 leading-snug">
-                    {course.tagline}
-                  </p>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed font-normal">
-                  {course.overview}
-                </p>
 
                 {/* Metrics Pill */}
                 <div className="p-3 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between text-center gap-2">
