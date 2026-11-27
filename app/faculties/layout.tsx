@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Faculties & Speaking Mentors",
+  title: "Spoken English Trainers and Mentors",
   description:
-    "Meet our certified speaking trainers and language coaches at Ancraze English Academy. Providing dedicated 1-on-1 speaking guidance, live corrections, and constant motivation in Bangla.",
+    "Meet Ancraze spoken English mentors offering 1-on-1 speaking practice, live corrections and guidance in Bangla. Ask about our courses today.",
   alternates: {
     canonical: "/faculties",
   },
   openGraph: {
-    title: "Our Faculties & Mentors | Ancraze English Academy",
+    title: "Spoken English Trainers and Mentors | Ancraze",
     description:
-      "Learn from dedicated spoken English mentors. Certified trainers who guide you 1-on-1 to speak English with natural fluency.",
+      "Meet Ancraze spoken English mentors offering 1-on-1 speaking practice, live corrections and guidance in Bangla. Ask about our courses today.",
     url: "https://www.ancraze.com/faculties",
     siteName: "Ancraze English Academy",
     images: [

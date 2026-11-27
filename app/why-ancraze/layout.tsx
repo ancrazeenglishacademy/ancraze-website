@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Why Choose Our 20 Codes Method",
+  title: "Why Trust Ancraze for Spoken English",
   description:
-    "Discover why Ancraze is the #1 choice for Bengali speakers to master Spoken English. Explore our 20 Codes Method, daily 1-on-1 personal speaking trainers, and 24/7 mobile learning app.",
+    "See the 5 pillars that make Ancraze the most effective spoken English academy for Bengali speakers. Explore our courses and start speaking.",
   alternates: {
     canonical: "/why-ancraze",
   },
   openGraph: {
-    title: "Why Choose Ancraze English Academy | The Ancraze Difference",
+    title: "Why Trust Ancraze for Spoken English | Ancraze",
     description:
-      "Stop memorising complicated grammar rules. Learn practical English sentence construction in Bangla with our 20 Codes Method and personal speaking trainers.",
+      "See the 5 pillars that make Ancraze the most effective spoken English academy for Bengali speakers. Explore our courses and start speaking.",
     url: "https://www.ancraze.com/why-ancraze",
     siteName: "Ancraze English Academy",
     images: [
