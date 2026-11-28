@@ -50,6 +50,11 @@ export interface MuxAsset {
     messages: string[];
   };
   passthrough?: string;
+  meta?: {
+    title?: string;
+    creator_id?: string;
+    external_id?: string;
+  };
 }
 
 export interface MuxDirectUpload {
@@ -66,19 +71,28 @@ export interface MuxDirectUpload {
 export async function createDirectUpload(options?: {
   corsOrigin?: string;
   passthrough?: string;
+  title?: string;
 }): Promise<MuxDirectUpload> {
   const headers = getMuxAuthHeaders();
+
+  const newAssetSettings: Record<string, any> = {
+    playback_policy: ["public"],
+    passthrough: options?.passthrough || "ancraze-course-video",
+    mp4_support: "standard", // allows direct mp4 download fallback if ever needed
+  };
+
+  if (options?.title && options.title.trim()) {
+    newAssetSettings.meta = {
+      title: options.title.trim().slice(0, 512),
+    };
+  }
 
   const response = await fetch(`${MUX_API_BASE}/uploads`, {
     method: "POST",
     headers,
     body: JSON.stringify({
       cors_origin: options?.corsOrigin || "*",
-      new_asset_settings: {
-        playback_policy: ["public"],
-        passthrough: options?.passthrough || "ancraze-course-video",
-        mp4_support: "standard", // allows direct mp4 download fallback if ever needed
-      },
+      new_asset_settings: newAssetSettings,
     }),
   });
 
@@ -176,7 +190,7 @@ export async function listAssets(options?: {
   page?: number;
 }): Promise<MuxAsset[]> {
   const headers = getMuxAuthHeaders();
-  const limit = options?.limit || 25;
+  const limit = Math.min(options?.limit || 100, 100);
   const page = options?.page || 1;
 
   const response = await fetch(

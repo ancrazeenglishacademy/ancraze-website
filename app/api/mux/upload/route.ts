@@ -21,11 +21,22 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { passthrough = "ancraze-course-video" } = body;
+    const { passthrough = "ancraze-course-video", title } = body;
+
+    let resolvedTitle = typeof title === "string" ? title.trim() : "";
+    if (!resolvedTitle && typeof passthrough === "string" && passthrough.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(passthrough);
+        resolvedTitle = parsed?.title || parsed?.name || "";
+      } catch {
+        // ignore JSON parse errors
+      }
+    }
 
     const directUpload = await createDirectUpload({
       corsOrigin: "*",
       passthrough,
+      title: resolvedTitle || undefined,
     });
 
     return NextResponse.json(

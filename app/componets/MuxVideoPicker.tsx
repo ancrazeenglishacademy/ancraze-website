@@ -21,6 +21,12 @@ import MuxPlayer from "./MuxPlayer";
 
 export interface MuxVideoItem {
   id: string; // asset ID
+  title?: string | null;
+  meta?: {
+    title?: string;
+    creator_id?: string;
+    external_id?: string;
+  } | null;
   status: "preparing" | "ready" | "errored";
   duration?: number;
   aspectRatio?: string;
@@ -29,6 +35,35 @@ export interface MuxVideoItem {
   thumbnailUrl?: string | null;
   createdAt: string;
   passthrough?: string;
+}
+
+function getAssetDisplayTitle(asset: MuxVideoItem): string {
+  if (asset.title && asset.title.trim()) {
+    return asset.title.trim();
+  }
+  if (asset.meta?.title && asset.meta.title.trim()) {
+    return asset.meta.title.trim();
+  }
+  if (asset.passthrough && asset.passthrough.trim()) {
+    const raw = asset.passthrough.trim();
+    if (raw.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.title === "string" && parsed.title.trim()) {
+          return parsed.title.trim();
+        }
+        if (typeof parsed?.name === "string" && parsed.name.trim()) {
+          return parsed.name.trim();
+        }
+      } catch {
+        // Fall through if not valid JSON
+      }
+    }
+    if (raw !== "ancraze-course-video") {
+      return raw;
+    }
+  }
+  return `Asset ${asset.id.slice(0, 8)}`;
 }
 
 interface MuxVideoPickerProps {
@@ -181,6 +216,7 @@ export default function MuxVideoPicker({
       setUploadStatusText("Requesting Mux direct upload slot...");
 
       // 1. Get Direct Upload URL from backend
+      const cleanTitle = selectedFile.name.replace(/\.[^/.]+$/, "");
       const createRes = await fetch("/api/mux/upload", {
         method: "POST",
         headers: {
@@ -188,7 +224,12 @@ export default function MuxVideoPicker({
           "x-api-key": process.env.NEXT_PUBLIC_INTERNAL_API_KEY || "",
         },
         body: JSON.stringify({
-          passthrough: JSON.stringify({ courseId: courseId || "general", name: selectedFile.name }),
+          title: cleanTitle,
+          passthrough: JSON.stringify({
+            courseId: courseId || "general",
+            name: selectedFile.name,
+            title: cleanTitle,
+          }),
         }),
       });
 
@@ -316,13 +357,14 @@ export default function MuxVideoPicker({
       return;
     }
 
+    const displayTitle = getAssetDisplayTitle(asset);
     const item = {
       url: `https://stream.mux.com/${playbackId}.m3u8`,
       playbackId: playbackId,
       assetId: asset.id,
       thumbnailUrl: `https://image.mux.com/${playbackId}/thumbnail.jpg`,
       duration: formatDuration(asset.duration),
-      name: asset.passthrough || `Mux Asset ${asset.id.slice(0, 8)}`,
+      name: displayTitle,
       source: "mux_library" as const,
     };
 
@@ -370,12 +412,40 @@ export default function MuxVideoPicker({
   };
 
   const filteredAssets = useMemo(() => {
-    return assets.filter(
-      (a) =>
-        a.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.playbackId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.passthrough?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const rawQuery = searchQuery.trim().toLowerCase();
+    if (!rawQuery) return assets;
+
+    // Normalize extra spaces and hyphens so titles like "Prem Technique  - Part1" match "prem technique part1"
+    const normalize = (str: string) =>
+      str
+        .toLowerCase()
+        .replace(/[-_]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const normalizedQuery = normalize(rawQuery);
+    const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+
+    return assets.filter((a) => {
+      const displayTitle = getAssetDisplayTitle(a);
+      const searchableFields = [
+        displayTitle,
+        a.title || "",
+        a.meta?.title || "",
+        a.meta?.external_id || "",
+        a.passthrough || "",
+        a.id || "",
+        a.playbackId || "",
+      ];
+
+      const combinedRaw = searchableFields.join(" ").toLowerCase();
+      if (combinedRaw.includes(rawQuery)) return true;
+
+      const combinedNormalized = normalize(combinedRaw);
+      if (combinedNormalized.includes(normalizedQuery)) return true;
+
+      return queryTokens.length > 0 && queryTokens.every((token) => combinedNormalized.includes(token));
+    });
   }, [assets, searchQuery]);
 
   return (
@@ -617,9 +687,9 @@ export default function MuxVideoPicker({
 
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-900 truncate">
-                        {asset.passthrough || `Asset ${asset.id.slice(0, 8)}`}
+                        {getAssetDisplayTitle(asset)}
                       </p>
-                      <p className="text-[10px] text-slate-400 font-mono">
+                      <p className="text-[10px] text-slate-400 font-mono truncate">
                         Playback ID: {asset.playbackId || "Preparing..."}
                       </p>
                     </div>

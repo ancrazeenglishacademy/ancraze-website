@@ -21,9 +21,41 @@ const checkApiKey = (request: NextRequest) => {
   return apiKey === validApiKey;
 };
 
+function extractAssetTitle(asset: {
+  id: string;
+  meta?: { title?: string; external_id?: string; creator_id?: string };
+  passthrough?: string;
+}): string {
+  if (asset.meta?.title && asset.meta.title.trim()) {
+    return asset.meta.title.trim();
+  }
+
+  if (asset.passthrough && asset.passthrough.trim()) {
+    const raw = asset.passthrough.trim();
+    if (raw.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.title === "string" && parsed.title.trim()) {
+          return parsed.title.trim();
+        }
+        if (typeof parsed?.name === "string" && parsed.name.trim()) {
+          return parsed.name.trim();
+        }
+      } catch {
+        // Not valid JSON, fall through
+      }
+    }
+    if (raw !== "ancraze-course-video") {
+      return raw;
+    }
+  }
+
+  return "";
+}
+
 /**
  * GET /api/mux/assets
- * Lists videos in your Mux account with playback IDs and thumbnails.
+ * Lists videos in your Mux account with titles, playback IDs, and thumbnails.
  */
 export async function GET(request: NextRequest) {
   if (!checkApiKey(request)) {
@@ -31,10 +63,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const limit = parseInt(request.nextUrl.searchParams.get("limit") || "50");
-    const page = parseInt(request.nextUrl.searchParams.get("page") || "1");
+    const requestedLimit = parseInt(request.nextUrl.searchParams.get("limit") || "100", 10);
+    const requestedPage = request.nextUrl.searchParams.get("page");
+    const limit = Math.min(isNaN(requestedLimit) || requestedLimit <= 0 ? 100 : requestedLimit, 100);
 
-    const assets = await listAssets({ limit, page });
+    let assets = await listAssets({
+      limit,
+      page: requestedPage ? parseInt(requestedPage, 10) || 1 : 1,
+    });
+
+    // If no explicit page was requested and the first page is full (100 items),
+    // automatically fetch up to 2 more pages so the entire Mux library is searchable by title.
+    if (!requestedPage && assets.length === 100) {
+      for (let nextPage = 2; nextPage <= 3; nextPage++) {
+        const moreAssets = await listAssets({ limit: 100, page: nextPage });
+        if (!moreAssets.length) break;
+        assets = assets.concat(moreAssets);
+        if (moreAssets.length < 100) break;
+      }
+    }
 
     const formattedAssets = await Promise.all(
       assets.map(async (asset) => {
@@ -45,8 +92,12 @@ export async function GET(request: NextRequest) {
           publicPlaybackId = await ensurePublicPlaybackId(asset);
         }
 
+        const resolvedTitle = extractAssetTitle(asset);
+
         return {
           id: asset.id,
+          title: resolvedTitle || null,
+          meta: asset.meta || null,
           status: asset.status,
           duration: asset.duration,
           aspectRatio: asset.aspect_ratio,
