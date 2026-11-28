@@ -96,6 +96,9 @@ export default function Footer({ hasFaculties = false }: FooterProps) {
                 <Link href="/what-we-provide" className="hover:text-white transition">What We Provide</Link>
               </li>
               <li>
+                <Link href="/blog" className="hover:text-white transition">Blog</Link>
+              </li>
+              <li>
                 <Link href="/contact" className="hover:text-white transition">Contact Us & Admissions</Link>
               </li>
               <li>

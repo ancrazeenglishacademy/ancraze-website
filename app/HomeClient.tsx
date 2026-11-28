@@ -1596,6 +1596,9 @@ function Footer({ hasFaculties = false }: { hasFaculties?: boolean }) {
                 <Link href="/#faq" className="hover:text-white transition">Frequently Asked Questions</Link>
               </li>
               <li>
+                <Link href="/blog" className="hover:text-white transition">Blog</Link>
+              </li>
+              <li>
                 <Link href="/contact" className="hover:text-white transition">Contact Us & Admissions</Link>
               </li>
             </ul>

@@ -15,6 +15,7 @@ export default function robots(): MetadataRoute.Robots {
           "/what-we-provide",
           "/faculties",
           "/contact",
+          "/blog",
           "/privacy",
         ],
         disallow: [
