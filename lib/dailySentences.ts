@@ -122,7 +122,7 @@ export const sections: { heading: string; sentences: string[][] }[] = [
       ],
       [
         "Why are you late?",
-        "তোমার দেরি হচ্ছে কেন?"
+        "তোমার দেরি হল কেন?"
       ],
       [
         "Who told you?",
@@ -204,7 +204,7 @@ export const sections: { heading: string; sentences: string[][] }[] = [
       ],
       [
         "I am hungry.",
-        "আমার খুব খিদে পেয়েছে।"
+        "আমার খিদে পেয়েছে।"
       ],
       [
         "I am thirsty.",
@@ -359,7 +359,7 @@ export const sections: { heading: string; sentences: string[][] }[] = [
       ],
       [
         "Let me help you.",
-        "আমাকে তোমাকে সাহায্য করতে দাও।"
+        "আমাকে সাহায্য করতে দাও।"
       ],
       [
         "Follow me.",
