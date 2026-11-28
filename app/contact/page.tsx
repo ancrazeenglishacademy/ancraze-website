@@ -556,6 +556,10 @@ export default function ContactPage() {
               App Store
             </a>
             <span>•</span>
+            <Link href="/blog" className="hover:text-white transition">
+              Blog
+            </Link>
+            <span>•</span>
             <Link href="/" className="hover:text-white transition">
               Back to Home
             </Link>
